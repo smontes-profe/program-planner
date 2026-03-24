@@ -10,6 +10,7 @@
 - `shadcn/ui`: composable UI primitives integrated in project codebase.
 - `lucide-react`: icon set.
 - `React Hook Form` + `Zod` (recommended): typed form handling and validation.
+- `next-themes` (optional): controlled theme support without accessibility regressions.
 
 ## 3. Backend and Data
 - `Supabase Auth`: authentication and session management.
@@ -20,6 +21,8 @@
 ## 4. Testing and Quality
 - `Vitest`: unit tests, especially grade engine and weight validators.
 - `@testing-library/react` (recommended): component behavior tests.
+- `axe-core` / `jest-axe` (recommended): accessibility regression checks.
+- `Lighthouse CI` (recommended): performance + accessibility budget tracking.
 - `ESLint` + `Prettier`: static quality and style consistency.
 
 ## 5. Delivery
@@ -34,6 +37,8 @@
   - Server Actions
   - imports (template or PDF-assisted)
 - Persist only normalized percentages (`0-100`) and normalize at computation boundaries.
+- Build UI with responsive-first layouts and semantic HTML landmarks.
+- Treat accessibility as a release quality gate, not a post-release improvement.
 
 ## 7. Language Policy
 - Code artifacts (variables, methods, types, tables, columns) in English.

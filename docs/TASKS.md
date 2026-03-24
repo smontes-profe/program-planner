@@ -10,6 +10,15 @@ Status legend:
 - [x] Define baseline docs (`SPECS`, `ARCHITECTURE`, `AGENTS`, `TASKS`).
 - [x] Add stack, CI/CD, MCP, and diagrams docs.
 - [x] Lock architecture decisions D1-D8 (single DB + org model + visibility scopes + role model).
+- [x] Add Next.js agent operating skills guide.
+- [x] Add local reusable skill package (`skills/nextjs-agent-ops`).
+- [x] Add local reusable security skill package (`skills/supabase-rls-ops`).
+- [x] Add local reusable testing skill package (`skills/nextjs-testing-ops`).
+- [x] Add PR template with responsive/a11y/usability checklist.
+- [x] Add CI quality-gates workflow scaffold for `test:a11y` and `test:responsive`.
+- [ ] Define responsive layout baseline (`320`, `768`, `1280` breakpoints).
+- [ ] Define accessibility acceptance checklist for core flows.
+- [ ] Define usability standards for loading, error, and empty states.
 - [ ] Initialize Next.js 15 project (App Router, TypeScript strict).
 - [ ] Configure Tailwind CSS + shadcn/ui + lucide-react.
 - [ ] Configure Vitest with first domain test.
@@ -77,6 +86,16 @@ Status legend:
 - [ ] Vercel environment segregation.
 - [ ] Block merge on failed quality checks.
 
+## Phase 8.1 - UX Quality Gates
+- [x] Add automated accessibility checks in CI scaffold for critical pages/components.
+- [x] Add responsive visual checks in CI scaffold for key breakpoints.
+- [ ] Define release gate for unresolved accessibility blockers.
+
+## Phase 8.2 - Mobile Progression
+- [ ] Define mobile-read and mobile-light-edit acceptance criteria.
+- [ ] Instrument analytics for mobile friction in core flows.
+- [ ] Prioritize and execute high-impact mobile improvements.
+
 ## Phase 9 - AI PDF Assistant (Optional, Post-MVP)
 - [ ] Upload curriculum PDF.
 - [ ] Extract draft RA/CE with AI pipeline.
@@ -85,5 +104,7 @@ Status legend:
 
 ## Ongoing Quality Tasks
 - [ ] Keep docs consistent with implementation on every merge.
+- [ ] Enforce Next.js skills checklist in PR reviews.
+- [ ] Track mobile usage friction and prioritize mobile improvements by impact.
 - [ ] Increase unit test coverage on critical domain logic.
 - [ ] Add integration tests for key user flows.

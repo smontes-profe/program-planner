@@ -9,6 +9,7 @@ Primary goals:
 - Provide traceability from `RA -> CE -> UT -> Instrument -> Grade`.
 - Guarantee legal and pedagogical consistency with strict weight validation.
 - Enable internal collaboration with safe cloning and lineage tracking.
+- Deliver a responsive and accessible web experience for daily teacher workflows.
 
 ## 2. Locked Decisions (Confirmed on 2026-03-24)
 These decisions are mandatory for implementation unless explicitly replaced in a later revision.
@@ -168,9 +169,39 @@ Non-negotiable rule:
 - Supabase RLS as primary authorization layer.
 - Unit tests required for weight and grade engine logic.
 
-## 12. Definition of Done for Domain Features
+## 12. UX, Accessibility, and Responsive Requirements
+Baseline UX requirements:
+- Core tasks must be clear, with predictable navigation and explicit feedback states.
+- Forms must provide field-level and global error messages.
+- Destructive actions must require confirmation.
+
+Accessibility requirements:
+- Target WCAG 2.2 AA for core flows (`auth`, `plan editing`, `grading`, `import/fork`).
+- Full keyboard operability for all interactive controls.
+- Visible focus states and semantic landmarks.
+- Color contrast minimum:
+  - normal text: `4.5:1`
+  - large text: `3:1`
+- Screen-reader compatible labels for form controls and icon-only buttons.
+
+Responsive requirements:
+- MVP must support desktop and tablet as first-class layouts.
+- Mobile support in MVP must be usable for read and light edit workflows.
+- Complex editing on mobile is allowed to be progressively improved after MVP.
+- Responsive behavior must be verified at least in `320px`, `768px`, and `1280px` widths.
+
+## 13. Mobile Feasibility Strategy
+- Track real usage and friction in mobile sessions after first production rollout.
+- Prioritize mobile improvements based on:
+  - frequency of failed/abandoned actions
+  - support requests
+  - impact on critical flows
+- Reassess full mobile parity after stabilization of core desktop/tablet workflows.
+
+## 14. Definition of Done for Domain Features
 A domain feature is complete only if all are true:
 1. Behavior matches this specification.
 2. Validation and error states are covered.
 3. Tests pass.
-4. `SPECS.md`, `ARCHITECTURE.md`, `TASKS.md`, and relevant diagrams are updated.
+4. Responsive and accessibility acceptance checks pass for affected UI.
+5. `SPECS.md`, `ARCHITECTURE.md`, `TASKS.md`, and relevant diagrams are updated.

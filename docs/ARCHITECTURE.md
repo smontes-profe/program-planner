@@ -15,6 +15,7 @@
 - `evaluation`: instrument coverage and grade engine.
 - `collaboration`: import/fork and lineage.
 - `admin`: cross-organization moderation and support.
+- `ui-system`: design tokens, responsive layout primitives, accessibility patterns.
 
 ## 3. Context Diagram
 ```mermaid
@@ -248,8 +249,27 @@ sequenceDiagram
   - `develop` -> development deployment
   - `main` -> production deployment
 
-## 9. Critical Non-Functional Requirements
+## 9. Frontend Interaction Architecture
+- Use a shared UI system based on Tailwind + shadcn primitives.
+- Keep semantic structure in page shells:
+  - `header`
+  - `nav`
+  - `main`
+  - `aside` (when needed)
+- Define responsive layout behavior per route:
+  - desktop: full editing workspace
+  - tablet: stacked or two-column adaptive layouts
+  - mobile: simplified layout with prioritized actions
+
+## 10. Critical Non-Functional Requirements
 - Deterministic and test-covered grade calculations.
 - Auditable lineage for all imports/forks.
 - Predictable performance for high-volume plans.
 - Mandatory documentation sync in code review.
+- Accessibility baseline aligned with WCAG 2.2 AA in core flows.
+- Responsive verification required for `320px`, `768px`, and `1280px`.
+- Mobile parity delivered progressively based on usage and friction evidence.
+- Usability baseline:
+  - clear empty/loading/error states
+  - consistent form feedback
+  - keyboard-friendly interactions
