@@ -1,39 +1,46 @@
 # Program Planner - System Architecture
 
 ## 1. Architectural Style
-- Framework: Next.js App Router (server-first + client components where needed).
-- Backend pattern: Server Actions + Supabase client (no mandatory REST layer).
-- Data store: PostgreSQL (Supabase).
-- AuthZ: Supabase Auth + Row Level Security (RLS).
-- Testing focus: domain calculation engine and validation rules.
+- Framework: Next.js App Router (server-first).
+- Backend pattern: Server Actions + Supabase client.
+- Data store: PostgreSQL (Supabase) with strict relational integrity.
+- AuthN/AuthZ: Supabase Auth + Row Level Security (RLS).
+- Security strategy: database-enforced authorization, app checks as secondary layer.
 
 ## 2. Logical Modules
-- `auth`: sign-up, sign-in, session, role resolution.
-- `curriculum`: public templates by region/year/module.
-- `teaching-plan`: private teacher copies + planning entities.
-- `evaluation`: instruments, CE coverage, grading, aggregates.
-- `collaboration`: publish/import (fork), lineage tracking.
-- `admin`: user role management and moderation.
+- `auth`: sign-up/sign-in/session management.
+- `organization`: organization and membership management.
+- `curriculum`: versioned curriculum templates by region/module/year.
+- `teaching-plan`: teacher-owned planning graph.
+- `evaluation`: instrument coverage and grade engine.
+- `collaboration`: import/fork and lineage.
+- `admin`: cross-organization moderation and support.
 
 ## 3. Context Diagram
 ```mermaid
 flowchart LR
     Teacher[Teacher] --> App[Program Planner Web App]
-    Admin[Admin] --> App
+    OrgManager[Organization Manager] --> App
+    PlatformAdmin[Platform Admin] --> App
     App --> SupabaseAuth[Supabase Auth]
     App --> DB[(PostgreSQL - Supabase)]
     App --> Storage[(Supabase Storage)]
-    Vercel[Vercel] --> App
-    GitHub[GitHub Actions] --> Vercel
+    GitHub[GitHub Actions] --> Vercel[Vercel]
+    Vercel --> App
 ```
 
 ## 4. Data Model (ERD)
 ```mermaid
 erDiagram
-    PROFILE ||--o{ TEACHING_PLAN : owns
-    PROFILE ||--o{ CURRICULUM_TEMPLATE : authors
+    PROFILE ||--o{ ORGANIZATION_MEMBERSHIP : has
+    ORGANIZATION ||--o{ ORGANIZATION_MEMBERSHIP : contains
+
+    ORGANIZATION ||--o{ CURRICULUM_TEMPLATE : owns
     CURRICULUM_TEMPLATE ||--o{ TEMPLATE_RA : contains
     TEMPLATE_RA ||--o{ TEMPLATE_CE : contains
+
+    ORGANIZATION ||--o{ TEACHING_PLAN : contains
+    PROFILE ||--o{ TEACHING_PLAN : owns
 
     TEACHING_PLAN ||--o{ PLAN_RA : contains
     PLAN_RA ||--o{ PLAN_CE : contains
@@ -49,26 +56,45 @@ erDiagram
     PLAN_CE ||--o{ INSTRUMENT_SCORE : graded_for
 
     TEACHING_PLAN }o--|| TEACHING_PLAN : cloned_from
+    TEACHING_PLAN }o--|| CURRICULUM_TEMPLATE : imported_from
 
     PROFILE {
         uuid id PK
+        string auth_user_id UNIQUE
         string email UNIQUE
-        string role "teacher|admin"
+        boolean is_platform_admin
         string full_name
+        timestamptz created_at
+    }
+
+    ORGANIZATION {
+        uuid id PK
+        string code
+        string name
+        boolean is_active
+        timestamptz created_at
+    }
+
+    ORGANIZATION_MEMBERSHIP {
+        uuid id PK
+        uuid organization_id FK
+        uuid profile_id FK
+        string role_in_org "org_manager|teacher"
+        boolean is_active
         timestamptz created_at
     }
 
     CURRICULUM_TEMPLATE {
         uuid id PK
-        uuid author_id FK
+        uuid organization_id FK
+        uuid created_by_profile_id FK
         string region_code
         string module_code
         string module_name
         string academic_year
-        string study_level
-        string template_version
+        string version
+        string status "draft|published|deprecated"
         string source_type "manual|pdf_assisted"
-        boolean is_public
         timestamptz created_at
     }
 
@@ -90,14 +116,18 @@ erDiagram
 
     TEACHING_PLAN {
         uuid id PK
-        uuid owner_id FK
+        uuid organization_id FK
+        uuid owner_profile_id FK
         uuid source_plan_id FK
         uuid source_template_id FK
+        string source_version
         string title
         string region_code
+        string module_code
         string academic_year
-        boolean is_public
+        string visibility_scope "private|organization|company"
         string status "draft|ready|published|archived"
+        timestamptz imported_at
         timestamptz created_at
     }
 
@@ -154,57 +184,72 @@ erDiagram
     }
 ```
 
-## 5. Key Flows
+## 5. Authorization and RLS Strategy
+RLS is mandatory and default-deny.
 
-### 5.1 Import Public Curriculum into New Plan
+Access model:
+- `platform_admin`: unrestricted access.
+- `org_manager`: full access inside owned organization.
+- `teacher`: own plans write access + shared read/import based on `visibility_scope`.
+
+Visibility rules:
+- `private`: owner, org managers in same organization, platform admins.
+- `organization`: any active membership in same organization.
+- `company`: any authenticated active member in any organization.
+
+## 6. Key Flows
+
+### 6.1 Import Template to Teaching Plan
 ```mermaid
 sequenceDiagram
-    actor T as Teacher
+    actor U as Teacher
     participant UI as Web UI
     participant SA as Server Action
     participant DB as PostgreSQL
 
-    T->>UI: Select public template
-    UI->>SA: importTemplate(templateId)
-    SA->>DB: Create teaching_plan
-    SA->>DB: Deep copy RA/CE into plan tables
-    SA->>DB: Save lineage metadata
+    U->>UI: Select published template
+    UI->>SA: importTemplate(templateId, organizationId)
+    SA->>DB: Validate membership and visibility
+    SA->>DB: Create teaching_plan with owner+organization
+    SA->>DB: Deep copy RA/CE to plan graph
+    SA->>DB: Save lineage metadata (source_template_id, source_version, imported_at)
     DB-->>SA: New plan id
-    SA-->>UI: Success + redirect to plan
+    SA-->>UI: Redirect to plan workspace
 ```
 
-### 5.2 Save Instrument Grade and Recalculate
+### 6.2 Save Grade and Recompute
 ```mermaid
 sequenceDiagram
-    actor T as Teacher
+    actor U as Teacher
     participant UI as Web UI
     participant SA as Server Action
     participant GE as Grade Engine
     participant DB as PostgreSQL
 
-    T->>UI: Submit score
+    U->>UI: Submit score
     UI->>SA: saveInstrumentScore(payload)
+    SA->>DB: RLS check (plan write permission)
     SA->>DB: Upsert score row
     SA->>GE: recomputePlanAggregates(planId)
-    GE-->>SA: ce/ra/final aggregates
-    SA->>DB: Persist materialized aggregates (optional)
-    SA-->>UI: Updated dashboard metrics
+    GE-->>SA: ce/ra/final and completion metrics
+    SA-->>UI: Updated metrics
 ```
 
-## 6. Security Model
-- RLS by default deny on all business tables.
-- Teacher policy: CRUD own teaching plans and child entities.
-- Public read policy: curriculum templates and published plans with `is_public = true`.
-- Admin policy: full read/write with explicit role check.
+## 7. Versioning and Immutability
+- Template unique key: `organization_id + region_code + module_code + academic_year + version`.
+- `published` templates are immutable.
+- Any functional update requires new version row (for example `v2`).
 
-## 7. Deployment Topology
+## 8. Deployment Topology
 - Vercel hosts Next.js app.
 - Supabase hosts Postgres/Auth/Storage.
-- GitHub Actions runs lint, typecheck, tests, and optional migration checks.
-- Vercel preview deployments for pull requests.
+- GitHub Actions runs lint/typecheck/tests and optional migration checks.
+- Branch mapping:
+  - `develop` -> development deployment
+  - `main` -> production deployment
 
-## 8. Critical Non-Functional Requirements
-- Predictable grade computations (deterministic, test-covered).
-- Fast loading for plans with high CE/UT/instrument volume.
-- Auditability for publish/import lineage and important grade mutations.
-- Documentation and schema consistency enforced in code review.
+## 9. Critical Non-Functional Requirements
+- Deterministic and test-covered grade calculations.
+- Auditable lineage for all imports/forks.
+- Predictable performance for high-volume plans.
+- Mandatory documentation sync in code review.

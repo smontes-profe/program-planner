@@ -6,79 +6,84 @@ Status legend:
 - `[x]` done
 - `[!]` blocked
 
-## Phase 0 - Foundation
+## Phase 0 - Foundation and Decision Lock
 - [x] Define baseline docs (`SPECS`, `ARCHITECTURE`, `AGENTS`, `TASKS`).
 - [x] Add stack, CI/CD, MCP, and diagrams docs.
+- [x] Lock architecture decisions D1-D8 (single DB + org model + visibility scopes + role model).
 - [ ] Initialize Next.js 15 project (App Router, TypeScript strict).
 - [ ] Configure Tailwind CSS + shadcn/ui + lucide-react.
 - [ ] Configure Vitest with first domain test.
 - [ ] Configure ESLint + Prettier + import sorting.
 
-## Phase 1 - Data Platform
-- [ ] Create Supabase project structure and environment variables.
-- [ ] Implement base SQL schema for profiles and teaching plans.
-- [ ] Implement curriculum template schema (`template_ra`, `template_ce`).
-- [ ] Implement RLS policies for teacher/admin/public access.
-- [ ] Add migration workflow (local + CI verification).
+## Phase 1 - Organization and Access Foundation
+- [ ] Create SQL schema for `organizations`.
+- [ ] Create SQL schema for `organization_memberships`.
+- [ ] Create SQL schema for `profiles` with `is_platform_admin`.
+- [ ] Implement region catalog and `academic_year` normalization constraints.
+- [ ] Implement RLS base policies for:
+  - platform admin global access
+  - org manager organization access
+  - teacher own/write access
 
-## Phase 2 - Auth and Access
-- [ ] Implement sign-up/sign-in with Supabase Auth.
-- [ ] Add protected app routes (`/dashboard`, `/plans/*`).
-- [ ] Add role guard middleware (`teacher`, `admin`).
-- [ ] Implement optional MFA toggle (feature flagged).
+## Phase 2 - Curriculum Templates
+- [ ] Implement `curriculum_templates` schema with unique version key.
+- [ ] Implement template status flow (`draft`, `published`, `deprecated`).
+- [ ] Enforce template immutability after publish.
+- [ ] Implement `template_ra` and `template_ce`.
+- [ ] Build template CRUD and publish flow.
 
-## Phase 3 - Curriculum Management
-- [ ] CRUD for curriculum templates.
-- [ ] CRUD for RA and CE in templates.
-- [ ] Curriculum versioning by region/module/year/version.
-- [ ] Manual curriculum creation flow (day-1 mandatory path).
-- [ ] Publish/unpublish template flow with validation.
+## Phase 3 - Teaching Plan Core
+- [ ] Implement `teaching_plans` schema with:
+  - `organization_id`
+  - `owner_profile_id`
+  - `visibility_scope`
+  - lineage fields
+- [ ] Implement plan RA/CE CRUD.
+- [ ] Implement hard invariant checks (RA=100, CE=100).
+- [ ] Implement plan status transitions (`draft`, `ready`, `published`, `archived`).
 
-## Phase 4 - Teaching Plan Core
-- [ ] Create teaching plan from scratch.
-- [ ] Import/fork from public template (deep copy + lineage).
-- [ ] CRUD for plan RA/CE.
-- [ ] Weight validation engine (RA=100, CE=100).
-- [ ] Plan readiness status (`draft`, `ready`, `published`).
+## Phase 4 - Collaboration and Visibility
+- [ ] Implement deep import/fork from template.
+- [ ] Implement deep import/fork from published plan.
+- [ ] Persist lineage (`source_*`, `imported_at`).
+- [ ] Implement visibility-based read/import policy:
+  - `private`
+  - `organization`
+  - `company`
+- [ ] Ensure no automatic source sync after import.
 
 ## Phase 5 - Didactic Planning
 - [ ] CRUD for didactic units (UT).
 - [ ] Map UT <-> CE (many-to-many).
 - [ ] Assign UT to trimester (`T1`, `T2`, `T3`).
-- [ ] Build trimester coverage summaries (RA/CE/UT percentages).
+- [ ] Build trimester coverage summaries.
 
 ## Phase 6 - Evaluation Engine
 - [ ] CRUD for evaluation instruments.
 - [ ] Support default and custom instrument types.
 - [ ] Define CE coverage per instrument.
-- [ ] Implement grade entry (`simple` and `advanced` modes).
-- [ ] Implement aggregate calculations (CE, RA, final).
-- [ ] Add unit tests for all formula and edge cases.
+- [ ] Implement grade entry (`simple` and `advanced`).
+- [ ] Implement aggregate calculations (CE, RA, final + completion metrics).
+- [ ] Add unit tests for formulas and edge cases.
 
-## Phase 7 - Collaboration
-- [ ] Public/private visibility for teaching plans.
-- [ ] Import public plan as independent clone.
-- [ ] Add source lineage metadata and source version.
-- [ ] Add "share improvements" republish flow.
+## Phase 7 - Organization Management and Admin
+- [ ] Build organization member management for org managers.
+- [ ] Build role assignment guardrails.
+- [ ] Build platform admin moderation tools.
 
-## Phase 8 - Admin Panel
-- [ ] User list and role management.
-- [ ] Permission override tools for admins.
-- [ ] Basic moderation actions for public content.
+## Phase 8 - CI/CD and Release
+- [ ] GitHub Actions: lint + typecheck + test on PR.
+- [ ] Branch strategy: `develop` -> development deploy, `main` -> production deploy.
+- [ ] Vercel environment segregation.
+- [ ] Block merge on failed quality checks.
 
 ## Phase 9 - AI PDF Assistant (Optional, Post-MVP)
 - [ ] Upload curriculum PDF.
 - [ ] Extract draft RA/CE with AI pipeline.
-- [ ] Teacher review UI for extracted results.
-- [ ] Save approved structure as template.
-
-## Phase 10 - CI/CD and Release
-- [ ] GitHub Actions: lint + typecheck + test on PR.
-- [ ] Branch strategy: `develop` -> preview, `main` -> production.
-- [ ] Vercel project linkage and env segregation.
-- [ ] Block merge if checks fail.
+- [ ] Teacher review and confirm extracted content.
+- [ ] Save approved extraction as template draft.
 
 ## Ongoing Quality Tasks
 - [ ] Keep docs consistent with implementation on every merge.
 - [ ] Increase unit test coverage on critical domain logic.
-- [ ] Add integration tests for critical user flows.
+- [ ] Add integration tests for key user flows.

@@ -19,6 +19,17 @@ Act as a senior full-stack engineer with FP teaching domain awareness (DAM/DAW c
 3. `docs/TASKS.md`
 4. Target code/files for the selected task
 
+## 3.1 Locked Architecture Decisions
+Treat these as fixed unless the user explicitly revises them:
+- Single database with organizations and memberships.
+- Teaching plan ownership requires both organization and owner profile.
+- Visibility scopes are only `private | organization | company` for MVP.
+- Roles are `platform_admin | org_manager | teacher`.
+- Published curriculum templates are immutable and versioned.
+- Import/fork is deep copy without post-import sync.
+- Authorization must be enforced in Supabase RLS.
+- `academic_year` and `region_code` must be normalized.
+
 ## 4. Implementation Standards
 - TypeScript strict mode required.
 - Validate inputs with Zod at boundaries (Server Actions, form handlers, import flows).

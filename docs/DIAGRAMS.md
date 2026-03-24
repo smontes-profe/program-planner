@@ -4,16 +4,18 @@
 ```mermaid
 flowchart LR
     Teacher[Teacher]
-    Admin[Admin]
+    OrgManager[Organization Manager]
+    PlatformAdmin[Platform Admin]
 
     UC1((Create Teaching Plan))
     UC2((Manage RA and CE))
     UC3((Plan UT and Trimester))
     UC4((Configure Instruments))
     UC5((Enter Grades))
-    UC6((Publish Plan))
-    UC7((Import Public Plan))
-    UC8((Manage Users and Roles))
+    UC6((Publish or Share Plan))
+    UC7((Import Published Template))
+    UC8((Manage Organization Members))
+    UC9((Moderate Platform Data))
 
     Teacher --> UC1
     Teacher --> UC2
@@ -22,46 +24,68 @@ flowchart LR
     Teacher --> UC5
     Teacher --> UC6
     Teacher --> UC7
-    Admin --> UC8
+    OrgManager --> UC8
+    PlatformAdmin --> UC9
 ```
 
 ## 2. Domain Class Diagram (Conceptual)
 ```mermaid
 classDiagram
+    class Organization {
+      +id: UUID
+      +code: string
+      +name: string
+    }
+
+    class Profile {
+      +id: UUID
+      +email: string
+      +isPlatformAdmin: boolean
+    }
+
+    class OrganizationMembership {
+      +id: UUID
+      +roleInOrg: OrgRole
+      +isActive: boolean
+    }
+
+    class CurriculumTemplate {
+      +id: UUID
+      +regionCode: string
+      +moduleCode: string
+      +academicYear: string
+      +version: string
+      +status: TemplateStatus
+    }
+
     class TeachingPlan {
       +id: UUID
       +title: string
-      +regionCode: string
-      +academicYear: string
-      +isPublic: boolean
+      +visibilityScope: VisibilityScope
       +status: PlanStatus
     }
 
     class LearningResult {
       +id: UUID
       +code: string
-      +description: string
       +weightInPlan: number
     }
 
     class EvaluationCriterion {
       +id: UUID
       +code: string
-      +description: string
       +weightInRa: number
     }
 
     class DidacticUnit {
       +id: UUID
       +code: string
-      +title: string
       +trimester: Trimester
     }
 
     class EvaluationInstrument {
       +id: UUID
       +type: InstrumentType
-      +title: string
       +gradingMode: GradingMode
     }
 
@@ -73,9 +97,13 @@ classDiagram
     class InstrumentScore {
       +id: UUID
       +scoreValue: number
-      +scoreDate: date
     }
 
+    Organization "1" --> "*" OrganizationMembership : has
+    Profile "1" --> "*" OrganizationMembership : has
+    Organization "1" --> "*" CurriculumTemplate : owns
+    Organization "1" --> "*" TeachingPlan : contains
+    Profile "1" --> "*" TeachingPlan : owns
     TeachingPlan "1" --> "*" LearningResult : contains
     LearningResult "1" --> "*" EvaluationCriterion : contains
     TeachingPlan "1" --> "*" DidacticUnit : includes
@@ -85,15 +113,42 @@ classDiagram
     EvaluationCriterion "1" --> "*" InstrumentCriterionWeight : weightedIn
     EvaluationInstrument "1" --> "*" InstrumentScore : records
     EvaluationCriterion "1" --> "*" InstrumentScore : gradedFor
+    TeachingPlan "*" --> "0..1" CurriculumTemplate : importedFrom
+    TeachingPlan "*" --> "0..1" TeachingPlan : clonedFrom
 ```
 
-## 3. Teaching Plan State Diagram
+## 3. Visibility Decision Diagram
+```mermaid
+flowchart TD
+    Start[Plan Read Access Request]
+    IsAdmin{platform_admin?}
+    SameOrg{Same organization?}
+    Scope{visibility_scope}
+    AnyMember{Active membership in any organization?}
+    Allow[Allow]
+    Deny[Deny]
+
+    Start --> IsAdmin
+    IsAdmin -- Yes --> Allow
+    IsAdmin -- No --> Scope
+
+    Scope -- private --> SameOrg
+    SameOrg -- Yes --> Allow
+    SameOrg -- No --> Deny
+
+    Scope -- organization --> SameOrg
+    Scope -- company --> AnyMember
+    AnyMember -- Yes --> Allow
+    AnyMember -- No --> Deny
+```
+
+## 4. Teaching Plan State Diagram
 ```mermaid
 stateDiagram-v2
     [*] --> Draft
-    Draft --> Ready: All hard validations pass
+    Draft --> Ready: Hard invariants pass
     Ready --> Published: Teacher publishes
-    Published --> Draft: Teacher unpublishes/edit
-    Published --> Archived: Admin or owner archives
+    Published --> Draft: Teacher edits and unpublishes
+    Published --> Archived: Owner, org manager, or platform admin archives
     Archived --> [*]
 ```

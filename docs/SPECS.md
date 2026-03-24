@@ -1,152 +1,176 @@
 # Program Planner - Business Specifications
 
 ## 1. Product Scope
-Program Planner is a web platform for FP teachers to design, evaluate, and share didactic programming for one or more modules.
+Program Planner is a web platform for FP teachers to design, evaluate, and share didactic planning for one or more modules across multiple organizations and autonomous communities.
 
 Primary goals:
-- Support multi-region curricula (different autonomous communities, same module, different rules).
-- Support academic-year versioning (for example `2026/2027`).
-- Provide complete traceability from `RA -> CE -> UT -> Instrument -> Grade`.
-- Keep legal and pedagogical consistency through strict weight validation.
-- Enable collaboration through public templates and safe cloning (fork model).
+- Support multi-region curricula (same module, different region rules).
+- Support academic-year versioning (format `YYYY/YYYY+1`, for example `2026/2027`).
+- Provide traceability from `RA -> CE -> UT -> Instrument -> Grade`.
+- Guarantee legal and pedagogical consistency with strict weight validation.
+- Enable internal collaboration with safe cloning and lineage tracking.
 
-## 2. User Roles
-- `teacher`: create and manage own teaching plans, optionally publish templates.
-- `admin`: manage users, roles, and moderation of shared/public content.
+## 2. Locked Decisions (Confirmed on 2026-03-24)
+These decisions are mandatory for implementation unless explicitly replaced in a later revision.
 
-Authentication requirements:
-- Corporate email based sign-up (domain allowlist optional but recommended).
-- Login with email magic link or password + optional MFA (phased rollout allowed).
+- `D1`: single PostgreSQL database with `organizations` and `organization_memberships`.
+- `D2`: every teaching plan belongs to both `organization_id` and `owner_profile_id`.
+- `D3`: visibility model is `private | organization | company` (no public internet in MVP).
+- `D4`: role model is `platform_admin | org_manager | teacher`.
+- `D5`: curriculum template versioning key is `region_code + module_code + academic_year + version`; published versions are immutable.
+- `D6`: import/fork is deep copy with lineage metadata and no automatic sync with source.
+- `D7`: authorization is enforced with Supabase RLS (not application-only checks).
+- `D8`: normalized `academic_year` and controlled `region_code` catalog are required.
 
-## 3. Core Domain Model
+## 3. Identity, Organization, and Role Model
 
-### 3.1 Curriculum Template (Public Knowledge)
-A curriculum template is a public structure reusable by teachers:
-- Region (`region_code`), academic year (`academic_year`), study level, and module metadata.
-- Learning results (`RA`) with weights in module scope.
-- Evaluation criteria (`CE`) with weights in RA scope.
+### 3.1 Profiles and Membership
+- A user has one profile and can belong to multiple organizations.
+- Membership relation includes:
+  - `organization_id`
+  - `profile_id`
+  - `role_in_org` (initially `org_manager` or `teacher`)
+  - activation status
 
-Business rule:
-- Templates are public-by-default once published and can be imported by any teacher.
+### 3.2 Role Semantics
+- `teacher`: manage own planning data inside organizations where they are member.
+- `org_manager`: all teacher capabilities + manage organization users and shared assets in their organization.
+- `platform_admin`: global access and moderation across all organizations.
 
-### 3.2 Teaching Plan (Private Working Copy)
-A teaching plan is teacher-owned and editable:
-- Can be created from scratch or cloned from a public template/plan.
-- Contains its own RA/CE tree after cloning.
-- Includes didactic units, instruments, grade records, and trimester planning.
+## 4. Core Domain Model
 
-Business rule:
-- Editing a teaching plan never mutates the source template/plan.
+### 4.1 Curriculum Template
+Reusable curriculum content indexed by region/module/year/version.
 
-### 3.3 Didactic Planning
-- A didactic unit (`UT`) belongs to one teaching plan.
-- A `UT` can cover one or many `CE`.
-- A `CE` can be covered by one or many `UT`.
+Core fields:
+- `organization_id` (owner organization of the template record)
+- `region_code`
+- `module_code`
+- `module_name`
+- `academic_year`
+- `version` (`v1`, `v2`, ...)
+- `status` (`draft`, `published`, `deprecated`)
+
+Business rules:
+- Only `published` templates can be imported.
+- A `published` template is immutable; updates require creating a new version.
+
+### 4.2 Teaching Plan
+Teacher-owned working copy used for real planning and grading.
+
+Core fields:
+- `organization_id`
+- `owner_profile_id`
+- `visibility_scope` (`private`, `organization`, `company`)
+- `status` (`draft`, `ready`, `published`, `archived`)
+- optional lineage (`source_template_id`, `source_plan_id`, `source_version`)
+
+Business rules:
+- Plan mutation only affects the current plan copy.
+- Import/fork creates a fully independent graph of entities.
+
+### 4.3 Planning Entities
+- `RA` belongs to a teaching plan.
+- `CE` belongs to an RA.
+- `UT` belongs to a teaching plan.
+- `UT <-> CE` is many-to-many.
 - Each `UT` is assigned to one trimester (`T1`, `T2`, `T3`).
 
-### 3.4 Evaluation
-- An evaluation instrument belongs to one teaching plan.
-- Instrument types include: `exam`, `project`, `activity`, `form`, `teacher_notebook`, `custom`.
-- Each instrument maps to one or many `CE` with a specific coverage percentage.
-- Grade input modes:
-  - `simple`: one grade is replicated to all CE linked to the instrument.
-  - `advanced`: grade is entered per CE.
+### 4.4 Evaluation Entities
+- `EvaluationInstrument` belongs to a teaching plan.
+- Instrument types include `exam`, `project`, `activity`, `form`, `teacher_notebook`, `custom`.
+- Instrument coverage is modeled per CE (`coverage_percent`).
+- Grade input supports:
+  - `simple` mode: one grade replicated to all linked CE.
+  - `advanced` mode: grade per CE.
 
-## 4. Weight and Consistency Rules
-All weights are percentages in `[0, 100]`, stored as decimals.
+## 5. Weight and Consistency Rules
+All percentages are stored in `[0, 100]` decimal format.
 
 Hard invariants:
 1. For each teaching plan, sum of `RA.weight_in_plan` MUST equal `100`.
 2. For each RA, sum of child `CE.weight_in_ra` MUST equal `100`.
-3. For each CE, sum of `InstrumentCEWeight.coverage_percent` SHOULD equal `100`.
-4. Any mutation that breaks a hard invariant blocks publish and shows validation errors.
+3. Any change violating hard invariants blocks publish and marks plan as not ready.
 
 Soft invariants:
-- Rule 3 can be temporarily incomplete while drafting, but must be `100` for final grading and publish.
+1. For each CE, sum of instrument coverage SHOULD equal `100` while drafting.
+2. For final grade and publish readiness, CE coverage MUST be `100`.
 
 Rounding policy:
-- Internal calculations use decimal precision (at least 4 decimals).
-- UI shows max 2 decimals.
+- Internal calculations use decimal precision with at least 4 decimals.
+- UI displays max 2 decimals.
 - Final displayed grade rounds half-up to 2 decimals.
 
-## 5. Grade Engine
+## 6. Grade Engine
 
-### 5.1 Formula Definitions
-For each criterion:
+### 6.1 Formula Definitions
+- `ce_grade = sum(instrument_grade_for_ce * instrument_coverage_for_ce_normalized)`
+- `ra_grade = sum(ce_grade * ce_weight_in_ra_normalized)`
+- `final_grade = sum(ra_grade * ra_weight_in_plan_normalized)`
 
-`ce_grade = sum(instrument_grade_for_ce * instrument_coverage_for_ce)`
-
-Where `instrument_coverage_for_ce` is normalized to `[0, 1]`.
-
-For each learning result:
-
-`ra_grade = sum(ce_grade * ce_weight_in_ra)`
-
-For final module grade:
-
-`final_grade = sum(ra_grade * ra_weight_in_plan)`
-
-Where `ce_weight_in_ra` and `ra_weight_in_plan` are normalized to `[0, 1]`.
-
-### 5.2 Missing Data Behavior
-- If a CE has no graded instruments, CE grade is `null` (not zero).
-- RA and final grade use only completed child items and expose completion ratio.
-- UI must clearly separate:
+### 6.2 Missing Data Behavior
+- If a CE has no graded instrument, CE grade is `null` (not zero).
+- RA/final values are computed as partial aggregates and include completion metadata.
+- UI must present both:
   - `computed_partial_grade`
   - `grade_completion_percent`
 
-## 6. Trimester Logic
-Trimester assignment comes from UT.
+## 7. Trimester Logic
+Trimester assignment derives from UT.
 
 Derived outputs per trimester:
-- Active UT list.
-- Active CE list (covered by trimester UT).
-- Active RA list (parents of trimester CE).
-- Coverage percent by CE, RA, UT, and instrument.
+- active UT list
+- active CE list
+- active RA list
+- CE/RA/UT/instrument coverage summaries
 
 Business rule:
-- A CE can appear in multiple trimesters if covered by multiple UT in different trimesters.
+- CE may appear in multiple trimesters if covered by UT assigned to different trimesters.
 
-## 7. Visibility and Collaboration
+## 8. Visibility and Collaboration
 
-Visibility modes:
-- `private`: only owner and admins.
-- `public`: visible to all teachers for read/import.
+Visibility scopes:
+- `private`: only owner, org managers of same organization, and platform admins.
+- `organization`: any member in the same organization can read/import.
+- `company`: any authenticated member of any organization can read/import.
 
 Import/fork behavior:
-- Import performs deep copy of all related entities.
-- Imported plan stores lineage metadata:
+- Deep copy related entities (`RA`, `CE`, `UT`, mappings, instruments if selected).
+- Persist lineage metadata:
   - `source_plan_id`
+  - `source_template_id`
   - `source_version`
   - `imported_at`
-- Changes after import are isolated.
+- No automatic synchronization after import.
 
-## 8. Multi-Region and Versioning Rules
-- Curriculum templates are indexed by:
+## 9. Multi-Region and Versioning
+- `academic_year` must follow normalized format (for example `2026/2027`).
+- `region_code` must be from controlled catalog.
+- Template uniqueness key:
+  - `organization_id`
   - `region_code`
   - `module_code`
   - `academic_year`
-  - `study_level`
-- Two templates with same key can coexist only with different semantic versions (`v1`, `v2`, ...).
-- Teachers can pick template version during import.
+  - `version`
+- `published` records are immutable; replacement uses next version.
 
-## 9. Curriculum Input Modes
-- `manual`: teacher creates RA/CE by hand (mandatory support from day 1).
-- `pdf_assisted` (future-ready): AI assistant extracts draft RA/CE from uploaded PDF and requires teacher confirmation before save.
+## 10. Curriculum Input Modes
+- `manual`: required for MVP.
+- `pdf_assisted`: optional post-MVP, teacher-reviewed before save.
 
 Non-negotiable rule:
-- AI extraction never publishes directly; teacher confirmation is required.
+- AI extraction never auto-publishes; explicit teacher confirmation is required.
 
-## 10. Technical Constraints
-- Type-safe contracts with TypeScript for all domain entities.
-- Input validation with Zod in Server Actions and API boundaries.
-- PostgreSQL constraints + foreign keys + cascading deletes where safe.
-- RLS in Supabase so teachers only read/write owned plans unless content is public.
-- Unit tests required for all grade and weighting functions.
+## 11. Technical Constraints
+- Type-safe contracts with TypeScript.
+- Zod validation at all write boundaries.
+- PostgreSQL constraints, foreign keys, and safe cascades.
+- Supabase RLS as primary authorization layer.
+- Unit tests required for weight and grade engine logic.
 
-## 11. Definition of Done for Domain Features
-A feature is complete only if:
-1. Domain behavior matches this document.
+## 12. Definition of Done for Domain Features
+A domain feature is complete only if all are true:
+1. Behavior matches this specification.
 2. Validation and error states are covered.
-3. Unit tests pass.
-4. Docs (`SPECS.md`, `ARCHITECTURE.md`, `TASKS.md`) are updated.
+3. Tests pass.
+4. `SPECS.md`, `ARCHITECTURE.md`, `TASKS.md`, and relevant diagrams are updated.

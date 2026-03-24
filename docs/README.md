@@ -1,7 +1,7 @@
 # Documentation Index
 
 ## Core
-- `SPECS.md`: business rules and domain invariants.
+- `SPECS.md`: business rules, domain invariants, and locked decisions D1-D8.
 - `ARCHITECTURE.md`: system modules, ERD, and key flows.
 - `TASKS.md`: prioritized backlog and execution status.
 - `AGENTS.md`: working rules for AI agents.
