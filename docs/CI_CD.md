@@ -16,26 +16,36 @@ Every PR targeting `develop` or `main` must pass:
 1. Lint
 2. Typecheck
 3. Unit tests (Vitest)
-4. Optional: migration validation (if schema changed)
+4. Accessibility checks (`test:a11y`)
+5. Responsive snapshot checks (`test:responsive`)
+6. Optional migration validation (if schema changed)
 
-Merge is blocked if any gate fails.
+Merge is blocked if any mandatory gate fails.
 
-## 4. Recommended GitHub Actions Pipeline
+## 4. Implemented GitHub Actions Workflows
 
-### 4.1 `ci.yml` (on PR)
-- Checkout
-- Setup Node.js
-- Install dependencies
-- Run:
-  - `npm run lint`
-  - `npm run typecheck`
-  - `npm run test -- --run`
+### 4.1 `quality-gates.yml` (on PR)
+Location: `.github/workflows/quality-gates.yml`
+
+Behavior:
+- If `package.json` does not exist yet, workflow reports skip and exits successfully.
+- If `package.json` exists:
+  - validates required scripts (`lint`, `typecheck`, `test`, `test:a11y`, `test:responsive`)
+  - runs lint, typecheck, unit tests, a11y tests, and responsive snapshots
+  - uploads UI quality artifacts (`test-results`, `playwright-report`, `artifacts/responsive-snapshots`)
 
 ### 4.2 `deploy.yml` (on push)
 - Push to `develop`: deploy to Vercel development target.
 - Push to `main`: deploy to Vercel production target.
 
-## 5. Vercel Integration Notes
+## 5. Command Contract
+See `docs/QA_AUTOMATION.md` for:
+- required npm scripts
+- required testing dependencies
+- runtime variables for UI quality checks
+- PR checklist template used in reviews
+
+## 6. Vercel Integration Notes
 - Connect repository to Vercel project.
 - Use environment-specific variables:
   - `NEXT_PUBLIC_SUPABASE_URL`
@@ -43,12 +53,12 @@ Merge is blocked if any gate fails.
   - `SUPABASE_SERVICE_ROLE_KEY` (server-only)
   - other secrets required by integrations
 
-## 6. Database Change Safety
+## 7. Database Change Safety
 - All schema changes via SQL migrations in repo.
 - CI check should ensure migration files are ordered and valid.
 - Production migration execution only from protected pipeline or manual approved step.
 
-## 7. Release Checklist
+## 8. Release Checklist
 1. All checks green on `develop`.
 2. Smoke test on development deployment.
 3. Merge `develop` into `main`.
