@@ -14,6 +14,7 @@
 - `AGENT_SKILLS_NEXTJS.md`: operational skills and best practices for Next.js agents.
 - `UI_UX.md`: responsive, accessibility, and usability baseline.
 - `QA_AUTOMATION.md`: PR checklist and CI command contract for UI quality gates.
+- `VERCEL_DEPLOY.md`: GitHub secrets and Vercel deploy workflow setup.
 
 ## Local Skills
 - `skills/nextjs-agent-ops/SKILL.md`: reusable Next.js operating skill for agents.
@@ -28,7 +29,8 @@
   4. `AGENT_SKILLS_NEXTJS.md`
   5. `UI_UX.md`
   6. `QA_AUTOMATION.md`
-  7. `TASKS.md`
+  7. `VERCEL_DEPLOY.md`
+  8. `TASKS.md`
 
 - Feature implementation:
   1. `SPECS.md`
@@ -36,5 +38,6 @@
   3. `AGENT_SKILLS_NEXTJS.md`
   4. `UI_UX.md`
   5. `QA_AUTOMATION.md`
-  6. `TASKS.md`
-  7. supporting guides as needed
+  6. `VERCEL_DEPLOY.md`
+  7. `TASKS.md`
+  8. supporting guides as needed

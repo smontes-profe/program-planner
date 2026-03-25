@@ -83,6 +83,8 @@ Status legend:
 ## Phase 8 - CI/CD and Release
 - [ ] GitHub Actions: lint + typecheck + test on PR.
 - [ ] Branch strategy: `develop` -> development deploy, `main` -> production deploy.
+- [x] Add Vercel deploy workflow scaffold for `develop` (preview) and `main` (production).
+- [ ] Configure GitHub secrets (`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`).
 - [ ] Vercel environment segregation.
 - [ ] Block merge on failed quality checks.
 

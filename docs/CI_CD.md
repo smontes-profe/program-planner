@@ -38,6 +38,20 @@ Behavior:
 - Push to `develop`: deploy to Vercel development target.
 - Push to `main`: deploy to Vercel production target.
 
+### 4.3 `vercel-deploy.yml` (on push)
+Location: `.github/workflows/vercel-deploy.yml`
+
+Behavior:
+- Trigger on push to `develop` and `main`.
+- `develop` deploys as Vercel preview.
+- `main` deploys as Vercel production.
+- Requires GitHub secrets:
+  - `VERCEL_TOKEN`
+  - `VERCEL_ORG_ID`
+  - `VERCEL_PROJECT_ID`
+- If `package.json` is missing, deployment is skipped.
+- If secrets are missing, workflow fails with explicit guidance.
+
 ## 5. Command Contract
 See `docs/QA_AUTOMATION.md` for:
 - required npm scripts
@@ -45,11 +59,16 @@ See `docs/QA_AUTOMATION.md` for:
 - runtime variables for UI quality checks
 - PR checklist template used in reviews
 
+See `docs/VERCEL_DEPLOY.md` for:
+- Vercel deployment secrets
+- where to find each value
+- first dry-run checklist
+
 ## 6. Vercel Integration Notes
 - Connect repository to Vercel project.
 - Use environment-specific variables:
   - `NEXT_PUBLIC_SUPABASE_URL`
-  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
   - `SUPABASE_SERVICE_ROLE_KEY` (server-only)
   - other secrets required by integrations
 
