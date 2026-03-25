@@ -44,17 +44,19 @@ La aplicación estará disponible en `http://localhost:3000`.
    ```
 
 2. **Instalación de la UI (shadcn/ui + Tailwind v4):**
-   Usamos la librería de componentes *shadcn/ui* que se instalará directamente en la carpeta base:
-   ```bash
-   npx -y shadcn@latest init -d --force
-   ```
-   *Nota: Se usó `-y` y `--force` para automatizarlo en terminales sin interacción visual.*
-
-3. **Inyección de Componentes Base:**
-   Para tener listos componentes universales y accesibles desde el minuto cero:
+   Usamos la librería de componentes *shadcn/ui*. Lanzamos el comando para añadir componentes básicos:
    ```bash
    npx -y shadcn@latest add button card form input label select sheet --yes
    ```
+   Como el proyecto aún no tenía el archivo `components.json`, el asistente nos preguntó si queríamos crearlo (respondemos que **Y**).
+
+3. **Configuración del Preset de Diseño (shadcn v4):**
+   El asistente nos hizo varias preguntas. A la pregunta del "preset" de diseño:
+   ```text
+   Which preset would you like to use?
+   > Nova - Lucide / Geist
+   ```
+   Elegimos el preset **Nova** porque nuestra arquitectura exige el uso de los iconos **Lucide** (`lucide-react`) y la tipografía **Geist** (por defecto en Next.js 15). Con esto, se configuró el proyecto y se instalaron los 7 componentes base.
 
 ## 4. Pruebas y Calidad de Código (QA)
 

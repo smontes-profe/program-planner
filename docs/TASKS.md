@@ -19,8 +19,8 @@ Status legend:
 - [ ] Define responsive layout baseline (`320`, `768`, `1280` breakpoints).
 - [ ] Define accessibility acceptance checklist for core flows.
 - [ ] Define usability standards for loading, error, and empty states.
-- [ ] Initialize Next.js 15 project (App Router, TypeScript strict).
-- [ ] Configure Tailwind CSS + shadcn/ui + lucide-react.
+- [x] Initialize Next.js 15 project (App Router, TypeScript strict).
+- [x] Configure Tailwind CSS + shadcn/ui + lucide-react.
 - [ ] Configure Vitest with first domain test.
 - [ ] Configure ESLint + Prettier + import sorting.
 
