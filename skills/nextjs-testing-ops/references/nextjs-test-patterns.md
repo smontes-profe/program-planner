@@ -1,14 +1,17 @@
 # Next.js Test Patterns
 
 ## Table of Contents
+
 1. Domain Unit Pattern
 2. Server Action Pattern
 3. Component Behavior Pattern
 4. Accessibility Pattern
 
 ## 1. Domain Unit Pattern
+
 ```ts
 import { describe, expect, it } from "vitest";
+
 import { calculateFinalGrade } from "@/domain/grades/calculate-final-grade";
 
 describe("calculateFinalGrade", () => {
@@ -26,8 +29,10 @@ describe("calculateFinalGrade", () => {
 ```
 
 ## 2. Server Action Pattern
+
 ```ts
 import { describe, expect, it, vi } from "vitest";
+
 import { saveInstrumentScoreAction } from "@/app/actions/save-instrument-score";
 
 describe("saveInstrumentScoreAction", () => {
@@ -50,6 +55,7 @@ describe("saveInstrumentScoreAction", () => {
 ```
 
 ## 3. Component Behavior Pattern
+
 ```ts
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -66,6 +72,7 @@ it("shows field error when title is empty", async () => {
 ```
 
 ## 4. Accessibility Pattern
+
 ```ts
 import { render } from "@testing-library/react";
 import { axe } from "jest-axe";

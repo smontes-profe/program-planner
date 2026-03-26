@@ -1,6 +1,7 @@
 # Next.js Checklists
 
 ## Table of Contents
+
 1. Mutation Checklist
 2. Data Fetch and Cache Checklist
 3. Security Checklist
@@ -9,6 +10,7 @@
 6. Anti-Patterns
 
 ## 1. Mutation Checklist
+
 - Validate payload with Zod.
 - Resolve session and organization context on server.
 - Verify role and visibility scope before write.
@@ -17,12 +19,14 @@
 - Return typed success/error object.
 
 ## 2. Data Fetch and Cache Checklist
+
 - Define cache behavior intentionally (`no-store`, timed revalidation, tags).
 - Use stable cache tags by domain (`plan:<id>`, `template:<id>`).
 - Keep protected reads on server.
 - Avoid duplicate fetching in client and server for same data.
 
 ## 3. Security Checklist
+
 - Keep RLS enabled and default-deny.
 - Ensure read policies include visibility scopes:
   - `private`
@@ -32,6 +36,7 @@
 - Cover denied access scenarios in tests.
 
 ## 4. Responsive and Accessibility Checklist
+
 - Verify affected screens at:
   - `320px`
   - `768px`
@@ -44,6 +49,7 @@
 - Ensure touch targets are mobile-friendly.
 
 ## 5. Testing Checklist
+
 - Unit test critical formulas and percentage constraints.
 - Integration test Server Actions for:
   - valid payload
@@ -53,6 +59,7 @@
 - Add regression tests for known bugs.
 
 ## 6. Anti-Patterns
+
 - Overusing `"use client"` at route level.
 - Domain rules implemented only in UI.
 - Mutation without explicit cache invalidation.

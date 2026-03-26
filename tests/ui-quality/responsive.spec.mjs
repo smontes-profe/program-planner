@@ -1,6 +1,6 @@
+import { expect, test } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
-import { expect, test } from "@playwright/test";
 
 const uiPath = process.env.UI_TEST_PATH ?? "/";
 const snapshotDir = path.join(process.cwd(), "artifacts", "responsive-snapshots");

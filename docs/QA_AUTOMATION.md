@@ -1,6 +1,7 @@
 # QA Automation Contract
 
 ## 1. Required npm scripts
+
 Add these scripts to `package.json` when the Next.js app scaffold is initialized:
 
 ```json
@@ -33,10 +34,12 @@ npx playwright install --with-deps
 ```
 
 ## 3. Runtime variables
+
 - `UI_TEST_BASE_URL`: base URL for UI quality tests. Default: `http://127.0.0.1:3000`.
 - `UI_TEST_PATH`: path to test. Default: `/`.
 
 ## 4. CI behavior
+
 - Workflow file: `.github/workflows/quality-gates.yml`.
 - PR template: `.github/pull_request_template.md`.
 - Script validation: `.github/scripts/validate-npm-scripts.mjs`.

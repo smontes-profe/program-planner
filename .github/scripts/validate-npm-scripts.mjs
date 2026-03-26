@@ -1,12 +1,6 @@
 import fs from "node:fs";
 
-const REQUIRED_SCRIPTS = [
-  "lint",
-  "typecheck",
-  "test",
-  "test:a11y",
-  "test:responsive",
-];
+const REQUIRED_SCRIPTS = ["lint", "typecheck", "test", "test:a11y", "test:responsive"];
 
 const packageJsonPath = new URL("../../package.json", import.meta.url);
 

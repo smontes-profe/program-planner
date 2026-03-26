@@ -1,6 +1,7 @@
 # Program Planner - Additional Diagrams
 
 ## 1. Use Case Diagram (High Level)
+
 ```mermaid
 flowchart LR
     Teacher[Teacher]
@@ -29,6 +30,7 @@ flowchart LR
 ```
 
 ## 2. Domain Class Diagram (Conceptual)
+
 ```mermaid
 classDiagram
     class Organization {
@@ -118,6 +120,7 @@ classDiagram
 ```
 
 ## 3. Visibility Decision Diagram
+
 ```mermaid
 flowchart TD
     Start[Plan Read Access Request]
@@ -143,6 +146,7 @@ flowchart TD
 ```
 
 ## 4. Teaching Plan State Diagram
+
 ```mermaid
 stateDiagram-v2
     [*] --> Draft

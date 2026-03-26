@@ -1,12 +1,14 @@
 # Documentation Index
 
 ## Core
+
 - `SPECS.md`: business rules, domain invariants, and locked decisions D1-D8.
 - `ARCHITECTURE.md`: system modules, ERD, and key flows.
 - `TASKS.md`: prioritized backlog and execution status.
 - `AGENTS.md`: working rules for AI agents.
 
 ## Supporting Guides
+
 - `STACK.md`: approved technology stack and conventions.
 - `CI_CD.md`: branch strategy, quality gates, deployment policy.
 - `MCP.md`: recommended MCP setup and safety rules.
@@ -17,11 +19,13 @@
 - `VERCEL_DEPLOY.md`: GitHub secrets and Vercel deploy workflow setup.
 
 ## Local Skills
+
 - `skills/nextjs-agent-ops/SKILL.md`: reusable Next.js operating skill for agents.
 - `skills/supabase-rls-ops/SKILL.md`: reusable security skill for RLS design and policy review.
 - `skills/nextjs-testing-ops/SKILL.md`: reusable testing skill for Next.js risk-based coverage.
 
 ## Recommended Reading Paths
+
 - New agent onboarding:
   1. `AGENTS.md`
   2. `SPECS.md`

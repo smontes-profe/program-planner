@@ -1,6 +1,7 @@
 # Program Planner - System Architecture
 
 ## 1. Architectural Style
+
 - Framework: Next.js App Router (server-first).
 - Backend pattern: Server Actions + Supabase client.
 - Data store: PostgreSQL (Supabase) with strict relational integrity.
@@ -8,6 +9,7 @@
 - Security strategy: database-enforced authorization, app checks as secondary layer.
 
 ## 2. Logical Modules
+
 - `auth`: sign-up/sign-in/session management.
 - `organization`: organization and membership management.
 - `curriculum`: versioned curriculum templates by region/module/year.
@@ -18,6 +20,7 @@
 - `ui-system`: design tokens, responsive layout primitives, accessibility patterns.
 
 ## 3. Context Diagram
+
 ```mermaid
 flowchart LR
     Teacher[Teacher] --> App[Program Planner Web App]
@@ -31,6 +34,7 @@ flowchart LR
 ```
 
 ## 4. Data Model (ERD)
+
 ```mermaid
 erDiagram
     PROFILE ||--o{ ORGANIZATION_MEMBERSHIP : has
@@ -186,14 +190,17 @@ erDiagram
 ```
 
 ## 5. Authorization and RLS Strategy
+
 RLS is mandatory and default-deny.
 
 Access model:
+
 - `platform_admin`: unrestricted access.
 - `org_manager`: full access inside owned organization.
 - `teacher`: own plans write access + shared read/import based on `visibility_scope`.
 
 Visibility rules:
+
 - `private`: owner, org managers in same organization, platform admins.
 - `organization`: any active membership in same organization.
 - `company`: any authenticated active member in any organization.
@@ -201,6 +208,7 @@ Visibility rules:
 ## 6. Key Flows
 
 ### 6.1 Import Template to Teaching Plan
+
 ```mermaid
 sequenceDiagram
     actor U as Teacher
@@ -219,6 +227,7 @@ sequenceDiagram
 ```
 
 ### 6.2 Save Grade and Recompute
+
 ```mermaid
 sequenceDiagram
     actor U as Teacher
@@ -237,11 +246,13 @@ sequenceDiagram
 ```
 
 ## 7. Versioning and Immutability
+
 - Template unique key: `organization_id + region_code + module_code + academic_year + version`.
 - `published` templates are immutable.
 - Any functional update requires new version row (for example `v2`).
 
 ## 8. Deployment Topology
+
 - Vercel hosts Next.js app.
 - Supabase hosts Postgres/Auth/Storage.
 - GitHub Actions runs lint/typecheck/tests and optional migration checks.
@@ -250,6 +261,7 @@ sequenceDiagram
   - `main` -> production deployment
 
 ## 9. Frontend Interaction Architecture
+
 - Use a shared UI system based on Tailwind + shadcn primitives.
 - Keep semantic structure in page shells:
   - `header`
@@ -262,6 +274,7 @@ sequenceDiagram
   - mobile: simplified layout with prioritized actions
 
 ## 10. Critical Non-Functional Requirements
+
 - Deterministic and test-covered grade calculations.
 - Auditable lineage for all imports/forks.
 - Predictable performance for high-volume plans.
