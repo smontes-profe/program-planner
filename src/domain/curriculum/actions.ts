@@ -56,6 +56,117 @@ async function authorizeAction(supabase: any, action: 'read' | 'write', organiza
 }
 
 /**
+ * Server Action for useActionState (Form Submission)
+ */
+export async function createTemplateDraftAction(prevState: any, formData: FormData): Promise<ActionResponse<CurriculumTemplate>> {
+  const rawData = Object.fromEntries(formData.entries());
+  
+  const validated = curriculumTemplateSchema.safeParse(rawData);
+  if (!validated.success) {
+    return { 
+      ok: false, 
+      error: "Datos del formulario inválidos", 
+      details: validated.error.flatten().fieldErrors 
+    };
+  }
+
+  return createTemplateDraft(validated.data);
+}
+
+/**
+ * Add a Resultat d'Aprenentatge (RA) to a template
+ */
+export async function addRA(templateId: string, payload: { code: string; description: string; weight: number }): Promise<ActionResponse<any>> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("template_ra")
+    .insert({
+      template_id: templateId,
+      code: payload.code,
+      description: payload.description,
+      weight_in_template: payload.weight
+    });
+
+  if (error) return { ok: false, error: `Error al añadir RA: ${error.message}` };
+  revalidatePath(`/curriculum/${templateId}`);
+  return { ok: true, data: null };
+}
+
+/**
+ * Add a Criteri d'Avaluació (CE) to an RA
+ */
+export async function addCE(templateId: string, raId: string, payload: { code: string; description: string; weight: number }): Promise<ActionResponse<any>> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("template_ce")
+    .insert({
+      ra_id: raId,
+      code: payload.code,
+      description: payload.description,
+      weight_in_ra: payload.weight
+    });
+
+  if (error) return { ok: false, error: `Error al añadir CE: ${error.message}` };
+  revalidatePath(`/curriculum/${templateId}`);
+  return { ok: true, data: null };
+}
+
+/**
+ * Update the status of a Curriculum Template
+ */
+async function updateTemplateStatus(id: string, status: CurriculumStatus): Promise<ActionResponse<CurriculumTemplate>> {
+  const supabase = await createClient();
+  const { data: template } = await supabase.from("curriculum_templates").select("organization_id").eq("id", id).single();
+  if (!template) return { ok: false, error: "Plantilla no encontrada" };
+
+  const { authorized, error } = await authorizeAction(supabase, 'write', template.organization_id, id);
+  if (!authorized) return { ok: false, error: error || "Sin autorización" };
+
+  const { data: updated, error: dbError } = await supabase
+    .from("curriculum_templates")
+    .update({ status })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (dbError) return { ok: false, error: `Error al actualizar el estado: ${dbError.message}` };
+
+  revalidatePath(`/curriculum/edit/${id}`);
+  revalidatePath("/curriculum");
+  return { ok: true, data: updated };
+}
+
+/**
+ * Publish a template (requires weights to be valid)
+ */
+export async function publishTemplateAction(templateId: string): Promise<ActionResponse<any>> {
+  const supabase = await createClient();
+  
+  // Fetch full template with RA/CE for weight validation
+  const { data: fullTemplate, error: fetchError } = await supabase
+    .from("curriculum_templates")
+    .select(`
+      *,
+      ras:template_ra (
+        *,
+        ces:template_ce (*)
+      )
+    `)
+    .eq("id", templateId)
+    .single();
+
+  if (fetchError || !fullTemplate) return { ok: false, error: "Error al recuperar los datos de la plantilla para validación" };
+
+  // Weight validation
+  const validation = validateWeights(fullTemplate);
+  if (!validation.isValid) {
+    return { ok: false, error: "Validación de pesos fallida", details: validation.errors };
+  }
+
+  return updateTemplateStatus(templateId, 'published');
+}
+
+/**
  * Create a new Curriculum Template Draft
  */
 export async function createTemplateDraft(payload: z.infer<typeof curriculumTemplateSchema>): Promise<ActionResponse<CurriculumTemplate>> {

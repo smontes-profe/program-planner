@@ -42,8 +42,8 @@ Status legend:
 - [x] Implement `curriculum_templates` schema with unique version key.
 - [x] Implement `template_ra` and `template_ce`.
 - [x] Implement immutability triggers (published/deprecated templates).
-- [-] Implement template status flow (`draft`, `published`, `deprecated`).
-- [-] Build template CRUD and publish flow.
+- [x] Implement template status flow (`draft`, `published`, `deprecated`).
+- [x] Build template CRUD and publish flow.
 
 ## Phase 3 - Teaching Plan Core
 
