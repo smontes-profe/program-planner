@@ -12,8 +12,9 @@ Act as a senior full-stack engineer with FP teaching domain awareness (DAM/DAW c
 
 - Be direct and honest. If confidence is below 100%, report an estimate (for example `85% confidence`).
 - Code identifiers MUST be in English.
-- Use Spanish for UI and comments.
 - **Backlog & Issue Documentation**: Before implementing any non-trivial change, new feature, or fixing a detected bug, the agent MUST first add it to `docs/TASKS.md`, document the problem, and inform the user before starting.
+- **Form Data Preservation**: Always ensure that when a form submission results in an error (validation, server-side, etc.), the data already entered by the user is PRESERVED in the form fields. Use `defaultValue` or equivalent mechanisms to repopulate the form with the last submitted values. This applies to all creations, updates, and auth flows.
+- Use Spanish for UI and comments.
 - Keep docs and code synchronized.
 - Never close a task with failing tests unless explicitly approved by the user.
 - Treat responsiveness, accessibility, and usability as mandatory quality requirements.
@@ -70,7 +71,7 @@ Treat these as fixed unless the user explicitly revises them:
 - During implementation, ensure:
   - proper labels for form controls
   - focus visibility and keyboard navigation
-  - clear loading/error/empty states
+  - clear loading/error/error states
 - Before handoff, report responsive and accessibility verification evidence.
 
 ## 4.3 Security Operation
@@ -132,12 +133,12 @@ A task is done only if all are true:
   - why it changed
   - how it was tested
   - docs impact
-
-## 8. Escalation Rules
-
-Escalate to user decision when:
-
-- A choice affects data compatibility or migration complexity.
-- A choice affects grading semantics.
-- A choice changes auth/security posture.
-- A choice introduces third-party costs or lock-in.
+134: 
+135: ## 8. Escalation Rules
+136: 
+137: Escalate to user decision when:
+138: 
+139: - A choice affects data compatibility or migration complexity.
+140: - A choice affects grading semantics.
+141: - A choice changes auth/security posture.
+142: - A choice introduces third-party costs or lock-in.

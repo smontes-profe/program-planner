@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { Badge } from "@/components/ui/badge";
 import { PublishButton } from "./_components/PublishButton";
 import { AddRAButton } from "./_components/AddRAButton";
@@ -8,6 +9,7 @@ import { AddCEButton } from "./_components/AddCEButton";
 import Link from "next/link";
 import { MoveLeft, Edit, Trash2, MoreVertical } from "lucide-react";
 import { notFound } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 interface TemplatePageProps {
   readonly params: Promise<{ id: string }>;
@@ -49,11 +51,12 @@ export default async function TemplateDetailsPage({ params }: TemplatePageProps)
           <div className="flex gap-2">
             {isDraft && (
               <>
-                <Button variant="outline" size="sm" asChild>
-                  <Link href={`/curriculum/${id}/edit`} className="inline-flex items-center">
-                    <Edit className="mr-2 h-4 w-4" /> Editar Datos
-                  </Link>
-                </Button>
+                <Link 
+                  href={`/curriculum/${id}/edit`} 
+                  className={cn(buttonVariants({ variant: "outline", size: "sm" }), "inline-flex items-center")}
+                >
+                  <Edit className="mr-2 h-4 w-4" /> Editar Datos
+                </Link>
                 <PublishButton templateId={id} />
               </>
             )}

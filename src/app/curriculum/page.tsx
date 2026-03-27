@@ -1,5 +1,6 @@
 import { listTemplates } from "@/domain/curriculum/actions";
-import { buttonVariants } from "@/components/ui/button";
+import { ensureUserHasOrganization } from "@/domain/organization/actions";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -11,6 +12,9 @@ export const metadata = {
 };
 
 export default async function CurriculumPage() {
+  // Ensure the user has an organization to work on (auto-create if empty during Phase 1.5)
+  await ensureUserHasOrganization();
+  
   const result = await listTemplates();
 
   if (!result.ok) {
@@ -96,7 +100,7 @@ export default async function CurriculumPage() {
                 <div className={cn("h-1 w-full", statusColor)} />
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
-                    <Badge 
+                    <BadgeLocal 
                       label={label}
                       variant={badgeVariant}
                     />
@@ -138,7 +142,7 @@ interface BadgeProps {
   readonly variant: 'success' | 'neutral' | 'warning';
 }
 
-function Badge({ label, variant }: BadgeProps) {
+function BadgeLocal({ label, variant }: BadgeProps) {
   const styles = {
     success: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20",
     neutral: "bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700",

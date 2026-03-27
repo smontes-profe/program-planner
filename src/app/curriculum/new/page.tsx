@@ -3,7 +3,8 @@ import { CurriculumForm } from "../_components/CurriculumForm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MoveLeft } from "lucide-react";
 import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
+import { cn } from "@/lib/utils";
 
 export const metadata = {
   title: "Nuevo Currículo - Program Planner",
@@ -24,7 +25,7 @@ export default async function NewCurriculumPage() {
       <div className="mb-6">
         <Link 
           href="/curriculum" 
-          className={buttonVariants({ variant: "ghost", size: "sm" }) + " -ml-2 text-zinc-500 hover:text-zinc-900"}
+          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "-ml-2 text-zinc-500 hover:text-zinc-900")}
         >
           <MoveLeft className="mr-2 h-4 w-4" />
           Volver al listado

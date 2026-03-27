@@ -9,9 +9,9 @@ import { z } from "zod";
 /**
  * Result type for Server Actions
  */
-type ActionResponse<T = any> = 
+export type ActionResponse<T = any> = 
   | { ok: true; data: T } 
-  | { ok: false; error: string; details?: any };
+  | { ok: false; error: string; details?: any; fields?: any };
 
 /**
  * Ensures the authenticated user can perform an action on a template
@@ -66,11 +66,16 @@ export async function createTemplateDraftAction(prevState: any, formData: FormDa
     return { 
       ok: false, 
       error: "Datos del formulario inválidos", 
-      details: validated.error.flatten().fieldErrors 
+      details: validated.error.flatten().fieldErrors,
+      fields: rawData
     };
   }
 
-  return createTemplateDraft(validated.data);
+  const result = await createTemplateDraft(validated.data);
+  if (!result.ok) {
+    return { ...result, fields: rawData };
+  }
+  return result;
 }
 
 /**
@@ -87,7 +92,7 @@ export async function addRA(templateId: string, payload: { code: string; descrip
       weight_in_template: payload.weight
     });
 
-  if (error) return { ok: false, error: `Error al añadir RA: ${error.message}` };
+  if (error) return { ok: false, error: `Error al añadir RA: ${error.message}`, fields: payload };
   revalidatePath(`/curriculum/${templateId}`);
   return { ok: true, data: null };
 }
@@ -106,7 +111,7 @@ export async function addCE(templateId: string, raId: string, payload: { code: s
       weight_in_ra: payload.weight
     });
 
-  if (error) return { ok: false, error: `Error al añadir CE: ${error.message}` };
+  if (error) return { ok: false, error: `Error al añadir CE: ${error.message}`, fields: payload };
   revalidatePath(`/curriculum/${templateId}`);
   return { ok: true, data: null };
 }

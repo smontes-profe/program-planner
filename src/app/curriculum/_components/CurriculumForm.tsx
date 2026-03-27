@@ -22,16 +22,27 @@ interface CurriculumFormProps {
 
 export function CurriculumForm({ regions, organizations }: CurriculumFormProps) {
   const router = useRouter();
-  const [selectedOrg, setSelectedOrg] = useState<string>("");
-  const [selectedRegion, setSelectedRegion] = useState<string>("");
-  const [selectedVisibility, setSelectedVisibility] = useState<string>("organization");
-
+  
   const [state, formAction, isPending] = useActionState(
     async (prevState: any, formData: FormData) => {
       return createTemplateDraftAction(prevState, formData);
     },
     { ok: false, error: "" } as any
   );
+
+  // Controlled states initialized from state.fields if available
+  const [selectedOrg, setSelectedOrg] = useState<string>(state.fields?.organization_id || "");
+  const [selectedRegion, setSelectedRegion] = useState<string>(state.fields?.region_code || "");
+  const [selectedVisibility, setSelectedVisibility] = useState<string>(state.fields?.visibility_scope || "organization");
+
+  // Sync state if form re-renders with new state.fields after error
+  useEffect(() => {
+    if (state.fields) {
+      if (state.fields.organization_id) setSelectedOrg(state.fields.organization_id);
+      if (state.fields.region_code) setSelectedRegion(state.fields.region_code);
+      if (state.fields.visibility_scope) setSelectedVisibility(state.fields.visibility_scope);
+    }
+  }, [state.fields]);
 
   useEffect(() => {
     if (state.ok && state.data?.id) {
@@ -109,6 +120,7 @@ export function CurriculumForm({ regions, organizations }: CurriculumFormProps) 
           placeholder="Ej: Programación, Bases de Datos..." 
           className="border-zinc-200 dark:border-zinc-800"
           required
+          defaultValue={state.fields?.module_name}
         />
         {fieldErrors.module_name && (
           <p className="text-xs text-destructive">{fieldErrors.module_name[0]}</p>
@@ -118,19 +130,36 @@ export function CurriculumForm({ regions, organizations }: CurriculumFormProps) 
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-2">
           <Label htmlFor="module_code">Código Módulo</Label>
-          <Input id="module_code" name="module_code" placeholder="Ej: 0373" required />
+          <Input 
+            id="module_code" 
+            name="module_code" 
+            placeholder="Ej: 0373" 
+            required 
+            defaultValue={state.fields?.module_code}
+          />
           {fieldErrors.module_code && <p className="text-xs text-destructive">{fieldErrors.module_code[0]}</p>}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="academic_year">Año Académico</Label>
-          <Input id="academic_year" name="academic_year" placeholder="2026/2027" required />
+          <Input 
+            id="academic_year" 
+            name="academic_year" 
+            placeholder="2026/2027" 
+            required 
+            defaultValue={state.fields?.academic_year}
+          />
           {fieldErrors.academic_year && <p className="text-xs text-destructive">{fieldErrors.academic_year[0]}</p>}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="version">Versión</Label>
-          <Input id="version" name="version" defaultValue="v1" required />
+          <Input 
+            id="version" 
+            name="version" 
+            defaultValue={state.fields?.version || "v1"} 
+            required 
+          />
         </div>
       </div>
 
