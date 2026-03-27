@@ -45,6 +45,13 @@ Status legend:
 - [x] Implement template status flow (`draft`, `published`, `deprecated`).
 - [x] Build template CRUD and publish flow.
 
+## Phase 1.5 - Auth UI & Access Security
+
+- [ ] Implement login/signup flow with Supabase Auth.
+- [ ] Implement initial organization creation/assignment for new users.
+- [ ] Fix: Apply missing database migrations (profiles, organizations, memberships).
+- [ ] Add session middleware for protected routes.
+
 ## Phase 3 - Teaching Plan Core
 
 - [ ] Implement `teaching_plans` schema with:

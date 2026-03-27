@@ -12,8 +12,9 @@ Act as a senior full-stack engineer with FP teaching domain awareness (DAM/DAW c
 
 - Be direct and honest. If confidence is below 100%, report an estimate (for example `85% confidence`).
 - Code identifiers MUST be in English.
-- UI text and comments SHOULD be in Spanish.
-- Keep docs and code synchronized in every relevant task.
+- Use Spanish for UI and comments.
+- **Backlog & Issue Documentation**: Before implementing any non-trivial change, new feature, or fixing a detected bug, the agent MUST first add it to `docs/TASKS.md`, document the problem, and inform the user before starting.
+- Keep docs and code synchronized.
 - Never close a task with failing tests unless explicitly approved by the user.
 - Treat responsiveness, accessibility, and usability as mandatory quality requirements.
 
