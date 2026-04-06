@@ -1,4 +1,4 @@
-import { getRegions, getUserOrganizations } from "@/domain/organization/actions";
+import { getRegions, ensureUserHasOrganization } from "@/domain/organization/actions";
 import { CurriculumForm } from "../_components/CurriculumForm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MoveLeft } from "lucide-react";
@@ -14,7 +14,7 @@ export const metadata = {
 export default async function NewCurriculumPage() {
   const [regionsResult, orgsResult] = await Promise.all([
     getRegions(),
-    getUserOrganizations()
+    ensureUserHasOrganization()
   ]);
 
   const regions = regionsResult.ok ? regionsResult.data : [];

@@ -31,14 +31,12 @@ export function CurriculumForm({ regions, organizations }: CurriculumFormProps) 
   );
 
   // Controlled states initialized from state.fields if available
-  const [selectedOrg, setSelectedOrg] = useState<string>(state.fields?.organization_id || "");
   const [selectedRegion, setSelectedRegion] = useState<string>(state.fields?.region_code || "");
   const [selectedVisibility, setSelectedVisibility] = useState<string>(state.fields?.visibility_scope || "organization");
 
   // Sync state if form re-renders with new state.fields after error
   useEffect(() => {
     if (state.fields) {
-      if (state.fields.organization_id) setSelectedOrg(state.fields.organization_id);
       if (state.fields.region_code) setSelectedRegion(state.fields.region_code);
       if (state.fields.visibility_scope) setSelectedVisibility(state.fields.visibility_scope);
     }
@@ -67,22 +65,12 @@ export function CurriculumForm({ regions, organizations }: CurriculumFormProps) 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="organization_id">Organización</Label>
-          <Select 
-            name="organization_id" 
-            value={selectedOrg} 
-            onValueChange={(val) => setSelectedOrg(val || "")}
-          >
-            <SelectTrigger id="organization_id" className="w-full h-10 border-zinc-200 dark:border-zinc-800">
-              <SelectValue placeholder="Selecciona organización" />
-            </SelectTrigger>
-            <SelectContent>
-              {organizations.map((org) => (
-                <SelectItem key={org.id} value={org.id}>
-                  {org.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <input type="hidden" name="organization_id" value={organizations[0]?.id || ""} />
+          <Input 
+            value={organizations[0]?.name || "Ilerna"} 
+            className="border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 text-zinc-500 cursor-not-allowed"
+            readOnly
+          />
           {fieldErrors.organization_id && (
             <p className="text-xs text-destructive">{fieldErrors.organization_id[0]}</p>
           )}
