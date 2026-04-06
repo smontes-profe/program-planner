@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase";
+import { createClient, createAdminClient } from "@/lib/supabase";
 
 /**
  * Result type for Server Actions
@@ -55,11 +55,12 @@ export async function getRegions(): Promise<ActionResponse<any[]>> {
  */
 export async function createOrganizationAction(name: string, code: string): Promise<ActionResponse<any>> {
   const supabase = await createClient();
+  const adminClient = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Usuario no autenticado" };
 
-  // 1. Create Organization
-  const { data: org, error: orgError } = await supabase
+  // 1. Create Organization with Admin Client (bypassing RLS)
+  const { data: org, error: orgError } = await adminClient
     .from("organizations")
     .insert({ name, code, is_active: true })
     .select()
@@ -67,8 +68,8 @@ export async function createOrganizationAction(name: string, code: string): Prom
 
   if (orgError) return { ok: false, error: `Error al crear organización: ${orgError.message}` };
 
-  // 2. Add User as Manager
-  const { error: memError } = await supabase
+  // 2. Add User as Manager with Admin Client
+  const { error: memError } = await adminClient
     .from("organization_memberships")
     .insert({
       organization_id: org.id,
@@ -95,6 +96,9 @@ export async function ensureUserHasOrganization(): Promise<ActionResponse<any>> 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Usuario no autenticado" };
 
-  const randomHandle = Math.random().toString(36).substring(7);
-  return createOrganizationAction(`Mi Organización (${user.email?.split('@')[0]})`, `ORG-${randomHandle}`);
+  const result = await createOrganizationAction("Ilerna", "ILERNA");
+  if (result.ok) {
+    return { ok: true, data: [result.data] };
+  }
+  return result;
 }
