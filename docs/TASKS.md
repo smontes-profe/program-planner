@@ -54,7 +54,7 @@ Status legend:
 
 ## Phase 3 - Teaching Plan Core
 
-- [ ] Implement `teaching_plans` schema with:
+- [x] Implement `teaching_plans` schema with:
   - `organization_id`
   - `owner_profile_id`
   - `visibility_scope`
