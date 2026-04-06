@@ -310,3 +310,39 @@ export async function listTemplates(): Promise<ActionResponse<CurriculumTemplate
   if (error) return { ok: false, error: error.message };
   return { ok: true, data: data as CurriculumTemplate[] };
 }
+
+/**
+ * Update an existing RA
+ */
+export async function updateRA(templateId: string, raId: string, payload: { code: string; description: string; weight: number }): Promise<ActionResponse<any>> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("template_ra")
+    .update({
+      code: payload.code,
+      description: payload.description,
+      weight_in_template: payload.weight
+    })
+    .eq("id", raId)
+    .eq("template_id", templateId);
+
+  if (error) return { ok: false, error: `Error al actualizar RA: ${error.message}`, fields: payload };
+  revalidatePath(`/curriculum/${templateId}`);
+  return { ok: true, data: null };
+}
+
+/**
+ * Delete an RA
+ */
+export async function deleteRA(templateId: string, raId: string): Promise<ActionResponse<any>> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("template_ra")
+    .delete()
+    .eq("id", raId)
+    .eq("template_id", templateId);
+
+  if (error) return { ok: false, error: `Error al eliminar RA: ${error.message}` };
+  revalidatePath(`/curriculum/${templateId}`);
+  return { ok: true, data: null };
+}

@@ -52,6 +52,11 @@ Status legend:
 - [x] Fix: Apply missing database migrations (profiles, organizations, memberships).
 - [x] Add session middleware for protected routes.
 
+## Phase 2.5 - Curriculum Fixes and improvements
+
+- [x] No se puede editar ni eliminar un RA ya creado.
+- [ ] Cuando intento guardar un CE nuevo asociado a un RA, sale este error: Error al añadir CE: Could not find the 'ra_id' column of 'template_ce' in the schema cache.
+
 ## Phase 3 - Teaching Plan Core
 
 - [x] Implement `teaching_plans` schema with:

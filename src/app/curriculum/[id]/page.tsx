@@ -6,8 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { PublishButton } from "./_components/PublishButton";
 import { AddRAButton } from "./_components/AddRAButton";
 import { AddCEButton } from "./_components/AddCEButton";
+import { EditRAButton } from "./_components/EditRAButton";
+import { DeleteRAButton } from "./_components/DeleteRAButton";
 import Link from "next/link";
-import { MoveLeft, Edit, Trash2, MoreVertical } from "lucide-react";
+import { MoveLeft, Edit, Trash2 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { cn } from "@/lib/utils";
 
@@ -113,9 +115,10 @@ export default async function TemplateDetailsPage({ params }: TemplatePageProps)
                            </span>
                         </div>
                         {isDraft && (
-                           <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100">
-                              <MoreVertical className="h-4 w-4" />
-                           </Button>
+                           <div className="flex items-center gap-1">
+                             <EditRAButton templateId={id} ra={ra} />
+                             <DeleteRAButton templateId={id} raId={ra.id} />
+                           </div>
                         )}
                       </div>
                       <CardContent className="pt-4 space-y-4">
