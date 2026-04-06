@@ -47,10 +47,10 @@ Status legend:
 
 ## Phase 1.5 - Auth UI & Access Security
 
-- [ ] Implement login/signup flow with Supabase Auth.
-- [ ] Implement initial organization creation/assignment for new users.
-- [ ] Fix: Apply missing database migrations (profiles, organizations, memberships).
-- [ ] Add session middleware for protected routes.
+- [x] Implement login/signup flow with Supabase Auth.
+- [x] Implement initial organization creation/assignment for new users.
+- [x] Fix: Apply missing database migrations (profiles, organizations, memberships).
+- [x] Add session middleware for protected routes.
 
 ## Phase 3 - Teaching Plan Core
 

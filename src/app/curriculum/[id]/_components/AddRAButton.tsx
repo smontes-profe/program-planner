@@ -20,7 +20,7 @@ export function AddRAButton({ templateId }: AddRAButtonProps) {
       const payload = {
         code: formData.get("code") as string,
         description: formData.get("description") as string,
-        weight: Number(formData.get("weight")),
+        weight: 0,
       };
       
       const res = await addRA(templateId, payload);
@@ -44,15 +44,11 @@ export function AddRAButton({ templateId }: AddRAButtonProps) {
           <SheetTitle>Añadir RA</SheetTitle>
           <SheetDescription>Añade un Resultado de Aprendizaje a la plantilla.</SheetDescription>
         </SheetHeader>
-        <form action={formAction} className="space-y-6 pt-6 text-zinc-900 dark:text-zinc-50">
+        <form action={formAction} className="space-y-6 pt-6 px-4 pb-4 text-zinc-900 dark:text-zinc-50">
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="code">Código</Label>
               <Input id="code" name="code" placeholder="RA1" required defaultValue={state.fields?.code ?? ""} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="weight">Peso (%)</Label>
-              <Input id="weight" name="weight" type="number" min="1" max="100" defaultValue={state.fields?.weight || "20"} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Descripción</Label>
