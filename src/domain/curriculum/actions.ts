@@ -139,6 +139,52 @@ export async function addMultipleCE(templateId: string, raId: string, payloads: 
 }
 
 /**
+ * Add multiple RAs along with their nested CEs
+ */
+export async function addMultipleRAWithCE(
+  templateId: string, 
+  payloads: { code: string; description: string; ces: { code: string; description: string }[] }[]
+): Promise<ActionResponse<any>> {
+  const supabase = await createClient();
+  
+  for (const payload of payloads) {
+    // Insert RA
+    const { data: raData, error: raError } = await supabase
+      .from("template_ra")
+      .insert({
+        template_id: templateId,
+        code: payload.code,
+        description: payload.description,
+        weight_in_template: 0
+      })
+      .select("id")
+      .single();
+
+    if (raError || !raData) {
+      return { ok: false, error: `Error al añadir RA ${payload.code}: ${raError?.message}` };
+    }
+
+    // Insert CEs for this RA
+    if (payload.ces.length > 0) {
+      const ceInserts = payload.ces.map(ce => ({
+        template_ra_id: raData.id,
+        code: ce.code,
+        description: ce.description,
+        weight_in_ra: 0
+      }));
+
+      const { error: ceError } = await supabase.from("template_ce").insert(ceInserts);
+      if (ceError) {
+        return { ok: false, error: `Error al añadir CEs para RA ${payload.code}: ${ceError.message}` };
+      }
+    }
+  }
+
+  revalidatePath(`/curriculum/${templateId}`);
+  return { ok: true, data: null };
+}
+
+/**
  * Update the status of a Curriculum Template
  */
 async function updateTemplateStatus(id: string, status: CurriculumStatus): Promise<ActionResponse<CurriculumTemplate>> {

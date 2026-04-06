@@ -5,6 +5,7 @@ import { buttonVariants } from "@/components/ui/button-variants";
 import { Badge } from "@/components/ui/badge";
 import { PublishButton } from "./_components/PublishButton";
 import { AddRAButton } from "./_components/AddRAButton";
+import { BulkAddRAButton } from "./_components/BulkAddRAButton";
 import { AddCEButton } from "./_components/AddCEButton";
 import { EditRAButton } from "./_components/EditRAButton";
 import { DeleteRAButton } from "./_components/DeleteRAButton";
@@ -110,7 +111,10 @@ export default async function TemplateDetailsPage({ params }: TemplatePageProps)
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Resultados de Aprendizaje (RA)</h2>
               {isDraft && (
-                <AddRAButton templateId={id} />
+                <div className="flex items-center gap-2">
+                  <BulkAddRAButton templateId={id} />
+                  <AddRAButton templateId={id} />
+                </div>
               )}
             </div>
 

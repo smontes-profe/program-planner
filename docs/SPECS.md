@@ -64,6 +64,102 @@ Business rules:
 - Only `published` templates can be imported.
 - A `published` template is immutable; updates require creating a new version.
 
+### Añadiendo RRAA en bloque:
+
+El usuario podrá copiar y pegar todos los RRAA (y sus criterios de evaluación) de un módulo de una sola vez. El sistema debe identificar cuando hay un patrón típico de nombre de RRAA (ej. "1. ", "2. ", "3. ", etc.) y separar usando esos patrones, usar el patrón ("1", "2", "3") como código del RRAA y luego el texto siguiente como la descripción. Por ejemplo, si pego "1. Se han caracterizado y diferenciado los modelos de ejecución de código en el servidor y en el cliente web. 2. Se han identificado las capacidades y mecanismos de ejecución de código de los navegadores web." debería crear dos RRAAs, uno con código "1" y descripción "Se han caracterizado y diferenciado los modelos de ejecución de código en el servidor y en el cliente web." y otro con código "2" y descripción "Se han identificado las capacidades y mecanismos de ejecución de código de los navegadores web.".
+Luego, dentro del bloque de cada RA, debe inditifcar los patrones para separar también los criterios de evaluación.
+Ejemplo:
+-----comienzo del ejemplo-----
+1. Selecciona las arquitecturas y tecnologías de programación sobre clientes web, identificando y analizando las capacidades y características de cada una.
+
+Criterios de evaluación:
+
+a) Se han caracterizado y diferenciado los modelos de ejecución de código en el servidor y en el cliente web.
+
+b) Se han identificado las capacidades y mecanismos de ejecución de código de los navegadores web.
+
+c) Se han identificado y caracterizado los principales lenguajes relacionados con la programación de clientes web.
+
+d) Se han reconocido las particularidades de la programación de guiones y sus ventajas y desventajas sobre la programación tradicional.
+
+e) Se han verificado los mecanismos de integración de los lenguajes de marcas con los lenguajes de programación de clientes web.
+
+f) Se han reconocido y evaluado las herramientas de programación y prueba sobre clientes web.
+
+2. Escribe sentencias simples, aplicando la sintaxis del lenguaje y verificando su ejecución sobre navegadores web.
+
+Criterios de evaluación:
+
+a) Se ha seleccionado un lenguaje de programación de clientes web en función de sus posibilidades.
+
+b) Se han utilizado los distintos tipos de variables y operadores disponibles en el lenguaje.
+
+c) Se han identificado los ámbitos de utilización de las variables.
+
+d) Se han reconocido y comprobado las peculiaridades del lenguaje respecto a las conversiones entre distintos tipos de datos.
+
+e) Se han utilizado mecanismos de decisión en la creación de bloques de sentencias.
+
+f) Se han utilizado bucles y se ha verificado su funcionamiento.
+
+g) Se han añadido comentarios al código.
+
+h) Se han utilizado herramientas y entornos para facilitar la programación, prueba y documentación del código.
+
+-----fin del ejemplo-----
+Esto se graduciría en:
+RA 1:
+
+- Código: 1
+- Descripción: Selecciona las arquitecturas y tecnologías de programación sobre clientes web, identificando y analizando las capacidades y características de cada una.
+- Criterios de Evaluación:
+  -Criterio 1:
+  -Código: a
+  -Descripción: Se han caracterizado y diferenciado los modelos de ejecución de código en el servidor y en el cliente web.
+  -Criterio 2:
+  -Código: b
+  -Descripción: Se han identificado las capacidades y mecanismos de ejecución de código de los navegadores web.
+  -Criterio 3:
+  -Código: c
+  -Descripción: Se han identificado y caracterizado los principales lenguajes relacionados con la programación de clientes web.
+  -Criterio 4:
+  -Código: d
+  -Descripción: Se han reconocido las particularidades de la programación de guiones y sus ventajas y desventajas sobre la programación tradicional.
+  -Criterio 5:
+  -Código: e
+  -Descripción: Se han verificado los mecanismos de integración de los lenguajes de marcas con los lenguajes de programación de clientes web.
+  -Criterio 6:
+  -Código: f
+  -Descripción: Se han reconocido y evaluado las herramientas de programación y prueba sobre clientes web.
+  RA 2:
+- Código: 2
+- Descripción: Escribe sentencias simples, aplicando la sintaxis del lenguaje y verificando su ejecución sobre navegadores web.
+- Criterios de Evaluación:
+  -Criterio 1:
+  -Código: a
+  -Descripción: Se ha seleccionado un lenguaje de programación de clientes web en función de sus posibilidades.
+  -Criterio 2:
+  -Código: b
+  -Descripción: Se han utilizado los distintos tipos de variables y operadores disponibles en el lenguaje.
+  -Criterio 3:
+  -Código: c
+  -Descripción: Se han identificado los ámbitos de utilización de las variables.
+  -Criterio 4:
+  -Código: d
+  -Descripción: Se han reconocido y comprobado las peculiaridades del lenguaje respecto a las conversiones entre distintos tipos de datos.
+  -Criterio 5:
+  -Código: e
+  -Descripción: Se han utilizado mecanismos de decisión en la creación de bloques de sentencias.
+  -Criterio 6:
+  -Código: f
+  -Descripción: Se han utilizado bucles y se ha verificado su funcionamiento.
+  -Criterio 7:
+  -Código: g
+  -Descripción: Se han añadido comentarios al código.
+  -Criterio 8:
+  -Código: h
+  -Descripción: Se han utilizado herramientas y entornos para facilitar la programación, prueba y documentación del código.
+
 ### 4.2 Teaching Plan
 
 Teacher-owned working copy used for real planning and grading.
