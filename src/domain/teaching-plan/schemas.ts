@@ -41,6 +41,9 @@ export const planTeachingUnitSchema = z.object({
   active_t2: z.boolean(),
   active_t3: z.boolean(),
   hours: z.coerce.number().min(0).default(0),
+}).refine(data => data.active_t1 || data.active_t2 || data.active_t3, {
+  message: "Debes seleccionar al menos un trimestre",
+  path: ["active_t1"],
 });
 
 export const planInstrumentSchema = z.object({

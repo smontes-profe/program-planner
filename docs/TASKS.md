@@ -98,6 +98,10 @@ Status legend:
 - [ ] `/plans/[id]` tab: Instrumentos (CRUD + CE weight assignment per instrument).
 - [ ] Computed weights panel: target vs. real comparison per RA (global + per trimester).
 
+### Phase 3.5 - Teaching Plan Fixes and UX Improvements
+
+- [x] Validar que al menos un trimestre esté seleccionado al crear una UT. Actualmente lanza un error de base de datos (`at_least_one_trimester_chk`) en inglés. El error debe ser descriptivo, en castellano y preservar los datos del formulario.
+
 - [ ] Implement plan status transitions (`draft`, `ready`, `published`, `archived`).
 
 ## Phase 4 - Collaboration and Visibility

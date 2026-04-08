@@ -249,7 +249,9 @@ export async function updatePlanRAConfig(
   payload: { weight_global: number; active_t1: boolean; active_t2: boolean; active_t3: boolean }
 ): Promise<ActionResponse<PlanRA>> {
   const validated = updatePlanRAConfigSchema.safeParse(payload);
-  if (!validated.success) return { ok: false, error: "Datos inválidos" };
+  if (!validated.success) {
+    return { ok: false, error: "Datos inválidos", details: validated.error.flatten().fieldErrors };
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -283,7 +285,9 @@ export async function deletePlan(planId: string): Promise<ActionResponse> {
 
 export async function addPlanRA(planId: string, payload: { code: string; description: string }): Promise<ActionResponse<PlanRA>> {
   const validated = planRASchema.safeParse(payload);
-  if (!validated.success) return { ok: false, error: "Datos inválidos" };
+  if (!validated.success) {
+    return { ok: false, error: "Datos del RA inválidos", details: validated.error.flatten().fieldErrors };
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -292,14 +296,22 @@ export async function addPlanRA(planId: string, payload: { code: string; descrip
     .select()
     .single();
 
-  if (error) return { ok: false, error: `Error al añadir RA: ${error.message}` };
+  if (error) {
+    let errorMessage = error.message;
+    if (errorMessage.includes("duplicate key")) {
+      errorMessage = `Ya existe un RA con el código "${validated.data.code}" en esta programación`;
+    }
+    return { ok: false, error: `Error al añadir RA: ${errorMessage}` };
+  }
   revalidatePath(`/plans/${planId}`);
   return { ok: true, data: data as PlanRA };
 }
 
 export async function updatePlanRA(planId: string, raId: string, payload: { code: string; description: string }): Promise<ActionResponse<PlanRA>> {
   const validated = planRASchema.safeParse(payload);
-  if (!validated.success) return { ok: false, error: "Datos inválidos" };
+  if (!validated.success) {
+    return { ok: false, error: "Datos del RA inválidos", details: validated.error.flatten().fieldErrors };
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -310,7 +322,13 @@ export async function updatePlanRA(planId: string, raId: string, payload: { code
     .select()
     .single();
 
-  if (error) return { ok: false, error: `Error al actualizar RA: ${error.message}` };
+  if (error) {
+    let errorMessage = error.message;
+    if (errorMessage.includes("duplicate key")) {
+      errorMessage = `Ya existe un RA con el código "${validated.data.code}" en esta programación`;
+    }
+    return { ok: false, error: `Error al actualizar RA: ${errorMessage}` };
+  }
   revalidatePath(`/plans/${planId}`);
   return { ok: true, data: data as PlanRA };
 }
@@ -329,7 +347,9 @@ export async function deletePlanRA(planId: string, raId: string): Promise<Action
 
 export async function addPlanCE(planId: string, raId: string, payload: { code: string; description: string }): Promise<ActionResponse<PlanCE>> {
   const validated = planCESchema.safeParse({ ...payload, weight_in_ra: 0 });
-  if (!validated.success) return { ok: false, error: "Datos inválidos" };
+  if (!validated.success) {
+    return { ok: false, error: "Datos del CE inválidos", details: validated.error.flatten().fieldErrors };
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -338,7 +358,13 @@ export async function addPlanCE(planId: string, raId: string, payload: { code: s
     .select()
     .single();
 
-  if (error) return { ok: false, error: `Error al añadir CE: ${error.message}` };
+  if (error) {
+    let errorMessage = error.message;
+    if (errorMessage.includes("duplicate key")) {
+      errorMessage = `Ya existe un CE con el código "${validated.data.code}" en este RA`;
+    }
+    return { ok: false, error: `Error al añadir CE: ${errorMessage}` };
+  }
   revalidatePath(`/plans/${planId}`);
   return { ok: true, data: data as PlanCE };
 }
@@ -352,7 +378,13 @@ export async function updatePlanCE(planId: string, ceId: string, payload: { code
     .select()
     .single();
 
-  if (error) return { ok: false, error: `Error al actualizar CE: ${error.message}` };
+  if (error) {
+    let errorMessage = error.message;
+    if (errorMessage.includes("duplicate key")) {
+      errorMessage = `Ya existe un CE con el código "${payload.code}" en este RA`;
+    }
+    return { ok: false, error: `Error al actualizar CE: ${errorMessage}` };
+  }
   revalidatePath(`/plans/${planId}`);
   return { ok: true, data: data as PlanCE };
 }
@@ -376,7 +408,13 @@ export async function addPlanUnit(
 ): Promise<ActionResponse<any>> {
   // Validate basic unit info
   const validated = planTeachingUnitSchema.safeParse(payload);
-  if (!validated.success) return { ok: false, error: "Datos inválidos" };
+  if (!validated.success) {
+    // Collect refinement errors (like at_least_one_trimester)
+    const errors = validated.error.flatten();
+    // If there's an error in active_t1 (where the refinement path was set), use that message as the main error
+    const mainError = errors.formErrors[0] || "Datos de la unidad inválidos";
+    return { ok: false, error: mainError, details: errors.fieldErrors };
+  }
 
   const supabase = await createClient();
   
@@ -387,7 +425,15 @@ export async function addPlanUnit(
     .select()
     .single();
 
-  if (error || !unit) return { ok: false, error: `Error al añadir UT: ${error?.message}` };
+  if (error || !unit) {
+    let errorMessage = error?.message || "Error desconocido";
+    if (errorMessage.includes("at_least_one_trimester_chk")) {
+      errorMessage = "Debes seleccionar al menos un trimestre para la unidad";
+    } else if (errorMessage.includes("duplicate key")) {
+      errorMessage = `Ya existe una UT con el código "${validated.data.code}" en esta programación`;
+    }
+    return { ok: false, error: `Error al añadir UT: ${errorMessage}` };
+  }
 
   // If there are selected RAs, link them in the junction table
   if (raIds.length > 0) {
@@ -410,6 +456,13 @@ export async function updatePlanUnit(
   payload: { title?: string; code?: string; active_t1?: boolean; active_t2?: boolean; active_t3?: boolean; hours?: number },
   raIds?: string[]
 ): Promise<ActionResponse<any>> {
+  // Validate basic trimesters if provied in payload
+  if (payload.active_t1 !== undefined && payload.active_t2 !== undefined && payload.active_t3 !== undefined) {
+    if (!payload.active_t1 && !payload.active_t2 && !payload.active_t3) {
+      return { ok: false, error: "Debes seleccionar al menos un trimestre" };
+    }
+  }
+
   const supabase = await createClient();
   
   // Update unit metadata
@@ -420,7 +473,15 @@ export async function updatePlanUnit(
       .eq("id", unitId)
       .eq("plan_id", planId);
       
-    if (error) return { ok: false, error: `Error al actualizar UT: ${error.message}` };
+    if (error) {
+      let errorMessage = error.message;
+      if (errorMessage.includes("at_least_one_trimester_chk")) {
+        errorMessage = "Debes seleccionar al menos un trimestre para la unidad";
+      } else if (errorMessage.includes("duplicate key")) {
+        errorMessage = `Ya existe una UT con el código "${payload.code}" en esta programación`;
+      }
+      return { ok: false, error: `Error al actualizar UT: ${errorMessage}` };
+    }
   }
 
   // Update RAs links if provided
