@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase";
-import { createPlanSchema, updatePlanSchema, updatePlanRAConfigSchema, planRASchema, planCESchema, planTeachingUnitSchema } from "./schemas";
+import { createPlanSchema, updatePlanSchema, updatePlanRAConfigSchema, planRASchema, planCESchema, planTeachingUnitSchema, planInstrumentSchema } from "./schemas";
 import { type TeachingPlan, type TeachingPlanFull, type PlanRA, type PlanCE } from "./types";
 
 export type ActionResponse<T = any> =
@@ -52,6 +52,7 @@ export async function getPlan(planId: string): Promise<ActionResponse<TeachingPl
       instruments:plan_instrument (
         *,
         units_coverage:plan_instrument_unit (unit_id),
+        ras_coverage:plan_instrument_ra (plan_ra_id),
         ce_weights:plan_instrument_ce (*)
       )
     `)
@@ -82,6 +83,7 @@ export async function getPlan(planId: string): Promise<ActionResponse<TeachingPl
   const mappedInstruments = (data.instruments || []).map((i: any) => ({
     ...i,
     unit_ids: i.units_coverage?.map((uc: any) => uc.unit_id) || [],
+    ra_ids: i.ras_coverage?.map((rc: any) => rc.plan_ra_id) || [],
     ce_weights: i.ce_weights || []
   }));
 
@@ -591,6 +593,148 @@ export async function updatePlanUnitOrder(planId: string, orderedIds: string[]):
     supabase.from("plan_teaching_unit").update({ order_index: index }).eq("id", id).eq("plan_id", planId)
   );
   await Promise.all(promises);
+  revalidatePath(`/plans/${planId}`);
+  return { ok: true, data: null };
+}
+
+// ─────────────────────────────────────────────
+// PLAN INSTRUMENT CRUD
+// ─────────────────────────────────────────────
+
+export async function addPlanInstrument(
+  planId: string,
+  payload: { code: string; type: string; name: string; description?: string | null },
+  unitIds: string[] = [],
+  raIds: string[] = [],
+  ceWeights: { ceId: string; weight: number }[] = []
+): Promise<ActionResponse<any>> {
+  const validated = planInstrumentSchema.safeParse(payload);
+  if (!validated.success) {
+    return { ok: false, error: "Datos del instrumento inválidos", details: validated.error.flatten().fieldErrors };
+  }
+
+  const supabase = await createClient();
+
+  // 1. Create instrument
+  const { data: instrument, error } = await supabase
+    .from("plan_instrument")
+    .insert({ plan_id: planId, ...validated.data })
+    .select()
+    .single();
+
+  if (error || !instrument) {
+    let errorMessage = error?.message || "Error desconocido";
+    if (errorMessage.includes("duplicate key")) {
+      errorMessage = `Ya existe un instrumento con el código "${validated.data.code}" en esta programación`;
+    }
+    return { ok: false, error: `Error al añadir instrumento: ${errorMessage}` };
+  }
+
+  // 2. Link UTs
+  if (unitIds.length > 0) {
+    const unitLinks = unitIds.map(uId => ({
+      instrument_id: instrument.id,
+      unit_id: uId
+    }));
+    const { error: ulError } = await supabase.from("plan_instrument_unit").insert(unitLinks);
+    if (ulError) return { ok: false, error: `Error al enlazar unidades: ${ulError.message}` };
+  }
+
+  // 2b. Link RAs
+  if (raIds.length > 0) {
+    const raLinks = raIds.map(raId => ({
+      instrument_id: instrument.id,
+      plan_ra_id: raId
+    }));
+    const { error: rlError } = await supabase.from("plan_instrument_ra").insert(raLinks);
+    if (rlError) return { ok: false, error: `Error al enlazar RAs: ${rlError.message}` };
+  }
+
+  // 3. Link CEs with weights
+  if (ceWeights.length > 0) {
+    const ceLinks = ceWeights.map(cw => ({
+      instrument_id: instrument.id,
+      plan_ce_id: cw.ceId,
+      weight: cw.weight
+    }));
+    const { error: clError } = await supabase.from("plan_instrument_ce").insert(ceLinks);
+    if (clError) return { ok: false, error: `Error al asignar pesos CE: ${clError.message}` };
+  }
+
+  revalidatePath(`/plans/${planId}`);
+  return { ok: true, data: instrument };
+}
+
+export async function updatePlanInstrument(
+  planId: string,
+  instrumentId: string,
+  payload: { code?: string; type?: string; name?: string; description?: string | null },
+  unitIds?: string[],
+  raIds?: string[],
+  ceWeights?: { ceId: string; weight: number }[]
+): Promise<ActionResponse<any>> {
+  const supabase = await createClient();
+
+  // 1. Update metadata
+  if (Object.keys(payload).length > 0) {
+    const { error } = await supabase
+      .from("plan_instrument")
+      .update(payload)
+      .eq("id", instrumentId)
+      .eq("plan_id", planId);
+    
+    if (error) {
+      let errorMessage = error.message;
+      if (errorMessage.includes("duplicate key")) {
+        errorMessage = `Ya existe un instrumento con el código "${payload.code}" en esta programación`;
+      }
+      return { ok: false, error: `Error al actualizar instrumento: ${errorMessage}` };
+    }
+  }
+
+  // 2. Update UT links (sync)
+  if (unitIds !== undefined) {
+    await supabase.from("plan_instrument_unit").delete().eq("instrument_id", instrumentId);
+    if (unitIds.length > 0) {
+      const unitLinks = unitIds.map(uId => ({ instrument_id: instrumentId, unit_id: uId }));
+      const { error: ulError } = await supabase.from("plan_instrument_unit").insert(unitLinks);
+      if (ulError) return { ok: false, error: `Error al actualizar unidades: ${ulError.message}` };
+    }
+  }
+
+  // 2b. Update RA links (sync)
+  if (raIds !== undefined) {
+    await supabase.from("plan_instrument_ra").delete().eq("instrument_id", instrumentId);
+    if (raIds.length > 0) {
+      const raLinks = raIds.map(raId => ({ instrument_id: instrumentId, plan_ra_id: raId }));
+      const { error: rlError } = await supabase.from("plan_instrument_ra").insert(raLinks);
+      if (rlError) return { ok: false, error: `Error al actualizar RAs: ${rlError.message}` };
+    }
+  }
+
+  // 3. Update CE weights (sync)
+  if (ceWeights !== undefined) {
+    await supabase.from("plan_instrument_ce").delete().eq("instrument_id", instrumentId);
+    if (ceWeights.length > 0) {
+      const ceLinks = ceWeights.map(cw => ({
+        instrument_id: instrumentId,
+        plan_ce_id: cw.ceId,
+        weight: cw.weight
+      }));
+      const { error: clError } = await supabase.from("plan_instrument_ce").insert(ceLinks);
+      if (clError) return { ok: false, error: `Error al actualizar pesos CE: ${clError.message}` };
+    }
+  }
+
+  revalidatePath(`/plans/${planId}`);
+  return { ok: true, data: null };
+}
+
+export async function deletePlanInstrument(planId: string, instrumentId: string): Promise<ActionResponse> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("plan_instrument").delete().eq("id", instrumentId).eq("plan_id", planId);
+  
+  if (error) return { ok: false, error: `Error al eliminar instrumento: ${error.message}` };
   revalidatePath(`/plans/${planId}`);
   return { ok: true, data: null };
 }

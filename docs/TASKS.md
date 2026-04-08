@@ -92,10 +92,10 @@ Status legend:
 
 - [ ] Implement `plan_teaching_unit` schema with trimester assignment and hours field.
 - [ ] Implement `plan_unit_ra` coverage table (which RAs a UT covers).
-- [ ] `/plans/[id]` tab: Unidades de Trabajo (CRUD + RA/CE assignment per UT).
-- [ ] Implement `evaluation_instruments` schema linked to a UT.
-- [ ] Implement `instrument_ce_weight` (which CEs an instrument covers and with what %).
-- [ ] `/plans/[id]` tab: Instrumentos (CRUD + CE weight assignment per instrument).
+- [x] `/plans/[id]` tab: Unidades de Trabajo (CRUD + RA/CE assignment per UT).
+- [x] Implement `evaluation_instruments` schema linked to a UT (Already done in migration).
+- [x] Implement `instrument_ce_weight` (which CEs an instrument covers and with what %) (Already done in migration).
+- [x] `/plans/[id]` tab: Instrumentos (CRUD + CE weight assignment per instrument).
 - [ ] Computed weights panel: target vs. real comparison per RA (global + per trimester).
 
 ### Phase 3.5 - Teaching Plan Fixes and UX Improvements

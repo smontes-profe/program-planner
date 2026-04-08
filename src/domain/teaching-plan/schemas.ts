@@ -47,7 +47,8 @@ export const planTeachingUnitSchema = z.object({
 });
 
 export const planInstrumentSchema = z.object({
-  type: z.enum(["exam", "practice", "project", "oral", "other"]),
+  code: z.string().min(1, "El código es obligatorio"),
+  type: z.enum(["exam", "practice", "project", "oral", "activity", "other"]),
   name: z.string().min(1, "El nombre es obligatorio"),
   description: z.string().optional().nullable(),
 });

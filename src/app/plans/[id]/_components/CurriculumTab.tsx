@@ -234,7 +234,7 @@ function AddRAButton({ planId }: { readonly planId: string }) {
           <Plus className="h-4 w-4" /> Añadir RA
         </div>
       </SheetTrigger>
-      <SheetContent side="right" className="bg-white dark:bg-zinc-950">
+      <SheetContent side="right" className="bg-white dark:bg-zinc-950 w-full sm:max-w-2xl">
         <SheetHeader>
           <SheetTitle>Añadir RA</SheetTitle>
           <SheetDescription>Añade un Resultado de Aprendizaje a esta programación.</SheetDescription>
@@ -284,7 +284,7 @@ function EditRAButton({ planId, ra }: { readonly planId: string; readonly ra: Pl
           <Edit2 className="h-4 w-4" />
         </div>
       </SheetTrigger>
-      <SheetContent side="right" className="bg-white dark:bg-zinc-950">
+      <SheetContent side="right" className="bg-white dark:bg-zinc-950 w-full sm:max-w-2xl">
         <SheetHeader>
           <SheetTitle>Editar RA</SheetTitle>
           <SheetDescription>Modifica los datos del Resultado de Aprendizaje.</SheetDescription>
@@ -353,7 +353,7 @@ function AddCEButton({ planId, raId }: { readonly planId: string; readonly raId:
           <Plus className="h-3 w-3" /> Añadir Criterio
         </span>
       </SheetTrigger>
-      <SheetContent side="right" className="bg-white dark:bg-zinc-950">
+      <SheetContent side="right" className="bg-white dark:bg-zinc-950 w-full sm:max-w-2xl">
         <SheetHeader>
           <SheetTitle>Añadir Criterio</SheetTitle>
           <SheetDescription>Añade un Criterio de Evaluación a este RA.</SheetDescription>
@@ -403,7 +403,7 @@ function EditCEButton({ planId, ce }: { readonly planId: string; readonly ce: an
           <Edit2 className="h-3 w-3" />
         </div>
       </SheetTrigger>
-      <SheetContent side="right" className="bg-white dark:bg-zinc-950">
+      <SheetContent side="right" className="bg-white dark:bg-zinc-950 w-full sm:max-w-2xl">
         <SheetHeader>
           <SheetTitle>Editar Criterio</SheetTitle>
           <SheetDescription>Modifica este Criterio de Evaluación.</SheetDescription>

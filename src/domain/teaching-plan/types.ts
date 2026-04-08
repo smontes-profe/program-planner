@@ -45,7 +45,7 @@ export interface PlanCE {
 }
 
 export type Trimester = 'T1' | 'T2' | 'T3';
-export type InstrumentType = 'exam' | 'practice' | 'project' | 'oral' | 'other';
+export type InstrumentType = 'exam' | 'practice' | 'project' | 'oral' | 'activity' | 'other';
 
 export interface PlanTeachingUnit {
   id: string;
@@ -72,6 +72,7 @@ export interface PlanInstrumentCE {
 export interface PlanInstrument {
   id: string;
   plan_id: string;
+  code: string;
   type: InstrumentType;
   name: string;
   description: string | null;
@@ -79,6 +80,7 @@ export interface PlanInstrument {
   
   // Relations
   unit_ids?: string[]; // IDs of units this instrument belongs to
+  ra_ids?: string[]; // IDs of RAs this instrument evaluates
   ce_weights?: PlanInstrumentCE[]; // Weights for CEs
 }
 
