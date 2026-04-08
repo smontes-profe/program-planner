@@ -42,7 +42,8 @@ export function CurriculumForm({ regions, organizations, templateId, initialData
     academic_year: initialData?.academic_year || "",
     version: initialData?.version || "v1",
     region_code: initialData?.region_code || "",
-    visibility_scope: initialData?.visibility_scope || "organization"
+    visibility_scope: initialData?.visibility_scope || "organization",
+    hours_total: initialData?.hours_total || 0
   });
 
   // Sync state if form re-renders with new state.fields after error
@@ -55,7 +56,8 @@ export function CurriculumForm({ regions, organizations, templateId, initialData
         academic_year: state.fields.academic_year ?? prev.academic_year,
         version: state.fields.version ?? prev.version,
         region_code: state.fields.region_code ?? prev.region_code,
-        visibility_scope: state.fields.visibility_scope ?? prev.visibility_scope
+        visibility_scope: state.fields.visibility_scope ?? prev.visibility_scope,
+        hours_total: state.fields.hours_total ?? prev.hours_total
       }));
     }
   }, [state.fields]);
@@ -175,6 +177,20 @@ export function CurriculumForm({ regions, organizations, templateId, initialData
             onChange={handleInputChange}
             required 
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="hours_total">Horas Anuales Totales</Label>
+          <Input 
+            id="hours_total" 
+            name="hours_total" 
+            type="number"
+            min="0"
+            value={formData.hours_total}
+            onChange={handleInputChange}
+            required 
+          />
+          {fieldErrors.hours_total && <p className="text-xs text-destructive">{fieldErrors.hours_total[0]}</p>}
         </div>
       </div>
 

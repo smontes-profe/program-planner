@@ -435,3 +435,68 @@ export async function deleteCE(templateId: string, ceId: string): Promise<Action
   revalidatePath(`/curriculum/${templateId}`);
   return { ok: true, data: null };
 }
+
+// ─────────────────────────────────────────────
+// ORDERING
+// ─────────────────────────────────────────────
+
+async function _swapOrder(table: string, id: string, direction: 'up' | 'down', parentCol: string, parentId: string) {
+  const supabase = await createClient();
+  const { data: allItems } = await supabase
+    .from(table)
+    .select('id, order_index')
+    .eq(parentCol, parentId)
+    .order('order_index', { ascending: true });
+    
+  if (!allItems) return { ok: false, error: "No se encontraron items" };
+
+  const currentIndex = allItems.findIndex((x: any) => x.id === id);
+  if (currentIndex === -1) return { ok: false, error: "Item no encontrado" };
+
+  const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+  if (targetIndex < 0 || targetIndex >= allItems.length) return { ok: false, error: "Movimiento inválido" };
+
+  // Swap order_index
+  const currentItem = allItems[currentIndex];
+  const targetItem = allItems[targetIndex];
+
+  const currentOrder = currentItem.order_index ?? currentIndex;
+  const targetOrder = targetItem.order_index ?? targetIndex;
+
+  await supabase.from(table).update({ order_index: targetOrder }).eq("id", currentItem.id);
+  await supabase.from(table).update({ order_index: currentOrder }).eq("id", targetItem.id);
+
+  return { ok: true };
+}
+
+export async function moveTemplateRA(templateId: string, raId: string, direction: 'up' | 'down'): Promise<ActionResponse<any>> {
+  const res = await _swapOrder("template_ra", raId, direction, "template_id", templateId);
+  if (res.ok) revalidatePath(`/curriculum/${templateId}`);
+  return res as any;
+}
+
+export async function moveTemplateCE(templateId: string, raId: string, ceId: string, direction: 'up' | 'down'): Promise<ActionResponse<any>> {
+  const res = await _swapOrder("template_ce", ceId, direction, "template_ra_id", raId);
+  if (res.ok) revalidatePath(`/curriculum/${templateId}`);
+  return res as any;
+}
+
+export async function updateTemplateRAOrder(templateId: string, orderedIds: string[]): Promise<ActionResponse<any>> {
+  const supabase = await createClient();
+  const promises = orderedIds.map((id, index) => 
+    supabase.from("template_ra").update({ order_index: index }).eq("id", id).eq("template_id", templateId)
+  );
+  await Promise.all(promises);
+  revalidatePath(`/curriculum/${templateId}`);
+  return { ok: true, data: null };
+}
+
+export async function updateTemplateCEOrder(templateId: string, orderedIds: string[]): Promise<ActionResponse<any>> {
+  const supabase = await createClient();
+  const promises = orderedIds.map((id, index) => 
+    supabase.from("template_ce").update({ order_index: index }).eq("id", id)
+  );
+  await Promise.all(promises);
+  revalidatePath(`/curriculum/${templateId}`);
+  return { ok: true, data: null };
+}

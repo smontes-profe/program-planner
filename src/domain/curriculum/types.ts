@@ -28,6 +28,7 @@ export interface CurriculumTemplate {
   status: CurriculumStatus;
   source_type: CurriculumSourceType;
   visibility_scope: VisibilityScope;
+  hours_total: number;
   created_at: string;
 }
 
@@ -39,6 +40,7 @@ export interface TemplateRA {
   template_id: string;
   code: string;
   description: string;
+  order_index: number;
   created_at: string;
 }
 
@@ -50,6 +52,7 @@ export interface TemplateCE {
   template_ra_id: string;
   code: string;
   description: string;
+  order_index: number;
   created_at: string;
 }
 

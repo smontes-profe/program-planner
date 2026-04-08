@@ -4,6 +4,7 @@ import { useState } from "react";
 import { type TeachingPlanFull } from "@/domain/teaching-plan/types";
 import { CurriculumTab } from "./CurriculumTab";
 import { WeightsTab } from "./WeightsTab";
+import { UnitsTab } from "./UnitsTab";
 import { cn } from "@/lib/utils";
 import { BookOpen, BarChart3, LayoutList, Microscope } from "lucide-react";
 
@@ -16,7 +17,7 @@ type TabId = "curriculum" | "weights" | "units" | "instruments";
 const TABS: { id: TabId; label: string; icon: React.ReactNode; available: boolean }[] = [
   { id: "curriculum", label: "Currículo", icon: <BookOpen className="h-4 w-4" />, available: true },
   { id: "weights", label: "Pesos", icon: <BarChart3 className="h-4 w-4" />, available: true },
-  { id: "units", label: "Unidades de Trabajo", icon: <LayoutList className="h-4 w-4" />, available: false },
+  { id: "units", label: "Unidades de Trabajo", icon: <LayoutList className="h-4 w-4" />, available: true },
   { id: "instruments", label: "Instrumentos", icon: <Microscope className="h-4 w-4" />, available: false },
 ];
 
@@ -56,6 +57,7 @@ export function PlanTabs({ plan }: PlanTabsProps) {
       <div className="pt-6">
         {activeTab === "curriculum" && <CurriculumTab plan={plan} />}
         {activeTab === "weights" && <WeightsTab plan={plan} />}
+        {activeTab === "units" && <UnitsTab plan={plan} />}
       </div>
     </div>
   );

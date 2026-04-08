@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase";
-import { createPlanSchema, updatePlanSchema, updatePlanRAConfigSchema, planRASchema, planCESchema } from "./schemas";
+import { createPlanSchema, updatePlanSchema, updatePlanRAConfigSchema, planRASchema, planCESchema, planTeachingUnitSchema } from "./schemas";
 import { type TeachingPlan, type TeachingPlanFull, type PlanRA, type PlanCE } from "./types";
 
 export type ActionResponse<T = any> =
@@ -44,13 +44,56 @@ export async function getPlan(planId: string): Promise<ActionResponse<TeachingPl
       ras:plan_ra (
         *,
         ces:plan_ce (*)
+      ),
+      units:plan_teaching_unit (
+        *,
+        ra_coverage:plan_unit_ra (plan_ra_id)
+      ),
+      instruments:plan_instrument (
+        *,
+        units_coverage:plan_instrument_unit (unit_id),
+        ce_weights:plan_instrument_ce (*)
       )
     `)
     .eq("id", planId)
     .single();
 
   if (error || !data) return { ok: false, error: "Plan no encontrado" };
-  return { ok: true, data: data as TeachingPlanFull };
+
+  // Sort relations manually until we have proper sub-order setup in the query builder
+  if (data.ras) {
+    data.ras.sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0));
+    data.ras.forEach((ra: any) => {
+      if (ra.ces) {
+        ra.ces.sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0));
+      }
+    });
+  }
+  if (data.units) {
+    data.units.sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0));
+  }
+
+  // Map the coverage data into simpler arrays for the frontend
+  const mappedUnits = (data.units || []).map((u: any) => ({
+    ...u,
+    ra_ids: u.ra_coverage?.map((rc: any) => rc.plan_ra_id) || []
+  }));
+
+  const mappedInstruments = (data.instruments || []).map((i: any) => ({
+    ...i,
+    unit_ids: i.units_coverage?.map((uc: any) => uc.unit_id) || [],
+    ce_weights: i.ce_weights || []
+  }));
+
+  const fullPlan: TeachingPlanFull = {
+    ...data,
+    ras: data.ras || [],
+    units: mappedUnits,
+    instruments: mappedInstruments,
+    sourceTemplateHours: data.hours_total ?? 0,
+  };
+  
+  return { ok: true, data: fullPlan };
 }
 
 // ─────────────────────────────────────────────
@@ -118,6 +161,7 @@ export async function createPlanFromTemplate(payload: {
       academic_year: validated.data.academic_year,
       visibility_scope: validated.data.visibility_scope,
       status: "draft",
+      hours_total: template.hours_total || 0,
       imported_at: new Date().toISOString(),
     })
     .select()
@@ -136,6 +180,7 @@ export async function createPlanFromTemplate(payload: {
         code: ra.code,
         description: ra.description,
         weight_global: 0,
+        order_index: ra.order_index || 0,
         active_t1: false,
         active_t2: false,
         active_t3: false,
@@ -154,6 +199,7 @@ export async function createPlanFromTemplate(payload: {
           plan_ra_id: planRA.id,
           code: ce.code,
           description: ce.description,
+          order_index: ce.order_index || 0,
           weight_in_ra: 0,
         });
 
@@ -175,6 +221,7 @@ export async function updatePlan(planId: string, payload: {
   title?: string;
   visibility_scope?: "private" | "organization" | "company";
   status?: "draft" | "ready" | "published" | "archived";
+  hours_total?: number;
 }): Promise<ActionResponse<TeachingPlan>> {
   const validated = updatePlanSchema.safeParse(payload);
   if (!validated.success) return { ok: false, error: "Datos inválidos" };
@@ -241,7 +288,7 @@ export async function addPlanRA(planId: string, payload: { code: string; descrip
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("plan_ra")
-    .insert({ plan_id: planId, ...validated.data, weight_global: 0, weight_t1: 0, weight_t2: 0, weight_t3: 0 })
+    .insert({ plan_id: planId, ...validated.data, weight_global: 0, active_t1: false, active_t2: false, active_t3: false })
     .select()
     .single();
 
@@ -314,6 +361,175 @@ export async function deletePlanCE(planId: string, ceId: string): Promise<Action
   const supabase = await createClient();
   const { error } = await supabase.from("plan_ce").delete().eq("id", ceId);
   if (error) return { ok: false, error: `Error al eliminar CE: ${error.message}` };
+  revalidatePath(`/plans/${planId}`);
+  return { ok: true, data: null };
+}
+
+// ─────────────────────────────────────────────
+// PLAN TEACHING UNIT CRUD
+// ─────────────────────────────────────────────
+
+export async function addPlanUnit(
+  planId: string, 
+  payload: { code: string; title: string; active_t1: boolean; active_t2: boolean; active_t3: boolean; hours: number }, 
+  raIds: string[] = []
+): Promise<ActionResponse<any>> {
+  // Validate basic unit info
+  const validated = planTeachingUnitSchema.safeParse(payload);
+  if (!validated.success) return { ok: false, error: "Datos inválidos" };
+
+  const supabase = await createClient();
+  
+  // Create unit
+  const { data: unit, error } = await supabase
+    .from("plan_teaching_unit")
+    .insert({ plan_id: planId, ...validated.data })
+    .select()
+    .single();
+
+  if (error || !unit) return { ok: false, error: `Error al añadir UT: ${error?.message}` };
+
+  // If there are selected RAs, link them in the junction table
+  if (raIds.length > 0) {
+    const raLinks = raIds.map(raId => ({
+      unit_id: unit.id,
+      plan_ra_id: raId
+    }));
+    
+    const { error: linkError } = await supabase.from("plan_unit_ra").insert(raLinks);
+    if (linkError) return { ok: false, error: `Error al enlazar RAs a UT: ${linkError.message}` };
+  }
+
+  revalidatePath(`/plans/${planId}`);
+  return { ok: true, data: unit };
+}
+
+export async function updatePlanUnit(
+  planId: string,
+  unitId: string,
+  payload: { title?: string; code?: string; active_t1?: boolean; active_t2?: boolean; active_t3?: boolean; hours?: number },
+  raIds?: string[]
+): Promise<ActionResponse<any>> {
+  const supabase = await createClient();
+  
+  // Update unit metadata
+  if (Object.keys(payload).length > 0) {
+    const { error } = await supabase
+      .from("plan_teaching_unit")
+      .update(payload)
+      .eq("id", unitId)
+      .eq("plan_id", planId);
+      
+    if (error) return { ok: false, error: `Error al actualizar UT: ${error.message}` };
+  }
+
+  // Update RAs links if provided
+  if (raIds !== undefined) {
+    // Delete existing links
+    await supabase.from("plan_unit_ra").delete().eq("unit_id", unitId);
+    
+    // Insert new links
+    if (raIds.length > 0) {
+      const raLinks = raIds.map(raId => ({
+        unit_id: unitId,
+        plan_ra_id: raId
+      }));
+      const { error: linkError } = await supabase.from("plan_unit_ra").insert(raLinks);
+      if (linkError) return { ok: false, error: `Error al modificar enlaces RA: ${linkError.message}` };
+    }
+  }
+
+  revalidatePath(`/plans/${planId}`);
+  return { ok: true, data: null };
+}
+
+export async function deletePlanUnit(planId: string, unitId: string): Promise<ActionResponse> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("plan_teaching_unit").delete().eq("id", unitId).eq("plan_id", planId);
+  
+  if (error) return { ok: false, error: `Error al eliminar UT: ${error.message}` };
+  revalidatePath(`/plans/${planId}`);
+  return { ok: true, data: null };
+}
+
+// ─────────────────────────────────────────────
+// ORDERING
+// ─────────────────────────────────────────────
+
+async function _swapOrder(table: string, id: string, direction: 'up' | 'down', parentCol: string, parentId: string) {
+  const supabase = await createClient();
+  const { data: allItems } = await supabase
+    .from(table)
+    .select('id, order_index')
+    .eq(parentCol, parentId)
+    .order('order_index', { ascending: true });
+    
+  if (!allItems) return { ok: false, error: "No se encontraron items" };
+
+  const currentIndex = allItems.findIndex((x: any) => x.id === id);
+  if (currentIndex === -1) return { ok: false, error: "Item no encontrado" };
+
+  const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+  if (targetIndex < 0 || targetIndex >= allItems.length) return { ok: false, error: "Movimiento inválido" };
+
+  // Swap order_index
+  const currentItem = allItems[currentIndex];
+  const targetItem = allItems[targetIndex];
+
+  const currentOrder = currentItem.order_index ?? currentIndex;
+  const targetOrder = targetItem.order_index ?? targetIndex;
+
+  await supabase.from(table).update({ order_index: targetOrder }).eq("id", currentItem.id);
+  await supabase.from(table).update({ order_index: currentOrder }).eq("id", targetItem.id);
+
+  return { ok: true };
+}
+
+export async function movePlanRA(planId: string, raId: string, direction: 'up' | 'down'): Promise<ActionResponse> {
+  const res = await _swapOrder("plan_ra", raId, direction, "plan_id", planId);
+  if (res.ok) revalidatePath(`/plans/${planId}`);
+  return res as any;
+}
+
+export async function movePlanCE(planId: string, raId: string, ceId: string, direction: 'up' | 'down'): Promise<ActionResponse> {
+  const res = await _swapOrder("plan_ce", ceId, direction, "plan_ra_id", raId);
+  if (res.ok) revalidatePath(`/plans/${planId}`);
+  return res as any;
+}
+
+export async function movePlanUnit(planId: string, unitId: string, direction: 'up' | 'down'): Promise<ActionResponse> {
+  const res = await _swapOrder("plan_teaching_unit", unitId, direction, "plan_id", planId);
+  if (res.ok) revalidatePath(`/plans/${planId}`);
+  return res as any;
+}
+
+export async function updatePlanRAOrder(planId: string, orderedIds: string[]): Promise<ActionResponse> {
+  const supabase = await createClient();
+  // We can do an upsert or multiple updates. For a small array, Promise.all is fine.
+  const promises = orderedIds.map((id, index) => 
+    supabase.from("plan_ra").update({ order_index: index }).eq("id", id).eq("plan_id", planId)
+  );
+  await Promise.all(promises);
+  revalidatePath(`/plans/${planId}`);
+  return { ok: true, data: null };
+}
+
+export async function updatePlanCEOrder(planId: string, orderedIds: string[]): Promise<ActionResponse> {
+  const supabase = await createClient();
+  const promises = orderedIds.map((id, index) => 
+    supabase.from("plan_ce").update({ order_index: index }).eq("id", id)
+  );
+  await Promise.all(promises);
+  revalidatePath(`/plans/${planId}`);
+  return { ok: true, data: null };
+}
+
+export async function updatePlanUnitOrder(planId: string, orderedIds: string[]): Promise<ActionResponse> {
+  const supabase = await createClient();
+  const promises = orderedIds.map((id, index) => 
+    supabase.from("plan_teaching_unit").update({ order_index: index }).eq("id", id).eq("plan_id", planId)
+  );
+  await Promise.all(promises);
   revalidatePath(`/plans/${planId}`);
   return { ok: true, data: null };
 }

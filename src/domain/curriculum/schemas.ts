@@ -20,6 +20,7 @@ export const curriculumTemplateSchema = z.object({
   status: z.enum(["draft", "published", "deprecated"]).default("draft"),
   source_type: z.enum(["manual", "pdf_assisted"]).default("manual"),
   visibility_scope: z.enum(["private", "organization", "company"]).default("organization"),
+  hours_total: z.coerce.number().min(0).default(0),
 });
 
 /**

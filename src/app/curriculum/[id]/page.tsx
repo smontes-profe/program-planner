@@ -1,17 +1,13 @@
 import { createClient } from "@/lib/supabase";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Badge } from "@/components/ui/badge";
 import { PublishButton } from "./_components/PublishButton";
 import { AddRAButton } from "./_components/AddRAButton";
 import { BulkAddRAButton } from "./_components/BulkAddRAButton";
-import { AddCEButton } from "./_components/AddCEButton";
-import { EditRAButton } from "./_components/EditRAButton";
-import { DeleteRAButton } from "./_components/DeleteRAButton";
-import { EditCEButton } from "./_components/EditCEButton";
-import { DeleteCEButton } from "./_components/DeleteCEButton";
-import { BulkAddCEButton } from "./_components/BulkAddCEButton";
 import { DeleteCurriculumButton } from "./_components/DeleteCurriculumButton";
+import { CurriculumSortableList } from "./_components/CurriculumSortableList";
+import { TemplateHoursEditor } from "./_components/TemplateHoursEditor";
 import Link from "next/link";
 import { MoveLeft, Edit } from "lucide-react";
 import { notFound } from "next/navigation";
@@ -39,6 +35,16 @@ export default async function TemplateDetailsPage({ params }: TemplatePageProps)
 
   if (error || !template) {
     return notFound();
+  }
+
+  // Sort relations manually
+  if (template.ras) {
+    template.ras.sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0));
+    template.ras.forEach((ra: any) => {
+      if (ra.ces) {
+        ra.ces.sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0));
+      }
+    });
   }
 
   const isDraft = template.status === 'draft';
@@ -94,6 +100,8 @@ export default async function TemplateDetailsPage({ params }: TemplatePageProps)
               <span className="bg-zinc-100 px-1.5 py-0.5 rounded dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
                 v{template.version}
               </span>
+              <span>•</span>
+              <TemplateHoursEditor templateId={id} initialHours={template.hours_total || 0} />
             </div>
           </div>
           <div className="flex items-center gap-3 self-end md:self-center">
@@ -114,60 +122,12 @@ export default async function TemplateDetailsPage({ params }: TemplatePageProps)
             </div>
 
             {template.ras && template.ras.length > 0 ? (
-               <div className="space-y-6">
-                 {template.ras.map((ra: any) => (
-                    <Card key={ra.id} className="border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-none hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
-                      <div className="bg-zinc-50 px-6 py-3 flex justify-between items-center border-b border-zinc-100 dark:bg-zinc-900/50 dark:border-zinc-800">
-                        <div className="flex items-baseline gap-3">
-                           <span className="text-lg font-bold font-mono text-zinc-400">RA {ra.code}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <EditRAButton templateId={id} ra={ra} />
-                          <DeleteRAButton templateId={id} raId={ra.id} />
-                        </div>
-                      </div>
-                      <CardContent className="pt-4 space-y-4">
-                        <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed text-sm">
-                          {ra.description}
-                        </p>
-                        
-                        <div className="pt-2 space-y-3">
-                           <div className="flex items-center justify-between">
-                               <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Criterios de Evaluación</h4>
-                               <div className="flex items-center">
-                                 <AddCEButton templateId={id} raId={ra.id} />
-                                 <BulkAddCEButton templateId={id} raId={ra.id} />
-                               </div>
-                           </div>
-                           
-                           {ra.ces && ra.ces.length > 0 ? (
-                              <div className="grid gap-2">
-                                 {ra.ces.map((ce: any) => (
-                                    <div key={ce.id} className="group p-3 bg-white border border-zinc-100 rounded-lg flex gap-4 dark:bg-zinc-950 dark:border-zinc-900 hover:border-zinc-200 dark:hover:border-zinc-800 transition-colors">
-                                       <div className="font-mono text-zinc-400 text-sm font-bold pt-0.5">{ce.code}</div>
-                                       <div className="flex-1 space-y-1">
-                                          <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{ce.description}</p>
-                                       </div>
-                                       <div className="flex items-start gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                          <EditCEButton templateId={id} ce={ce} />
-                                          <DeleteCEButton templateId={id} ceId={ce.id} />
-                                       </div>
-                                    </div>
-                                 ))}
-                              </div>
-                           ) : (
-                              <p className="text-xs text-zinc-400 italic">No hay criterios definidos para este RA.</p>
-                           )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                 ))}
-               </div>
+               <CurriculumSortableList template={template} isDraft={isDraft} />
             ) : (
-              <Card className="bg-zinc-50/50 border-dashed border-2 dark:bg-zinc-900/20 py-12 flex flex-col items-center justify-center border-zinc-200 dark:border-zinc-800">
-                 <p className="text-zinc-500 mb-4 font-medium">Empieza añadiendo tu primer Resultado de Aprendizaje.</p>
-                 <AddRAButton templateId={id} />
-              </Card>
+               <Card className="bg-zinc-50/50 border-dashed border-2 dark:bg-zinc-900/20 py-12 flex flex-col items-center justify-center border-zinc-200 dark:border-zinc-800 text-center">
+                  <p className="text-zinc-500 mb-4 font-medium">No hay RAs definidos en este currículo.</p>
+                  <AddRAButton templateId={id} />
+               </Card>
             )}
           </section>
         </div>

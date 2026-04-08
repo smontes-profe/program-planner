@@ -1,9 +1,10 @@
 import { getPlan } from "@/domain/teaching-plan/actions";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { MoveLeft } from "lucide-react";
+import { MoveLeft, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { PlanTabs } from "./_components/PlanTabs";
+import { PlanHoursEditor } from "./_components/PlanHoursEditor";
 
 interface PlanDetailPageProps {
   readonly params: Promise<{ id: string }>;
@@ -54,6 +55,11 @@ export default async function PlanDetailPage({ params }: PlanDetailPageProps) {
             <span>{plan.academic_year}</span>
             <span>•</span>
             <span className="capitalize">{plan.region_code}</span>
+            <span>•</span>
+            <div className="flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5 text-zinc-400" />
+              <PlanHoursEditor planId={plan.id} initialHours={plan.hours_total || 0} />
+            </div>
             {plan.source_template_id && (
               <>
                 <span>•</span>

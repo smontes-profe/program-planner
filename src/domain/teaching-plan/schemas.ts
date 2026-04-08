@@ -13,6 +13,7 @@ export const updatePlanSchema = z.object({
   title: z.string().min(1).max(255).optional(),
   visibility_scope: z.enum(["private", "organization", "company"]).optional(),
   status: z.enum(["draft", "ready", "published", "archived"]).optional(),
+  hours_total: z.coerce.number().min(1).optional(),
 });
 
 export const updatePlanRAConfigSchema = z.object({
@@ -31,4 +32,19 @@ export const planCESchema = z.object({
   code: z.string().min(1).max(50),
   description: z.string().min(1),
   weight_in_ra: z.number().min(0).max(100).default(0),
+});
+
+export const planTeachingUnitSchema = z.object({
+  code: z.string().min(1, "El código es obligatorio"),
+  title: z.string().min(1, "El título es obligatorio"),
+  active_t1: z.boolean(),
+  active_t2: z.boolean(),
+  active_t3: z.boolean(),
+  hours: z.coerce.number().min(0).default(0),
+});
+
+export const planInstrumentSchema = z.object({
+  type: z.enum(["exam", "practice", "project", "oral", "other"]),
+  name: z.string().min(1, "El nombre es obligatorio"),
+  description: z.string().optional().nullable(),
 });
