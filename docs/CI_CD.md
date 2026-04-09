@@ -40,26 +40,14 @@ Behavior:
   - runs lint, typecheck, unit tests, a11y tests, and responsive snapshots
   - uploads UI quality artifacts (`test-results`, `playwright-report`, `artifacts/responsive-snapshots`)
 
-### 4.2 `deploy.yml` (on push)
+### 4.2 Despliegue Automático (Continuous Deployment)
 
-- Push to `develop`: deploy to Vercel development target.
-- Push to `main`: deploy to Vercel production target.
+Ya no utilizamos una Action dedicada (`vercel-deploy.yml`) para forzar despliegues, dado que el repositorio está conectado de forma nativa a la plataforma de **Vercel**. 
 
-### 4.3 `vercel-deploy.yml` (on push)
+- Push a `develop` o PRs: Vercel lanza automáticamente un despliegue de *Preview* (Staging).
+- Push/Merge a `main`: Vercel lanza automáticamente el despliegue de *Producción*.
 
-Location: `.github/workflows/vercel-deploy.yml`
-
-Behavior:
-
-- Trigger on push to `develop` and `main`.
-- `develop` deploys as Vercel preview.
-- `main` deploys as Vercel production.
-- Requires GitHub secrets:
-  - `VERCEL_TOKEN`
-  - `VERCEL_ORG_ID`
-  - `VERCEL_PROJECT_ID`
-- If `package.json` is missing, deployment is skipped.
-- If secrets are missing, workflow fails with explicit guidance.
+Este comportamiento nativo hace redundante el uso de credenciales de Vercel (Tokens, Org IDs) como Secretos en GitHub, y elimina una capa de posible punto de fallo.
 
 ## 5. Command Contract
 
