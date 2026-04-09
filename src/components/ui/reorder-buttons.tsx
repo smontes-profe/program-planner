@@ -21,7 +21,7 @@ export function ReorderButtons({
   return (
     <div className={`flex flex-col gap-0.5 ${className}`}>
       <button
-        onClick={() => startTransition(onMoveUp)}
+        onClick={() => startTransition(() => { onMoveUp(); })}
         disabled={isFirst || isPending}
         className="h-4 w-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded flex flex-col justify-center items-center text-zinc-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         title="Mover arriba"
@@ -29,7 +29,7 @@ export function ReorderButtons({
         <ArrowUp className="h-3 w-3" />
       </button>
       <button
-        onClick={() => startTransition(onMoveDown)}
+        onClick={() => startTransition(() => { onMoveDown(); })}
         disabled={isLast || isPending}
         className="h-4 w-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded flex flex-col justify-center items-center text-zinc-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         title="Mover abajo"
