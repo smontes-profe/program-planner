@@ -28,7 +28,7 @@ Status legend:
 - [x] `/plans/[id]` tab: Instrumentos (CRUD + CE weight assignment per instrument).
 - [x] Añadir en la edición de instrumentos la entrada de porcentaje por RA cubierta y exigir que los porcentajes de CE dentro de cada RA sumen 100 % para poder derivar la aportación a cada CE.
 - [x] Añadir la opción “Automatizar pesos de CEs” en el tab de Pesos: permitir fijar la distribución por CE dentro de cada RA, validar que suma 100 % y que los instrumentos hereden esos pesos cuando está activada.
-- [ ] Computed weights panel: target vs. real comparison per RA (global + per trimester).
+- [x] Computed weights panel: target vs. real comparison per RA (global + per trimester).
 
 ### Phase 3.5 - Teaching Plan Fixes and UX Improvements
 
