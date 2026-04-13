@@ -47,6 +47,7 @@ Status legend:
     - CE sin pesos definidos dentro de un RA.
   - [x] Botones de publicar/despublicar en la vista de detalle del plan.
   - [x] Actualizar badges de status en lista y detalle (solo `draft` = "Borrador", `published` = "Publicada").
+ - [x] BUGFIX for github action
 
 ## Phase 3.6 - Evaluaciones
 
