@@ -6,6 +6,7 @@ import { updatePlanRAConfig, toggleCeWeightAuto, updateCeWeightsForRA } from "@/
 import { useRouter } from "next/navigation";
 import { CheckCircle2, AlertTriangle, ChevronDown, ChevronRight, Loader2, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ComputedWeightsPanel } from "./ComputedWeightsPanel";
 
 interface WeightsTabProps {
   readonly plan: TeachingPlanFull;
@@ -445,6 +446,9 @@ export function WeightsTab({ plan }: WeightsTabProps) {
         peso tiene ese RA <em>dentro de ese trimestre</em>, calculado proporcionalmente respecto a los
         otros RAs activos en él.
       </p>
+
+      {/* Computed weights: target vs. real coverage from instruments */}
+      <ComputedWeightsPanel plan={plan} />
     </div>
   );
 }
