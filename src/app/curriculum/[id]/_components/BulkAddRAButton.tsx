@@ -146,7 +146,7 @@ export function BulkAddRAButton({ templateId }: BulkAddRAButtonProps) {
             {text.length > 0 && parsedItems.length === 0 && (
                 <div className="bg-amber-50 border border-amber-100 dark:bg-amber-950/30 dark:border-amber-900/50 p-3 rounded-lg flex items-start gap-2">
                     <Info className="h-4 w-4 text-amber-600 dark:text-amber-500 mt-0.5 shrink-0" />
-                    <p className="text-xs text-amber-800 dark:text-amber-400">No hemos detectado ningún Resultado de Aprendizaje. Verifica que empiezan por un número, como "1. " o "2. ".</p>
+                    <p className="text-xs text-amber-800 dark:text-amber-400">No hemos detectado ningún Resultado de Aprendizaje. Verifica que empiezan por un número, como &quot;1. &quot; o &quot;2. &quot;.</p>
                 </div>
             )}
           </div>

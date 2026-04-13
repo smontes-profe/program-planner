@@ -116,7 +116,7 @@ export function BulkAddCEButton({ templateId, raId }: BulkAddCEButtonProps) {
             {text.length > 0 && parsedItems.length === 0 && (
                 <div className="bg-amber-50 border border-amber-100 dark:bg-amber-950/30 dark:border-amber-900/50 p-3 rounded-lg flex items-start gap-2">
                     <Info className="h-4 w-4 text-amber-600 dark:text-amber-500 mt-0.5 shrink-0" />
-                    <p className="text-xs text-amber-800 dark:text-amber-400">No hemos detectado ningún formato válido. Asegúrate de separar los códigos con un paréntesis o punto, como "a)texto" o "1. texto".</p>
+                    <p className="text-xs text-amber-800 dark:text-amber-400">No hemos detectado ningún formato válido. Asegúrate de separar los códigos con un paréntesis o punto, como &quot;a)texto&quot; o &quot;1. texto&quot;.</p>
                 </div>
             )}
           </div>
