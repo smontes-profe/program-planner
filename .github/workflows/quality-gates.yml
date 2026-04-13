@@ -64,6 +64,10 @@ jobs:
         if: steps.detect.outputs.has_package == 'true'
         run: npm run test -- --run
 
+      - name: Install Playwright browsers
+        if: steps.detect.outputs.has_package == 'true'
+        run: npx playwright install --with-deps
+
       - name: Accessibility tests
         if: steps.detect.outputs.has_package == 'true'
         run: npm run test:a11y
