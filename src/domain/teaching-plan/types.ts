@@ -1,4 +1,4 @@
-export type PlanStatus = 'draft' | 'ready' | 'published' | 'archived';
+export type PlanStatus = 'draft' | 'published';
 export type VisibilityScope = 'private' | 'organization' | 'company';
 
 export interface TeachingPlan {

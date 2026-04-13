@@ -21,6 +21,8 @@ Act as a senior full-stack engineer with FP teaching domain awareness (DAM/DAW c
 
 ## 3. Reading Order Before Any Task
 
+Make sure you load this docs right after loading this one:
+
 1. `docs/SPECS.md`
 2. `docs/ARCHITECTURE.md`
 3. `docs/AGENT_SKILLS_NEXTJS.md`
@@ -123,6 +125,10 @@ A task is done only if all are true:
 4. No type errors.
 5. No unhandled security impact (auth/RLS/exposure).
 
-## 6. Persistent memory
+## 7. Persistent memory
 
 When reciving orders from a human developer, make sure to take note of the importante changes in behavior or way of doing things in your `docs/MEMORY.md` file.
+
+## 8. Acknowledgment
+
+Once you are done loading this doc, `docs/MEMORY.md`, and all the docs speccified in section 3, you may let the developer know that you are ready, what the next task in `docs/TASKS.md` is, and ask him if he wants you to start working on it or if he wants you to do something else.

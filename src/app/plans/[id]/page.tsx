@@ -1,10 +1,12 @@
-import { getPlan } from "@/domain/teaching-plan/actions";
+import { getPlan, getPlanWarnings } from "@/domain/teaching-plan/actions";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { MoveLeft, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { PlanTabs } from "./_components/PlanTabs";
 import { PlanHoursEditor } from "./_components/PlanHoursEditor";
+import { PlanStatusControls } from "./_components/PlanStatusControls";
+import { PlanWarnings } from "./_components/PlanWarnings";
 
 interface PlanDetailPageProps {
   readonly params: Promise<{ id: string }>;
@@ -19,13 +21,13 @@ export default async function PlanDetailPage({ params }: PlanDetailPageProps) {
   }
 
   const plan = result.data;
+  const warningsResult = await getPlanWarnings(id);
+  const warnings = warningsResult.ok ? warningsResult.data.warnings : [];
 
-  let badgeVariant: "success" | "warning" | "neutral" | "default" = "neutral";
+  let badgeVariant: "neutral" | "success" = "neutral";
   let badgeLabel = "Borrador";
 
-  if (plan.status === "ready") { badgeVariant = "default"; badgeLabel = "Lista"; }
-  else if (plan.status === "published") { badgeVariant = "success"; badgeLabel = "Publicada"; }
-  else if (plan.status === "archived") { badgeVariant = "warning"; badgeLabel = "Archivada"; }
+  if (plan.status === "published") { badgeVariant = "success"; badgeLabel = "Publicada"; }
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-5xl">
@@ -39,7 +41,9 @@ export default async function PlanDetailPage({ params }: PlanDetailPageProps) {
             <MoveLeft className="mr-2 h-4 w-4" />
             Mis Programaciones
           </Link>
-          <Badge variant={badgeVariant}>{badgeLabel}</Badge>
+          <div className="flex items-center gap-3">
+            <Badge variant={badgeVariant}>{badgeLabel}</Badge>
+          </div>
         </div>
 
         {/* Header */}
@@ -70,6 +74,10 @@ export default async function PlanDetailPage({ params }: PlanDetailPageProps) {
             )}
           </div>
         </div>
+
+        {/* Status controls and warnings */}
+        <PlanStatusControls planId={plan.id} initialStatus={plan.status} />
+        {warnings.length > 0 && <PlanWarnings warnings={warnings} />}
 
         {/* Tab content */}
         <PlanTabs plan={plan} />

@@ -169,13 +169,17 @@ Core fields:
 - `organization_id`
 - `owner_profile_id`
 - `visibility_scope` (`private`, `organization`, `company`)
-- `status` (`draft`, `ready`, `published`, `archived`)
+- `status` (`draft`, `published`)
 - optional lineage (`source_template_id`, `source_plan_id`, `source_version`)
 
 Business rules:
 
 - Plan mutation only affects the current plan copy.
 - Import/fork creates a fully independent graph of entities.
+- `draft`: plan is being edited. Not visible from the Evaluations module.
+- `published`: plan is available as a base for Evaluations. Can still be edited without reverting to `draft`.
+- Status transitions: `draft ↔ published` (bidirectional, no intermediate states).
+- Editing a `published` plan does NOT change its status; weight changes recalculate all existing grades immediately.
 
 ### 4.3 Planning Entities
 
@@ -212,7 +216,11 @@ Hard invariants:
 
 1. For each teaching plan, sum of `RA.weight_in_plan` MUST equal `100`.
 2. For each RA, sum of child `CE.weight_in_ra` MUST equal `100`.
-3. Any change violating hard invariants blocks publish and marks plan as not ready.
+3. Invariant violations produce **warnings** (not blocks): the plan can still be published and used in Evaluations even if weights do not sum to 100%.
+4. The UI must display a warnings panel showing:
+   - RAs whose `weight_global` does not sum to 100%.
+   - Instruments without RA weight definitions.
+   - CEs without weight definitions within an RA.
 
 Soft invariants:
 

@@ -68,12 +68,9 @@ export default async function PlansPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {plans.map((plan) => {
-            let statusColor = "bg-zinc-300 dark:bg-zinc-700";
-            let statusLabel = "Borrador";
-
-            if (plan.status === "ready") { statusColor = "bg-blue-500"; statusLabel = "Lista"; }
-            else if (plan.status === "published") { statusColor = "bg-emerald-500"; statusLabel = "Publicada"; }
-            else if (plan.status === "archived") { statusColor = "bg-amber-500"; statusLabel = "Archivada"; }
+            const isPublished = plan.status === "published";
+            const statusColor = isPublished ? "bg-emerald-500" : "bg-zinc-300 dark:bg-zinc-700";
+            const statusLabel = isPublished ? "Publicada" : "Borrador";
 
             return (
               <Card

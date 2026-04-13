@@ -12,7 +12,7 @@ export const createPlanSchema = z.object({
 export const updatePlanSchema = z.object({
   title: z.string().min(1).max(255).optional(),
   visibility_scope: z.enum(["private", "organization", "company"]).optional(),
-  status: z.enum(["draft", "ready", "published", "archived"]).optional(),
+  status: z.enum(["draft", "published"]).optional(),
   hours_total: z.coerce.number().min(1).optional(),
 });
 

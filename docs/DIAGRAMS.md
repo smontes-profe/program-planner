@@ -154,9 +154,10 @@ flowchart TD
 ```mermaid
 stateDiagram-v2
     [*] --> Draft
-    Draft --> Ready: Hard invariants pass
-    Ready --> Published: Teacher publishes
-    Published --> Draft: Teacher edits and unpublishes
-    Published --> Archived: Owner, org manager, or platform admin archives
-    Archived --> [*]
+    Draft --> Published: Teacher publishes
+    Published --> Draft: Teacher unpublishes
+    Draft --> [*]
+    Published --> [*]
 ```
+
+> **Note:** In the MVP, teaching plans have only two states: `draft` and `published`. The `ready` and `archived` states are deferred to a future iteration. A `published` plan can be edited without reverting to `draft`; weight changes recalculate all existing grades. See TASKS.md Phase 3.7 for future "freeze grades per trimester" functionality.

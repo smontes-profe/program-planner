@@ -227,7 +227,7 @@ export async function createPlanFromTemplate(payload: {
 export async function updatePlan(planId: string, payload: {
   title?: string;
   visibility_scope?: "private" | "organization" | "company";
-  status?: "draft" | "ready" | "published" | "archived";
+  status?: "draft" | "published";
   hours_total?: number;
 }): Promise<ActionResponse<TeachingPlan>> {
   const validated = updatePlanSchema.safeParse(payload);
@@ -242,6 +242,104 @@ export async function updatePlan(planId: string, payload: {
     .single();
 
   if (error) return { ok: false, error: `Error al actualizar: ${error.message}` };
+  revalidatePath(`/plans/${planId}`);
+  revalidatePath("/plans");
+  return { ok: true, data: data as TeachingPlan };
+}
+
+/**
+ * Publish a teaching plan. Makes it visible and selectable from the Evaluations module.
+ * Does NOT require hard invariants to pass — warnings are returned but the plan is still published.
+ */
+export async function publishPlan(planId: string): Promise<ActionResponse<TeachingPlan & { warnings: string[] }>> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Usuario no autenticado" };
+
+  // Get current plan
+  const { data: plan, error: planError } = await supabase
+    .from("teaching_plans")
+    .select("*")
+    .eq("id", planId)
+    .single();
+
+  if (planError || !plan) return { ok: false, error: "Plan no encontrado" };
+
+  // Check ownership or org_manager
+  const { data: membership } = await supabase
+    .from("organization_memberships")
+    .select("role_in_org, organization_id")
+    .eq("profile_id", user.id)
+    .eq("organization_id", plan.organization_id)
+    .eq("is_active", true)
+    .single();
+
+  if (!membership) return { ok: false, error: "No tienes permiso para modificar esta programación" };
+  if (plan.owner_profile_id !== user.id && membership.role_in_org !== "org_manager") {
+    return { ok: false, error: "No tienes permiso para publicar esta programación" };
+  }
+
+  if (plan.status === "published") return { ok: false, error: "La programación ya está publicada" };
+
+  // Compute warnings (non-blocking)
+  const warnings = await _computePlanWarnings(planId);
+
+  // Update status to published
+  const { data, error } = await supabase
+    .from("teaching_plans")
+    .update({ status: "published" })
+    .eq("id", planId)
+    .select()
+    .single();
+
+  if (error) return { ok: false, error: `Error al publicar: ${error.message}` };
+  revalidatePath(`/plans/${planId}`);
+  revalidatePath("/plans");
+  return { ok: true, data: { ...(data as TeachingPlan), warnings } };
+}
+
+/**
+ * Unpublish a teaching plan. Reverts it to draft status.
+ */
+export async function unpublishPlan(planId: string): Promise<ActionResponse<TeachingPlan>> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Usuario no autenticado" };
+
+  // Get current plan
+  const { data: plan, error: planError } = await supabase
+    .from("teaching_plans")
+    .select("*")
+    .eq("id", planId)
+    .single();
+
+  if (planError || !plan) return { ok: false, error: "Plan no encontrado" };
+
+  // Check ownership or org_manager
+  const { data: membership } = await supabase
+    .from("organization_memberships")
+    .select("role_in_org, organization_id")
+    .eq("profile_id", user.id)
+    .eq("organization_id", plan.organization_id)
+    .eq("is_active", true)
+    .single();
+
+  if (!membership) return { ok: false, error: "No tienes permiso para modificar esta programación" };
+  if (plan.owner_profile_id !== user.id && membership.role_in_org !== "org_manager") {
+    return { ok: false, error: "No tienes permiso para despublicar esta programación" };
+  }
+
+  if (plan.status !== "published") return { ok: false, error: "La programación no está publicada" };
+
+  // Update status to draft
+  const { data, error } = await supabase
+    .from("teaching_plans")
+    .update({ status: "draft" })
+    .eq("id", planId)
+    .select()
+    .single();
+
+  if (error) return { ok: false, error: `Error al despublicar: ${error.message}` };
   revalidatePath(`/plans/${planId}`);
   revalidatePath("/plans");
   return { ok: true, data: data as TeachingPlan };
@@ -806,6 +904,89 @@ export async function updateCeWeightsForRA(
 // ─────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────
+
+/**
+ * Compute warnings for a teaching plan.
+ * Returns a list of human-readable warning messages.
+ * Does NOT block any operation — these are informational only.
+ */
+async function _computePlanWarnings(planId: string): Promise<string[]> {
+  const supabase = await createClient();
+  const warnings: string[] = [];
+
+  // 1. Check RA weights sum to 100%
+  const { data: ras } = await supabase
+    .from("plan_ra")
+    .select("id, code, weight_global")
+    .eq("plan_id", planId);
+
+  if (ras && ras.length > 0) {
+    const totalWeight = ras.reduce((sum, ra) => sum + Number(ra.weight_global), 0);
+    if (Math.abs(totalWeight - 100) > 0.01) {
+      warnings.push(`Los pesos de los RA suman ${totalWeight.toFixed(2)}% (deberían sumar 100%).`);
+    }
+
+    // 2. Check each RA's CE weights sum to 100%
+    for (const ra of ras) {
+      const { data: ces } = await supabase
+        .from("plan_ce")
+        .select("id, code, weight_in_ra")
+        .eq("plan_ra_id", ra.id);
+
+      if (ces && ces.length > 0) {
+        const ceTotal = ces.reduce((sum, ce) => sum + Number(ce.weight_in_ra), 0);
+        if (Math.abs(ceTotal - 100) > 0.01) {
+          warnings.push(`RA "${ra.code}": los pesos de los CE suman ${ceTotal.toFixed(2)}% (deberían sumar 100%).`);
+        }
+      } else {
+        warnings.push(`RA "${ra.code}": no tiene criterios de evaluación definidos.`);
+      }
+    }
+  } else {
+    warnings.push("La programación no tiene Resultados de Aprendizaje definidos.");
+  }
+
+  // 3. Check instruments without RA coverage
+  const { data: instruments } = await supabase
+    .from("plan_instrument")
+    .select("id, code, name")
+    .eq("plan_id", planId);
+
+  if (instruments && instruments.length > 0) {
+    for (const instrument of instruments) {
+      const { data: raCoverage } = await supabase
+        .from("plan_instrument_ra")
+        .select("id")
+        .eq("instrument_id", instrument.id);
+
+      if (!raCoverage || raCoverage.length === 0) {
+        warnings.push(`Instrumento "${instrument.code}" (${instrument.name}): no tiene cobertura de RA definida.`);
+      }
+    }
+  }
+
+  return warnings;
+}
+
+/**
+ * Get warnings for a teaching plan without modifying it.
+ */
+export async function getPlanWarnings(planId: string): Promise<ActionResponse<{ warnings: string[] }>> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Usuario no autenticado" };
+
+  const { data: plan } = await supabase
+    .from("teaching_plans")
+    .select("*")
+    .eq("id", planId)
+    .single();
+
+  if (!plan) return { ok: false, error: "Plan no encontrado" };
+
+  const warnings = await _computePlanWarnings(planId);
+  return { ok: true, data: { warnings } };
+}
 
 /**
  * List published templates available to the current user for import

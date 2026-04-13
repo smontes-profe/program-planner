@@ -4,7 +4,8 @@ This doc is to be used as a persistent "memory" for AI agents working on this pr
 
 ## Important Notes
 
-- **Documentacion básica** Antes de hacer cualquier cambio, cargar docs/AGENTS.md y todos los documentos listados allí (SPECS, ARCHITECTURE, AGENT_SKILLS_NEXTJS, UI_UX, QA_AUTOMATION, TASKS, MEMORY) para usarlos como contexto.
+- **Certeza**: Cuando des alguna respuesta sobre la que no estés seguro al 100% (ya sea de código, solución a un problema, lo que sea...), avisa de ello, a ser posible dando un porcentaje de fiabilidad.
+- **Honestidad**: Salvo que se especifique lo contrario, sé honesto. Evita "hacer la pelota". Si crees que algo está bien, regular, mal, excelente... dilo.
 - **Comunicación de Cambios:** Antes de realizar cualquier modificación importante en los archivos, el agente debe explicar detalladamente el plan de acción al usuario y esperar su visto bueno.
 - **Revisión y Feedback:** Tras completar una tarea o bloque de tareas, el agente debe esperar a que el usuario revise los cambios realizados y le proporcione feedback antes de continuar.
 - **Documentación tras cambios importantes:** Al recibir una solicitud relevante se debe identificar qué archivos dentro de `docs/` (como mínimo `SPECS.md`, `ARCHITECTURE.md`, `TASKS.md`, `MEMORY.md`, y cualquier otro afectado) requieren actualización antes de comenzar y actualizarlos junto a la implementación una vez el plan esté aprobado.

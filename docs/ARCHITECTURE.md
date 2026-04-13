@@ -14,7 +14,7 @@
 - `organization`: organization and membership management.
 - `curriculum`: versioned curriculum templates by region/module/year.
 - `teaching-plan`: teacher-owned planning graph.
-- `evaluation`: instrument coverage and grade engine, including instrument-level RA coverage percentages, per-RA CE share automation, and the new “Automatizar pesos de CEs” workflow in the Pesos tab.
+- `evaluation`: evaluation contexts, student management, instrument grade entry, and grade computation engine. Includes CSV import/export of students and grades.
 - `collaboration`: import/fork and lineage.
 - `admin`: cross-organization moderation and support.
 - `ui-system`: design tokens, responsive layout primitives, accessibility patterns.
@@ -131,7 +131,7 @@ erDiagram
         string module_code
         string academic_year
         string visibility_scope "private|organization|company"
-        string status "draft|ready|published|archived"
+        string status "draft|published"
         timestamptz imported_at
         timestamptz created_at
     }
@@ -289,7 +289,7 @@ sequenceDiagram
 
 - Template unique key: `organization_id + region_code + module_code + academic_year + version`.
 - `published` templates are mutable for corrections (e.g., matching BOJA updates).
-- Curriculum modifications do *not* retroactively affect existing `teaching_plans` due to the Deep Copy architecture.
+- Curriculum modifications do _not_ retroactively affect existing `teaching_plans` due to the Deep Copy architecture.
 
 ## 8. Deployment Topology
 
