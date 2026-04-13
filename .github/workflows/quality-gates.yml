@@ -1,10 +1,13 @@
 name: quality-gates
 
 on:
+  push:
+    branches:
+      - develop  # Se ejecuta cuando haces push a develop
   pull_request:
     branches:
-      - main
-      - develop
+      - main 
+      - develop    # Se ejecuta cuando abres/actualizas PRs hacia main
 
 jobs:
   quality:
