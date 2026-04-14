@@ -1,4 +1,4 @@
-import { listEvaluationContexts, listPublishedPlans, createEvaluationContext, deleteEvaluationContext } from "@/domain/evaluation/actions";
+import { listEvaluationContexts, listPublishedPlans, createEvaluationContext, deleteEvaluationContext, linkTeachingPlan } from "@/domain/evaluation/actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
@@ -154,35 +154,15 @@ function CreateContextButton({ publishedPlans }: { publishedPlans: { id: string;
 
     if (!title || !academic_year) return;
 
-    // Get organization from user's memberships
-    const { createClient } = await import("@/lib/supabase");
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: membership } = await supabase
-      .from("organization_memberships")
-      .select("organization_id")
-      .eq("profile_id", user.id)
-      .eq("is_active", true)
-      .single();
-    if (!membership) return;
-
-    const result = await createEvaluationContext({
-      title,
-      organization_id: membership.organization_id,
-      academic_year,
-    });
+    const result = await createEvaluationContext({ title, academic_year });
 
     if (result.ok && planId) {
-      await import("@/domain/evaluation/actions").then(mod =>
-        mod.linkTeachingPlan(result.data!.id, planId)
-      );
+      await linkTeachingPlan(result.data.id, planId);
     }
 
     if (result.ok) {
       revalidatePath("/evaluations");
-      redirect(`/evaluations/${result.data!.id}`);
+      redirect(`/evaluations/${result.data.id}`);
     }
   }
 

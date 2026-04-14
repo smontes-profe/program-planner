@@ -122,10 +122,9 @@ export async function getEvaluationContext(contextId: string): Promise<ActionRes
 
 export async function createEvaluationContext(payload: {
   title: string;
-  organization_id: string;
   academic_year: string;
 }): Promise<ActionResponse<EvaluationContext>> {
-  const validated = createEvaluationContextSchema.safeParse(payload);
+  const validated = createEvaluationContextSchema.omit({ organization_id: true }).safeParse(payload);
   if (!validated.success) {
     return { ok: false, error: "Datos inválidos", details: validated.error.flatten().fieldErrors };
   }
@@ -134,10 +133,20 @@ export async function createEvaluationContext(payload: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, error: "Usuario no autenticado" };
 
+  // Get organization from user's memberships
+  const { data: membership } = await supabase
+    .from("organization_memberships")
+    .select("organization_id")
+    .eq("profile_id", user.id)
+    .eq("is_active", true)
+    .single();
+  if (!membership) return { ok: false, error: "No perteneces a ninguna organización activa" };
+
   const { data, error } = await supabase
     .from("evaluation_contexts")
     .insert({
       ...validated.data,
+      organization_id: membership.organization_id,
       created_by_profile_id: user.id,
     })
     .select()
