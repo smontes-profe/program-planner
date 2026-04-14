@@ -41,6 +41,7 @@ Nuevo módulo de Evaluaciones al mismo nivel que Plantillas de Currículo y Prog
 - [x] Solo se pueden seleccionar programaciones con `status = 'published'`.
 - [ ] Las programaciones seleccionadas son de solo lectura desde el módulo de Evaluaciones (no se pueden modificar).
 - [ ] Vista de configuración del contexto de evaluación: resumen de módulos vinculados y alumnos asignados.
+- [x] Permitir editar título y curso académico del contexto, y seleccionar programaciones vinculadas desde la misma vista (creación/edición).
 
 ### 3.6.3 - Matriz de Notas de Instrumentos
 

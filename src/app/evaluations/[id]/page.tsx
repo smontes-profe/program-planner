@@ -1,15 +1,17 @@
 import { getEvaluationContext, computeStudentGrades, listPublishedPlans } from "@/domain/evaluation/actions";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { MoveLeft, AlertCircle } from "lucide-react";
+import { MoveLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { EvalTabs } from "./_components/EvalTabs";
+import { ContextSettingsPanel } from "./_components/ContextSettingsPanel";
 
 interface EvalDetailPageProps {
   params: Promise<{ id: string }>;
+  searchParams?: { error?: string };
 }
 
-export default async function EvalDetailPage({ params }: EvalDetailPageProps) {
+export default async function EvalDetailPage({ params, searchParams }: EvalDetailPageProps) {
   const { id } = await params;
   const result = await getEvaluationContext(id);
 
@@ -29,6 +31,7 @@ export default async function EvalDetailPage({ params }: EvalDetailPageProps) {
     active: "success" as const,
     closed: "neutral" as const,
   };
+  const errorMessage = searchParams?.error ? decodeURIComponent(searchParams.error) : null;
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl">
@@ -69,11 +72,21 @@ export default async function EvalDetailPage({ params }: EvalDetailPageProps) {
           </div>
         </div>
 
+        {errorMessage && (
+          <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/60 dark:bg-rose-900/40 dark:text-rose-200">
+            {errorMessage}
+          </div>
+        )}
+
+        <ContextSettingsPanel
+          context={context}
+          availablePlans={publishedPlansResult.ok ? publishedPlansResult.data : []}
+        />
+
         {/* Tab content */}
         <EvalTabs
           context={context}
           gradesResult={gradesResult.ok ? gradesResult.data : null}
-          availablePlans={publishedPlansResult.ok ? publishedPlansResult.data : []}
         />
       </div>
     </div>

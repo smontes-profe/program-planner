@@ -3,9 +3,7 @@
 import { useState } from "react";
 import { type EvaluationContextFull, type GradeComputationResult } from "@/domain/evaluation/types";
 import { cn } from "@/lib/utils";
-import { Users, Grid3x3, BarChart3, Download, Plus, UserPlus, Trash2, Loader2 } from "lucide-react";
-import { addStudent, deleteStudent, bulkImportStudents, linkTeachingPlan, unlinkTeachingPlan } from "@/domain/evaluation/actions";
-import { useRouter } from "next/navigation";
+import { Users, Grid3x3, BarChart3, Download } from "lucide-react";
 import { StudentsTab } from "./StudentsTab";
 import { GradeMatrixTab } from "./GradeMatrixTab";
 import { GradesTab } from "./GradesTab";
@@ -14,7 +12,6 @@ import { ExportTab } from "./ExportTab";
 interface EvalTabsProps {
   readonly context: EvaluationContextFull;
   readonly gradesResult: GradeComputationResult | null;
-  readonly availablePlans: { id: string; title: string; module_code: string; academic_year: string }[];
 }
 
 type TabId = "students" | "matrix" | "grades" | "export";
@@ -26,7 +23,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   { id: "export", label: "Exportación", icon: <Download className="h-4 w-4" /> },
 ];
 
-export function EvalTabs({ context, gradesResult, availablePlans }: EvalTabsProps) {
+export function EvalTabs({ context, gradesResult }: EvalTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>("students");
 
   return (

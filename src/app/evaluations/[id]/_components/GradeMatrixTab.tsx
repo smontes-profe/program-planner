@@ -21,8 +21,13 @@ export function GradeMatrixTab({ context }: GradeMatrixTabProps) {
           <p>Añade alumnos en la pestaña "Alumnado" para poder registrar notas.</p>
         </div>
       ) : context.plans.length === 0 ? (
-        <div className="text-center py-12 text-zinc-400 text-sm">
+        <div className="text-center py-12 text-zinc-400 text-sm space-y-2">
           <p>Vincula al menos una programación publicada para poder configurar instrumentos y registrar notas.</p>
+          <p>
+            <a href="#context-settings" className="font-semibold text-emerald-600 hover:text-emerald-500">
+              Hazlo desde la configuración del contexto
+            </a>
+          </p>
         </div>
       ) : (
         <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-8 text-center text-zinc-400">

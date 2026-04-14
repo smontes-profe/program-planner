@@ -16,6 +16,7 @@ This doc is to be used as a persistent "memory" for AI agents working on this pr
   - **MCP (`mcp__supabase-postgres__query`)**: solo lectura — NO sirve para `CREATE TABLE`, `ALTER TABLE`, etc.
   - **Supabase CLI (`supabase db push`)**: funciona si el historial de migraciones está sincronizado. Si hay desajustes, fallará.
   - **psql (fallback fiable)**: ejecutar directamente la migración con `psql` usando la URL del **Supabase Pooler** (puerto 5432), que **sí permite escritura**: `psql "postgresql://postgres.rjqdebeaupjvdmjtsdws:ITheLarch1975$@aws-1-eu-west-1.pooler.supabase.com:5432/postgres" -f supabase/migrations/NOMBRE.sql`. Después marcar como aplicada con `supabase migration repair VERSION --status applied`.
+- **Migraciones Súper Proactivas:** A partir de ahora, siempre que el agente genere una nueva migración en `supabase/migrations/` debe aplicarla él mismo contra Supabase (preferiblemente con `supabase db push`, o con `psql` usando la URL del pooler) y confirmar que el esquema queda actualizado; no se debe dejar depender a un desarrollador humano para ese paso.
 
 ## Terminología del Dominio (FP — Formación Profesional)
 
