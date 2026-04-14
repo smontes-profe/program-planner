@@ -5,12 +5,12 @@ import { z } from "zod";
 export const createEvaluationContextSchema = z.object({
   title: z.string().min(1).max(255),
   organization_id: z.string().uuid(),
-  academic_year: z.string().regex(/^\d{4}\/\d{5}$/, "Formato: YYYY/YYYY (ej. 2026/2027)"),
+  academic_year: z.string().regex(/^\d{4}\/\d{4}$/, "Formato: YYYY/YYYY (ej. 2026/2027)"),
 });
 
 export const updateEvaluationContextSchema = z.object({
   title: z.string().min(1).max(255).optional(),
-  academic_year: z.string().regex(/^\d{4}\/\d{5}$/, "Formato: YYYY/YYYY (ej. 2026/2027)").optional(),
+  academic_year: z.string().regex(/^\d{4}\/\d{4}$/, "Formato: YYYY/YYYY (ej. 2026/2027)").optional(),
   status: z.enum(["draft", "active", "closed"]).optional(),
 });
 

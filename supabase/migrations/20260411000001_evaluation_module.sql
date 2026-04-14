@@ -7,7 +7,7 @@ CREATE TABLE public.evaluation_contexts (
   id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id         UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   created_by_profile_id   UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  academic_year           TEXT NOT NULL CHECK (academic_year ~ '^\d{4}/\d{5}$'),
+  academic_year           TEXT NOT NULL CHECK (academic_year ~ '^\d{4}/\d{4}$'),
   title                   TEXT NOT NULL,
   status                  TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'active', 'closed')),
   created_at              TIMESTAMPTZ NOT NULL DEFAULT now()
