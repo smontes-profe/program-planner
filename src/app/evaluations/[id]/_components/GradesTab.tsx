@@ -2,7 +2,7 @@
 
 import { type GradeComputationResult, type StudentGradeSummary } from "@/domain/evaluation/types";
 import { cn } from "@/lib/utils";
-import { BarChart3, Users, TrendingUp } from "lucide-react";
+import { AlertCircle, AlertTriangle, BarChart3, Users, TrendingUp } from "lucide-react";
 
 interface GradesTabProps {
   readonly gradesResult: GradeComputationResult | null;
@@ -62,12 +62,12 @@ export function GradesTab({ gradesResult }: GradesTabProps) {
           <thead>
             <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
               <th className="text-left px-3 py-2.5 font-semibold text-zinc-600 dark:text-zinc-400 w-8">#</th>
-              <th className="text-left px-3 py-2.5 font-semibold text-zinc-600 dark:text-zinc-400 min-w-[180px]">Alumno</th>
-              <th className="text-center px-3 py-2.5 font-semibold text-zinc-600 dark:text-zinc-400">Nota Final</th>
-              <th className="text-center px-3 py-2.5 font-semibold text-zinc-600 dark:text-zinc-400">Completado</th>
-              <th className="text-center px-3 py-2.5 font-semibold text-zinc-600 dark:text-zinc-400">T1</th>
-              <th className="text-center px-3 py-2.5 font-semibold text-zinc-600 dark:text-zinc-400">T2</th>
-              <th className="text-center px-3 py-2.5 font-semibold text-zinc-600 dark:text-zinc-400">T3</th>
+          <th className="text-left px-3 py-2.5 font-semibold text-zinc-600 dark:text-zinc-400 min-w-[150px]">Alumno</th>
+          <th className="text-center px-3 py-2.5 font-semibold text-zinc-600 dark:text-zinc-400">T1</th>
+          <th className="text-center px-3 py-2.5 font-semibold text-zinc-600 dark:text-zinc-400">T2</th>
+          <th className="text-center px-3 py-2.5 font-semibold text-zinc-600 dark:text-zinc-400">T3</th>
+          <th className="text-center px-3 py-2.5 font-semibold text-zinc-600 dark:text-zinc-400">Nota Final</th>
+          <th className="text-center px-3 py-2.5 font-semibold text-zinc-600 dark:text-zinc-400">Completado</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -100,19 +100,44 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
 }
 
 // ─── Student Grade Row ───────────────────────────────────────────────────────
+const trimesterOrder: ("T1" | "T2" | "T3")[] = ["T1", "T2", "T3"];
+
 function StudentGradeRow({ student: sg, index }: { student: StudentGradeSummary; index: number }) {
-  const gradeColor = sg.finalGrade === null
+
+  const nameLabel = sg.studentLastName
+    ? `${sg.studentLastName}, ${sg.studentFirstName}`
+    : sg.studentFirstName;
+
+  const availableTrimesterGrades = sg.trimesterGrades.filter(tri => tri.grade !== null);
+  const computedFinalGrade = availableTrimesterGrades.length > 0
+    ? availableTrimesterGrades.reduce((sum, tri) => sum + (tri.grade ?? 0), 0) / availableTrimesterGrades.length
+    : null;
+
+  const hasIncompleteTrimester = sg.trimesterGrades.some(tri => tri.completionPercent < 100);
+
+  const finalGradeColor = computedFinalGrade === null
     ? "text-zinc-400"
-    : sg.finalGrade >= 5
+    : computedFinalGrade >= 5
       ? "text-emerald-600 dark:text-emerald-400"
       : "text-red-600 dark:text-red-400";
 
   return (
     <tr className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors">
       <td className="px-3 py-2 text-zinc-400 font-mono text-xs">{index + 1}</td>
-      <td className="px-3 py-2 font-medium text-zinc-900 dark:text-zinc-100">{sg.studentName}</td>
-      <td className={cn("px-3 py-2 text-center font-mono font-bold", gradeColor)}>
-        {sg.finalGrade !== null ? sg.finalGrade.toFixed(2) : "—"}
+      <td className="px-3 py-2 font-medium text-zinc-900 dark:text-zinc-100">{nameLabel}</td>
+      {trimesterOrder.map((key) => {
+        const tri = sg.trimesterGrades.find(tri => tri.key === key);
+        return (
+          <td key={key} className="px-3 py-2 text-center">
+            <TrimesterCell trimester={tri} />
+          </td>
+        );
+      })}
+      <td className={cn("px-3 py-2 text-center font-mono font-bold flex items-center justify-center gap-1", finalGradeColor)}>
+        {computedFinalGrade !== null ? computedFinalGrade.toFixed(2) : "—"}
+        {hasIncompleteTrimester && (
+          <AlertTriangle className="h-3 w-3 text-amber-500" />
+        )}
       </td>
       <td className="px-3 py-2 text-center">
         <div className="flex items-center justify-center gap-1">
@@ -129,12 +154,40 @@ function StudentGradeRow({ student: sg, index }: { student: StudentGradeSummary;
           <span className="text-xs text-zinc-500 w-10 text-right">{sg.finalCompletionPercent.toFixed(0)}%</span>
         </div>
       </td>
-      {sg.trimesterGrades.map((tri) => (
-        <td key={tri.key} className="px-3 py-2 text-center font-mono text-xs text-zinc-600 dark:text-zinc-400">
-          {tri.grade !== null ? tri.grade.toFixed(1) : "—"}
-        </td>
-      ))}
     </tr>
+  );
+}
+
+interface TrimesterCellProps {
+  trimester?: StudentGradeSummary["trimesterGrades"][number];
+}
+
+function TrimesterCell({ trimester }: TrimesterCellProps) {
+  if (!trimester) {
+    return <span className="font-mono text-xs text-zinc-400">—</span>;
+  }
+
+  const gradeValue = trimester.grade;
+  const gradeColor = gradeValue === null
+    ? "text-zinc-400"
+    : gradeValue >= 5
+      ? "text-emerald-600 dark:text-emerald-400"
+      : "text-red-600 dark:text-red-400";
+
+  const AlertIcon =
+    trimester.completionPercent === 0 ? (
+      <AlertCircle className="h-3 w-3 text-rose-500" />
+    ) : trimester.completionPercent < 100 ? (
+      <AlertTriangle className="h-3 w-3 text-amber-500" />
+    ) : null;
+
+  return (
+    <div className="flex items-center justify-center gap-1">
+      {AlertIcon}
+      <span className={cn("font-mono text-xs", gradeColor)}>
+        {gradeValue !== null ? gradeValue.toFixed(1) : "—"}
+      </span>
+    </div>
   );
 }
 

@@ -53,7 +53,14 @@ export function computeAllStudentGrades(
 
   const studentGrades = students.map(student => {
     const studentScores = scoresByStudent.get(student.id) || [];
-    return computeSingleStudentGrade(student.id, student.student_name, context, plans, studentScores);
+    return computeSingleStudentGrade(
+      student.id,
+      student.student_name,
+      student.last_name,
+      context,
+      plans,
+      studentScores
+    );
   });
 
   // Group statistics
@@ -80,6 +87,7 @@ export function computeAllStudentGrades(
 function computeSingleStudentGrade(
   studentId: string,
   studentName: string,
+  studentLastName: string | null,
   context: EvaluationContextFull,
   plans: TeachingPlanFull[],
   studentScores: InstrumentScore[]
@@ -124,11 +132,13 @@ function computeSingleStudentGrade(
     ? (gradedRAs / finalCompletionPercent) * 100
     : 0;
 
-  return {
-    studentId,
-    studentName,
-    finalGrade,
-    finalCompletionPercent: Math.round(completionPercent * 100) / 100,
+    return {
+      studentId,
+      studentName,
+      studentFirstName: studentName,
+      studentLastName,
+      finalGrade,
+      finalCompletionPercent: Math.round(completionPercent * 100) / 100,
     raGrades,
     trimesterGrades,
   };

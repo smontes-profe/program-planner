@@ -57,6 +57,8 @@ export interface InstrumentScore {
 export interface StudentGradeSummary {
   studentId: string;
   studentName: string;
+  studentFirstName: string;
+  studentLastName: string | null;
   // Final grade (all RAs combined)
   finalGrade: number | null;
   finalCompletionPercent: number;
