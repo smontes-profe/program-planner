@@ -12,7 +12,10 @@ This doc is to be used as a persistent "memory" for AI agents working on this pr
 - **Comunicación en español:** Todas las conversaciones con desarrolladores humanos dentro de este chat deben llevarse a cabo en español de España.
 - **Seguir los prompts:** Cuando un desarrollador pide te pide una cosa explícitamente, aunque se qhaya quedado otra pendiente o con errores, haz exactamente lo que pide y no insistas en corregir el fallo o lo pendiente (salvo que se alcare explícitamente).
 - **Fiabilidad:** Antes de dar un problema como solucionado, el agente debe verificar que realmente lo está y que no hay errores o fallos, dentroo de sus posibilidades , siempre que no lleve un tiempo desmesurado.Especialmente si ya van más de un intento. En caso de duda, es mejor pecar de precavido y pedir ayuda al usuario. Además, asegurarse siempre de que la solución no ha roto algo que ya funcionaba.
-- **Aplicar migraciones con MCP:** Cada vez que se creen nuevas migraciones SQL en `supabase/migrations/`, ejecutarlas inmediatamente contra la base de datos de Supabase usando el MCP (`mcp__supabase-postgres__query`) para aplicarlas. No dejar migraciones pendientes sin aplicar.
+- **Aplicar migraciones con MCP/CLI:** Cada vez que se creen nuevas migraciones SQL en `supabase/migrations/`, ejecutarlas inmediatamente contra la base de datos de Supabase. No dejar migraciones pendientes sin aplicar.
+  - **MCP (`mcp__supabase-postgres__query`)**: solo lectura — NO sirve para `CREATE TABLE`, `ALTER TABLE`, etc.
+  - **Supabase CLI (`supabase db push`)**: funciona si el historial de migraciones está sincronizado. Si hay desajustes, fallará.
+  - **psql (fallback fiable)**: ejecutar directamente la migración con `psql` usando la URL del **Supabase Pooler** (puerto 5432), que **sí permite escritura**: `psql "postgresql://postgres.rjqdebeaupjvdmjtsdws:ITheLarch1975$@aws-1-eu-west-1.pooler.supabase.com:5432/postgres" -f supabase/migrations/NOMBRE.sql`. Después marcar como aplicada con `supabase migration repair VERSION --status applied`.
 
 ## Terminología del Dominio (FP — Formación Profesional)
 
