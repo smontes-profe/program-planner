@@ -193,32 +193,30 @@ export function GradeMatrixTab({ context, plans, scores, scoreError }: GradeMatr
             <div className="overflow-x-auto max-w-full rounded-xl border border-zinc-200 dark:border-zinc-800">
               <table className="w-full min-w-[640px] text-sm">
                 <thead>
-                  <tr className="bg-zinc-50 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:bg-zinc-900/50 dark:text-zinc-400">
-                    <th className="px-4 py-3">Alumno</th>
-                    {group.columns.map(column => (
-                      <th key={column.instrumentId} className="px-3 py-3">
-                        <div className="space-y-1">
-                          <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                            {column.instrumentCode}
-                          </span>
-                          <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                            {column.instrumentName}
-                          </span>
-                        </div>
-                      </th>
-                    ))}
+            <tr className="bg-zinc-50 text-left text-xs font-semibold tracking-wide text-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-400">
+              <th className="px-4 py-3">Alumno</th>
+              {group.columns.map(column => (
+                <th key={column.instrumentId} className="px-2 py-2">
+                  <div className="space-y-1">
+                    <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                      {column.instrumentCode}
+                    </span>
+                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                      {column.instrumentName}
+                    </span>
+                  </div>
+                </th>
+              ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
                   {studentRows.map(student => (
                     <tr key={student.id} className="hover:bg-zinc-50/60 dark:hover:bg-zinc-900/30">
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-zinc-900 dark:text-zinc-50">
-                          {student.last_name ? `${student.last_name}, ` : ""}
-                          {student.student_name}
-                        </div>
-                        <div className="text-xs text-zinc-500 dark:text-zinc-400">{student.student_code || "—"}</div>
-                      </td>
+                    <td className="px-4 py-3 align-top w-[220px]">
+                      <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-50 leading-tight">
+                        {student.last_name ? `${student.last_name}, ${student.student_name}` : student.student_name}
+                      </div>
+                    </td>
                       {group.columns.map(column => (
                         <td key={`${student.id}-${column.instrumentId}`} className="px-3 py-3 align-top">
                           {renderInstrumentCell(column, student.id)}

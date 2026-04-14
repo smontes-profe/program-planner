@@ -4,7 +4,7 @@ import { FormEvent, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { type EvaluationContextFull } from "@/domain/evaluation/types";
-import { linkPlanAction, updateContextAction } from "../actions";
+import { linkPlanAction, updateContextAction } from "@/app/evaluations/[id]/actions";
 
 interface ContextSettingsPanelProps {
   readonly context: EvaluationContextFull;

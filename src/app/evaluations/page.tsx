@@ -127,12 +127,20 @@ export default async function EvaluationsPage({ searchParams }: { searchParams?:
                     </span>
                   </div>
                     <div className="flex justify-between items-center text-sm pt-2">
-                      <Link
-                        href={`/evaluations/${ctx.id}`}
-                        className={cn(buttonVariants({ variant: "default", size: "sm" }), "bg-emerald-600 hover:bg-emerald-700 text-white")}
-                      >
-                        Abrir
-                      </Link>
+                      <div className="flex gap-2">
+                        <Link
+                          href={`/evaluations/${ctx.id}`}
+                          className={cn(buttonVariants({ variant: "default", size: "sm" }), "bg-emerald-600 hover:bg-emerald-700 text-white")}
+                        >
+                          Abrir
+                        </Link>
+                        <Link
+                          href={`/evaluations/configurar/${ctx.id}`}
+                          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-zinc-900 dark:text-zinc-50")}
+                        >
+                          Configurar
+                        </Link>
+                      </div>
                       <DeleteContextButton contextId={ctx.id} />
                     </div>
                   </CardContent>

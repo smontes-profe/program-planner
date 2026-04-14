@@ -4,7 +4,6 @@ import Link from "next/link";
 import { MoveLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { EvalTabs } from "./_components/EvalTabs";
-import { ContextSettingsPanel } from "./_components/ContextSettingsPanel";
 import { getPlan } from "@/domain/teaching-plan/actions";
 import type { TeachingPlanFull } from "@/domain/teaching-plan/types";
 
@@ -88,11 +87,6 @@ export default async function EvalDetailPage({ params, searchParams }: EvalDetai
             {errorMessage}
           </div>
         )}
-
-        <ContextSettingsPanel
-          context={context}
-          availablePlans={publishedPlansResult.ok ? publishedPlansResult.data : []}
-        />
 
         {/* Tab content */}
         <EvalTabs
