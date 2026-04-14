@@ -86,7 +86,7 @@ export function GradeMatrixCsvImport({ contextId }: GradeMatrixCsvImportProps) {
           )}
         </button>
         <span className="text-xs text-zinc-400 dark:text-zinc-500">
-          Solo se actualizan los instrumentos que aparecen en el archivo; los demás quedan intactos.
+          Solo se actualizan los instrumentos que aparecen en el archivo; los demás quedan intactos. Para una correcta importación, asegúrate de que los emails coinciden y que los nombres de los instrumentos incluyen al principio el código usado aquí en la app.
         </span>
       </div>
 

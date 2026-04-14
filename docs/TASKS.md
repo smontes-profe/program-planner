@@ -92,6 +92,13 @@ Nuevo módulo de Evaluaciones al mismo nivel que Plantillas de Currículo y Prog
 - [x] Los `org_manager` pueden ver todos los contextos de su organización.
 - [x] Los `platform_admin` tienen acceso global.
 
+### 3.6.8 - Ajustes visuales y de UX
+
+- [x] Truncar RA y CE en la vista del currículum exactamente igual que en la sección de programaciones, añadiendo tooltip para mostrar el texto completo.
+- [x] Asegurar que todos los `Number` steppers relevantes suben/bajan de 1 en 1, no de 0,01 en 0,01.
+- [x] Revisar y homogenizar los mensajes de error visibles para que sean claros y estén en castellano.
+- [x] Ajustar la pantalla de instrumentos: tipografía ligeramente más pequeña para el nombre, truncamiento a 20 caracteres con tooltip, y redistribuir espacios (menos para tipo/UT/RA, más para CEs).
+
 ### Phase 3.7 - Futuro: Congelación de notas por trimestre (Opción B)
 
 > **Nota:** Esta tarea se implementará después del MVP, cuando sea necesario proteger las notas de trimestres ya cerrados ante cambios de pesos.

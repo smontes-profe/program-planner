@@ -123,12 +123,12 @@ export function GradeMatrixTab({ context, plans, scores, scoreError }: GradeMatr
     return (
       <>
         <div className="flex items-center gap-2">
-          <Input
-            className="min-w-[3rem]"
-            type="number"
-            min={0}
-            max={10}
-            step={0.1}
+            <Input
+              className="min-w-[3rem]"
+              type="number"
+              min={0}
+              max={10}
+              step={1}
             value={value}
             onChange={e => setScoreValues(prev => ({ ...prev, [key]: e.target.value }))}
             onBlur={() => handleSave(key, studentId, instrument.instrumentId)}
