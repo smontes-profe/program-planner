@@ -15,7 +15,9 @@ interface StudentsTabProps {
 
 /** Parse Moodle-style CSV (comma-separated, quoted, with Spanish decimal commas) */
 function parseMoodleCSV(text: string): { student_name: string; student_code: string | null; student_email: string | null }[] {
-  const lines = text.trim().split("\n").filter(l => l.trim());
+  // Normalize: strip BOM, Windows line endings
+  const cleaned = text.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const lines = cleaned.trim().split("\n").filter(l => l.trim());
   if (lines.length < 2) return [];
 
   // Parse header to find column indices
@@ -30,8 +32,9 @@ function parseMoodleCSV(text: string): { student_name: string; student_code: str
   }
   if (current.trim()) headers.push(current.trim());
 
+  // Match columns flexibly
   const idxApellidos = headers.findIndex(h => h.toLowerCase().includes("apellido"));
-  const idxNombre = headers.findIndex(h => h.toLowerCase() === "nombre");
+  const idxNombre = headers.findIndex(h => /^nombre$/i.test(h));
   const idxCodigo = headers.findIndex(h => h.toLowerCase().includes("id de estudiante"));
   const idxEmail = headers.findIndex(h => h.toLowerCase().includes("usuario") || h.toLowerCase().includes("email"));
 
@@ -122,7 +125,7 @@ export function StudentsTab({ context }: StudentsTabProps) {
       {/* Add student form */}
       <div className="flex items-center gap-2 flex-wrap">
         <Input
-          placeholder="Código alumno"
+          placeholder="ID"
           value={newCode}
           onChange={(e) => setNewCode(e.target.value)}
           className="w-32"
@@ -163,7 +166,7 @@ export function StudentsTab({ context }: StudentsTabProps) {
             <thead>
               <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
                 <th className="text-left px-4 py-2.5 font-semibold text-zinc-600 dark:text-zinc-400 w-8">#</th>
-                <th className="text-left px-4 py-2.5 font-semibold text-zinc-600 dark:text-zinc-400 w-24">Código</th>
+                <th className="text-left px-4 py-2.5 font-semibold text-zinc-600 dark:text-zinc-400 w-24">ID</th>
                 <th className="text-left px-4 py-2.5 font-semibold text-zinc-600 dark:text-zinc-400">Nombre</th>
                 <th className="text-left px-4 py-2.5 font-semibold text-zinc-600 dark:text-zinc-400">Email</th>
                 <th className="text-right px-4 py-2.5 font-semibold text-zinc-600 dark:text-zinc-400 w-16"></th>
