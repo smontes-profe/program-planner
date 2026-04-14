@@ -26,68 +26,68 @@ Nuevo módulo de Evaluaciones al mismo nivel que Plantillas de Currículo y Prog
 
 ### 3.6.1 - Gestión del Alumnado
 
-- [ ] Tabla `evaluation_students` con campos: `id`, `evaluation_context_id`, `student_name`, `student_email` (nullable), `active`, `created_at`.
-- [ ] CRUD completo de alumnos (crear, editar, eliminar).
-- [ ] Importación masiva de alumnado desde CSV (columnas mínimas: nombre, email opcional).
+- [x] Tabla `evaluation_students` con campos: `id`, `evaluation_context_id`, `student_name`, `student_email` (nullable), `active`, `created_at`.
+- [x] CRUD completo de alumnos (crear, editar, eliminar).
+- [x] Importación masiva de alumnado desde CSV (columnas mínimas: nombre, email opcional).
 - [ ] Validación de CSV con preservación de datos en caso de error.
 - [ ] UI de lista de alumnos con búsqueda y filtrado por módulo/programación.
 
 ### 3.6.2 - Contexto de Evaluación
 
-- [ ] Tabla `evaluation_contexts` con campos: `id`, `organization_id`, `academic_year`, `title`, `created_by_profile_id`, `status` (`draft`, `active`, `closed`), `created_at`.
-- [ ] CRUD de contextos de evaluación (crear, editar, eliminar, cambiar estado).
-- [ ] Selección de módulos a calificar: tabla intermedia `evaluation_context_modules` que vincula `evaluation_context_id` con `teaching_plan_id`.
-- [ ] Solo se pueden seleccionar programaciones con `status = 'published'`.
+- [x] Tabla `evaluation_contexts` con campos: `id`, `organization_id`, `academic_year`, `title`, `created_by_profile_id`, `status` (`draft`, `active`, `closed`), `created_at`.
+- [x] CRUD de contextos de evaluación (crear, editar, eliminar, cambiar estado).
+- [x] Selección de módulos a calificar: tabla intermedia `evaluation_context_modules` que vincula `evaluation_context_id` con `teaching_plan_id`.
+- [x] Solo se pueden seleccionar programaciones con `status = 'published'`.
 - [ ] Las programaciones seleccionadas son de solo lectura desde el módulo de Evaluaciones (no se pueden modificar).
 - [ ] Vista de configuración del contexto de evaluación: resumen de módulos vinculados y alumnos asignados.
 
 ### 3.6.3 - Matriz de Notas de Instrumentos
 
-- [ ] Tabla `instrument_student_scores` con campos: `id`, `evaluation_context_id`, `instrument_id`, `student_id`, `score_value`, `score_date`, `notes`, `created_at`, `updated_at`.
+- [x] Tabla `instrument_student_scores` con campos: `id`, `evaluation_context_id`, `instrument_id`, `student_id`, `score_value`, `score_date`, `notes`, `created_at`, `updated_at`.
 - [ ] Vista de matriz de notas: filas = alumnos, columnas = instrumentos (agrupados por módulo y UT).
 - [ ] Celdas editables con entrada directa de nota (modo `simple` por defecto, soporte para modo `advanced` si el instrumento lo tiene configurado).
 - [ ] Importación masiva de notas desde CSV: columnas = código de instrumento, filas = alumno. Validación de códigos de instrumento contra la programación vinculada.
 - [ ] Validación de CSV con preservación de datos en caso de error y reporte de errores por fila/columna.
-- [ ] Los instrumentos deben tener su código correctamente asignado (requisito previo desde Phase 3B).
+- [x] Los instrumentos deben tener su código correctamente asignado (requisito previo desde Phase 3B).
 
 ### 3.6.4 - Cálculo Automático de Notas por Trimestre y RA
 
-- [ ] Vista de solo lectura: notas calculadas por alumno, trimestre y RA.
-- [ ] Cálculo automático basado en:
+- [x] Vista de solo lectura: notas calculadas por alumno, trimestre y RA.
+- [x] Cálculo automático basado en:
   - Notas de instrumentos por alumno.
   - Pesos de RA en el plan (`weight_global`).
   - Pesos de CE por RA (`weight_in_ra`).
   - Cobertura de CE por instrumento (`coverage_percent` derivado de RA coverage × CE share).
   - Trimestre de cada UT (para notas por trimestre).
-- [ ] Fórmulas existentes reutilizadas del motor de notas (ver SPECS.md sección 6 - Grade Engine).
-- [ ] Panel resumen por alumno: nota final del módulo, notas por trimestre, notas por RA.
-- [ ] Panel resumen global: estadísticas del grupo (media, mediana, desviación).
+- [x] Fórmulas existentes reutilizadas del motor de notas (ver SPECS.md sección 6 - Grade Engine).
+- [x] Panel resumen por alumno: nota final del módulo, notas por trimestre, notas por RA.
+- [x] Panel resumen global: estadísticas del grupo (media, mediana, desviación).
 
 ### 3.6.5 - Exportación de Notas
 
-- [ ] Exportar notas por alumno en CSV: columnas = nombre, email, nota final, notas por RA, notas por trimestre.
+- [x] Exportar notas por alumno en CSV: columnas = nombre, email, nota final, notas por RA, notas por trimestre.
 - [ ] Exportar matriz completa de instrumentos en CSV: filas = alumnos, columnas = instrumentos + notas calculadas.
 - [ ] Exportar acta de evaluación: documento resumen con notas finales por alumno y estadísticas del grupo.
 
 ### 3.6.6 - UI y Navegación
 
-- [ ] Nueva sección "Evaluaciones" en el menú principal (al mismo nivel que Plantillas y Programaciones).
-- [ ] Lista de contextos de evaluación (`/evaluations`).
-- [ ] Vista de detalle de contexto (`/evaluations/[id]`) con sub-pestañas:
+- [x] Nueva sección "Evaluaciones" en el menú principal (al mismo nivel que Plantillas y Programaciones).
+- [x] Lista de contextos de evaluación (`/evaluations`).
+- [x] Vista de detalle de contexto (`/evaluations/[id]`) con sub-pestañas:
   - Alumnado
   - Matriz de notas
   - Notas calculadas (solo lectura)
   - Exportación
 - [ ] Responsive y accesible (breakpoints 320px, 768px, 1280px).
-- [ ] Estados vacíos, de carga y error implementados.
+- [x] Estados vacíos, de carga y error implementados.
 
 ### 3.6.7 - Autorización y RLS
 
-- [ ] Políticas RLS para `evaluation_contexts`: solo miembros de la organización con rol `teacher` o superior pueden ver/editar sus contextos.
-- [ ] Políticas RLS para `evaluation_students`: acceso vinculado al contexto de evaluación.
-- [ ] Políticas RLS para `instrument_student_scores`: acceso vinculado al contexto de evaluación y permisos del usuario.
-- [ ] Los `org_manager` pueden ver todos los contextos de su organización.
-- [ ] Los `platform_admin` tienen acceso global.
+- [x] Políticas RLS para `evaluation_contexts`: solo miembros de la organización con rol `teacher` o superior pueden ver/editar sus contextos.
+- [x] Políticas RLS para `evaluation_students`: acceso vinculado al contexto de evaluación.
+- [x] Políticas RLS para `instrument_student_scores`: acceso vinculado al contexto de evaluación y permisos del usuario.
+- [x] Los `org_manager` pueden ver todos los contextos de su organización.
+- [x] Los `platform_admin` tienen acceso global.
 
 ### Phase 3.7 - Futuro: Congelación de notas por trimestre (Opción B)
 
