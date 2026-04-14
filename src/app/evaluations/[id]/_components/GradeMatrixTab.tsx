@@ -173,17 +173,6 @@ export function GradeMatrixTab({ context, plans, scores, scoreError }: GradeMatr
 
       {planGroups.map(group => (
         <section key={group.plan.id}>
-          <div className="mb-3 flex items-baseline justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                {group.plan.academic_year}
-              </p>
-              <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
-                {group.plan.module_code} · {group.plan.title}
-              </h3>
-            </div>
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">{group.columns.length} instrumento(s)</span>
-          </div>
 
           {group.columns.length === 0 ? (
             <div className="rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/40 px-4 py-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
@@ -198,10 +187,10 @@ export function GradeMatrixTab({ context, plans, scores, scoreError }: GradeMatr
               {group.columns.map(column => (
                 <th key={column.instrumentId} className="px-2 py-2">
                   <div className="space-y-1">
-                    <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                    <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 block">
                       {column.instrumentCode}
                     </span>
-                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 block">
                       {column.instrumentName}
                     </span>
                   </div>

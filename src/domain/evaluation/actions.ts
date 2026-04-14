@@ -324,7 +324,7 @@ export async function upsertInstrumentScore(
     .from("instrument_student_scores")
     .upsert(
       { context_id: contextId, ...validated.data },
-      { onConflict: "context_id,instrument_id,student_id,plan_ce_id" }
+      { onConflict: "context_id,instrument_id,student_id,plan_ce_key" }
     )
     .select()
     .single();
@@ -354,7 +354,7 @@ export async function bulkUpsertScores(
 
   const { error } = await supabase
     .from("instrument_student_scores")
-    .upsert(rows, { onConflict: "context_id,instrument_id,student_id,plan_ce_id" });
+    .upsert(rows, { onConflict: "context_id,instrument_id,student_id,plan_ce_key" });
 
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/evaluations/${contextId}`);
