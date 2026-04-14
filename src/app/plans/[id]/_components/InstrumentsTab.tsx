@@ -492,6 +492,11 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
     setOpen(true);
   };
 
+  const handleTypeChange = async (instrumentId: string, newType: string) => {
+    const res = await updatePlanInstrument(plan.id, instrumentId, { type: newType as InstrumentType });
+    if (res.ok) router.refresh();
+  };
+
   const handleDelete = async (instrument: PlanInstrument) => {
     if (!confirm(`¿Eliminar el instrumento "${instrument.name}"?`)) return;
     setIsPending(true);
@@ -562,28 +567,40 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
               ) : (
                 plan.instruments?.map((inst) => {
                   const unitCodes = (inst.unit_ids || []).map(uId => {
-                    return plan.units?.find(u => u.id === uId)?.code || "?";
+                    const unit = plan.units?.find(u => u.id === uId);
+                    return { id: uId, code: unit?.code || "?" };
                   });
 
-                  // RA info with coverage percent
+                  // RA info with coverage percent — include RA id for unique key
                   const rasWithCoverage = (inst.ra_coverages || []).map(rc => {
                     const ra = plan.ras.find(r => r.id === rc.plan_ra_id);
-                    return ra ? { code: ra.code, description: ra.description, coverage: rc.coverage_percent } : null;
+                    return ra ? { id: ra.id, code: ra.code, description: ra.description, coverage: rc.coverage_percent } : null;
                   }).filter(Boolean);
 
                   // Fallback: legacy ra_ids without coverage data
                   if (rasWithCoverage.length === 0 && inst.ra_ids?.length) {
                     for (const raId of inst.ra_ids) {
                       const ra = plan.ras.find(r => r.id === raId);
-                      if (ra) rasWithCoverage.push({ code: ra.code, description: ra.description, coverage: 0 });
+                      if (ra) rasWithCoverage.push({ id: ra.id, code: ra.code, description: ra.description, coverage: 0 });
                     }
                   }
 
-                  // Filtered weights and their associated CEs
+                  // Filtered weights and their associated CEs — include CE id for unique key
                   const ces = (inst.ce_weights || []).map(cw => {
                     const ce = plan.ras.flatMap(r => r.ces || []).find(c => c.id === cw.plan_ce_id);
-                    return ce ? { code: ce.code, description: ce.description, weight: cw.weight } : null;
+                    // Find which RA this CE belongs to
+                    const parentRA = plan.ras.find(r => r.ces?.some(c => c.id === cw.plan_ce_id));
+                    return ce ? { id: ce.id, code: ce.code, description: ce.description, weight: cw.weight, raId: parentRA?.id, raCode: parentRA?.code } : null;
                   }).filter(Boolean);
+
+                  // Group CEs by RA
+                  const cesByRA = new Map<string, typeof ces>();
+                  for (const ce of ces) {
+                    if (!ce) continue;
+                    const raId = ce.raId || "unknown";
+                    if (!cesByRA.has(raId)) cesByRA.set(raId, []);
+                    cesByRA.get(raId)!.push(ce);
+                  }
 
                   return (
                     <TableRow key={inst.id}>
@@ -599,21 +616,28 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className="font-normal text-[11px] h-5">
-                          {getInstrumentTypeLabel(inst.type)}
-                        </Badge>
+                        <Select value={inst.type} onValueChange={(v) => v && handleTypeChange(inst.id, v)}>
+                          <SelectTrigger className="h-6 w-auto min-w-[110px] border-0 bg-transparent shadow-none px-1 py-0 text-[11px] font-medium focus:ring-0 focus:outline-none">
+                            <SelectValue>{getInstrumentTypeLabel(inst.type)}</SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {INSTRUMENT_TYPES.map(t => (
+                              <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
-                          {unitCodes.map(code => (
-                            <Badge key={code} variant="outline" className="text-[10px] py-0">{code}</Badge>
+                          {unitCodes.map(uc => (
+                            <Badge key={uc.id} variant="outline" className="text-[10px] py-0">{uc.code}</Badge>
                           ))}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
                           {rasWithCoverage.map(ra => (
-                            <Tooltip key={ra!.code}>
+                            <Tooltip key={ra!.id}>
                               <TooltipTrigger className="cursor-help">
                                 <Badge variant="neutral" className="bg-zinc-100 text-[10px] py-0 hover:bg-zinc-200 gap-0.5">
                                   RA {ra!.code}
@@ -635,22 +659,34 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-wrap gap-2">
-                          {ces.map(ce => (
-                            <Tooltip key={ce!.code}>
-                              <TooltipTrigger className="cursor-help flex items-center gap-1 group">
-                                <span className="text-[11px] font-mono font-bold text-zinc-500 group-hover:text-primary transition-colors">{ce!.code})</span>
-                                <span className="text-[10px] text-zinc-400 font-medium">{ce!.weight}%</span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <div className="space-y-1">
-                                  <p className="font-bold border-b border-zinc-700 pb-1 mb-1">Criterio {ce!.code}</p>
-                                  <p>{ce!.description}</p>
+                        <div className="flex flex-col gap-1.5">
+                          {ces.length > 0 ? (
+                            Array.from(cesByRA.entries()).map(([raId, raCes]) => (
+                              <div key={raId} className="flex flex-col gap-0.5">
+                                <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400">
+                                  RA {raCes[0]?.raCode}
+                                </span>
+                                <div className="flex flex-wrap gap-1">
+                                  {raCes.map(ce => (
+                                    <Tooltip key={ce!.id}>
+                                      <TooltipTrigger className="cursor-help flex items-center gap-1 group">
+                                        <span className="text-[11px] font-mono font-bold text-zinc-500 group-hover:text-primary transition-colors">{ce!.code})</span>
+                                        <span className="text-[10px] text-zinc-400 font-medium">{ce!.weight}%</span>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <div className="space-y-1">
+                                          <p className="font-bold border-b border-zinc-700 pb-1 mb-1">Criterio {ce!.code}</p>
+                                          <p>{ce!.description}</p>
+                                        </div>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  ))}
                                 </div>
-                              </TooltipContent>
-                            </Tooltip>
-                          ))}
-                          {ces.length === 0 && <span className="text-zinc-300">-</span>}
+                              </div>
+                            ))
+                          ) : (
+                            <span className="text-zinc-300">-</span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="text-right">

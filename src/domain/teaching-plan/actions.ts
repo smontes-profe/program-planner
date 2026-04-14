@@ -946,20 +946,19 @@ async function _computePlanWarnings(planId: string): Promise<string[]> {
     warnings.push("La programación no tiene Resultados de Aprendizaje definidos.");
   }
 
-  // 3. Check instruments without RA coverage
-  const { data: instruments } = await supabase
+  // 3. Check instruments without RA coverage — single query with JOIN
+  const { data: instrumentsWithCoverage } = await supabase
     .from("plan_instrument")
-    .select("id, code, name")
+    .select(`
+      id, code, name,
+      ra_coverages:plan_instrument_ra (id)
+    `)
     .eq("plan_id", planId);
 
-  if (instruments && instruments.length > 0) {
-    for (const instrument of instruments) {
-      const { data: raCoverage } = await supabase
-        .from("plan_instrument_ra")
-        .select("id")
-        .eq("instrument_id", instrument.id);
-
-      if (!raCoverage || raCoverage.length === 0) {
+  if (instrumentsWithCoverage && instrumentsWithCoverage.length > 0) {
+    for (const instrument of instrumentsWithCoverage) {
+      const raCov = instrument.ra_coverages as any[] | null;
+      if (!raCov || raCov.length === 0) {
         warnings.push(`Instrumento "${instrument.code}" (${instrument.name}): no tiene cobertura de RA definida.`);
       }
     }
