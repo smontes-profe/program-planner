@@ -198,45 +198,35 @@ export function StudentsTab({ context }: StudentsTabProps) {
 
 // ─── Bulk Import Form ────────────────────────────────────────────────────────
 function BulkImportForm({ onImport }: { onImport: (csv: string) => void }) {
-  const [showForm, setShowForm] = useState(false);
-  const [csvText, setCsvText] = useState("");
+  const [fileName, setFileName] = useState("");
 
-  function handleImport() {
-    if (csvText.trim()) {
-      onImport(csvText);
-      setCsvText("");
-      setShowForm(false);
-    }
-  }
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileName(file.name);
 
-  if (!showForm) {
-    return (
-      <Button variant="outline" size="sm" onClick={() => setShowForm(true)}>
-        <FileUp className="h-4 w-4 mr-1" />
-        Importar desde CSV
-      </Button>
-    );
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      if (text) onImport(text);
+    };
+    reader.readAsText(file, "UTF-8");
   }
 
   return (
-    <div className="space-y-2 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30">
-      <p className="text-xs text-zinc-500">Pega el CSV exportado desde Moodle/GCV. Detecta automáticamente: Apellidos, Nombre, ID de estudiante y email.</p>
-      <textarea
-        rows={5}
-        value={csvText}
-        onChange={(e) => setCsvText(e.target.value)}
-        placeholder={"Juan García, juan@email.com\nMaría López, maria@email.com\nPedro Sánchez"}
-        className="w-full rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500"
-      />
-      <div className="flex gap-2">
-        <Button size="sm" onClick={handleImport} disabled={!csvText.trim()}>
-          <UserPlus className="h-4 w-4 mr-1" />
-          Importar
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => { setShowForm(false); setCsvText(""); }}>
-          Cancelar
-        </Button>
-      </div>
+    <div className="flex items-center gap-2">
+      <label className="flex items-center gap-2 cursor-pointer rounded-md border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors">
+        <input type="file" accept=".csv,text/csv" onChange={handleFileChange} className="hidden" />
+        <FileUp className="h-4 w-4 text-zinc-500" />
+        <span className="text-zinc-700 dark:text-zinc-300">
+          {fileName || "Importar CSV..."}
+        </span>
+      </label>
+      {fileName && (
+        <p className="text-xs text-zinc-400">
+          {fileName} seleccionado
+        </p>
+      )}
     </div>
   );
 }
