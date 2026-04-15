@@ -65,6 +65,17 @@ Nuevo módulo de Evaluaciones al mismo nivel que Plantillas de Currículo y Prog
 - [x] Fórmulas existentes reutilizadas del motor de notas (ver SPECS.md sección 6 - Grade Engine).
 - [x] Panel resumen por alumno: nota final del módulo, notas por trimestre, notas por RA.
 - [x] Panel resumen global: estadísticas del grupo (media, mediana, desviación).
+- [ ] Ordenar las tablas de notas calculadas por apellidos/nombre y reemplazar el actual desglose por RA con una tabla tipo matriz (primer columna: alumno, columna por RA), con iconos de alerta para RAs sin evaluar (círculo rojo) o con evaluación parcial (triángulo naranja) y colores para las notas (<5 rojo, resto verde).
+- [ ] Notas calculadas: dividir columnas T1, T2 y T3 en nota autocalculada y nota ajustada.
+  - Nota autocalculada: valor calculado para cada alumno segun pesos de RA/CE evaluados en ese trimestre.
+  - Nota ajustada: por defecto es floor(nota autocalculada) (entero sin decimales), pero el usuario la puede editar manualmente.
+  - Persistencia de ajuste manual: cuando nota ajustada se modifica a mano, se conserva ese valor aunque cambie la nota autocalculada.
+  - Alertas: si falta algun RA o CE por evaluar en el trimestre, mostrar simbolo de alerta tanto en autocalculada como en ajustada.
+  - Indicador de override: si la nota ajustada fue modificada manualmente, mostrar simbolo especifico.
+  - Colores: rojo para suspenso y verde para aprobado (>= 5) en ambas columnas.
+  - Nota final:
+    - Nota autocalculada: media de T1, T2 y T3 autocalculadas.
+    - Nota ajustada: media de T1, T2 y T3 ajustadas, con opcion de ajuste manual persistente (si se edita a mano deja de autocalcularse).
 
 ### 3.6.5 - Exportación de Notas
 

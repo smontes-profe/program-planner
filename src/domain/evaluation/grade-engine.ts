@@ -17,6 +17,7 @@
 import type {
   EvaluationContextFull,
   InstrumentScore,
+  RAReference,
   StudentGradeSummary,
 } from "./types";
 import type { TeachingPlanFull } from "@/domain/teaching-plan/types";
@@ -31,6 +32,7 @@ export interface GradeComputationResult {
     totalStudents: number;
     gradedStudents: number;
   };
+  raReferences: RAReference[];
 }
 
 /**
@@ -78,7 +80,8 @@ export function computeAllStudentGrades(
     gradedStudents: studentGrades.filter(s => s.finalGrade !== null).length,
   };
 
-  return { studentGrades, groupStats };
+  const raReferences = extractRAReferences(plans);
+  return { studentGrades, groupStats, raReferences };
 }
 
 /**
@@ -315,6 +318,18 @@ function computePlanStudentGrades(
   }
 
   return { raGrades, trimesterGrades };
+}
+
+function extractRAReferences(plans: TeachingPlanFull[]): RAReference[] {
+  const map = new Map<string, RAReference>();
+  for (const plan of plans) {
+    for (const ra of plan.ras || []) {
+      if (!map.has(ra.id)) {
+        map.set(ra.id, { raId: ra.id, raCode: ra.code });
+      }
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => a.raCode.localeCompare(b.raCode));
 }
 
 // ─────────────────────────────────────────────

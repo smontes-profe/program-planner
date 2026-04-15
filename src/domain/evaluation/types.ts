@@ -78,4 +78,9 @@ export interface StudentGradeSummary {
   }[];
 }
 
+export interface RAReference {
+  raId: string;
+  raCode: string;
+}
+
 export type { GradeComputationResult } from "./grade-engine";
