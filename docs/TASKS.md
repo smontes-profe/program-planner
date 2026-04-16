@@ -66,16 +66,24 @@ Nuevo módulo de Evaluaciones al mismo nivel que Plantillas de Currículo y Prog
 - [x] Panel resumen por alumno: nota final del módulo, notas por trimestre, notas por RA.
 - [x] Panel resumen global: estadísticas del grupo (media, mediana, desviación).
 - [ ] Ordenar las tablas de notas calculadas por apellidos/nombre y reemplazar el actual desglose por RA con una tabla tipo matriz (primer columna: alumno, columna por RA), con iconos de alerta para RAs sin evaluar (círculo rojo) o con evaluación parcial (triángulo naranja) y colores para las notas (<5 rojo, resto verde).
-- [ ] Notas calculadas: dividir columnas T1, T2 y T3 en nota autocalculada y nota ajustada.
-  - Nota autocalculada: valor calculado para cada alumno segun pesos de RA/CE evaluados en ese trimestre.
+- [-] Notas calculadas: dividir columnas T1, T2 y T3 en nota autocalculada y nota ajustada.
+  - Nota autocalculada: valor calculado para cada alumno segun pesos de RA/CE evaluados en ese trimestre (sin efecto PRI/PMI).
   - Nota ajustada: por defecto es floor(nota autocalculada) (entero sin decimales), pero el usuario la puede editar manualmente.
   - Persistencia de ajuste manual: cuando nota ajustada se modifica a mano, se conserva ese valor aunque cambie la nota autocalculada.
+  - Locks globales por trimestre (T1/T2/T3 abierta-cerrada): al cerrar, se congela solo la autocalculada; la ajustada sigue editable manualmente.
   - Alertas: si falta algun RA o CE por evaluar en el trimestre, mostrar simbolo de alerta tanto en autocalculada como en ajustada.
   - Indicador de override: si la nota ajustada fue modificada manualmente, mostrar simbolo especifico.
   - Colores: rojo para suspenso y verde para aprobado (>= 5) en ambas columnas.
-  - Nota final:
-    - Nota autocalculada: media de T1, T2 y T3 autocalculadas.
-    - Nota ajustada: media de T1, T2 y T3 ajustadas, con opcion de ajuste manual persistente (si se edita a mano deja de autocalcularse).
+- [-] Notas calculadas por RA: dividir cada RA en nota original y nota mejorada.
+  - Nota original: calculo actual con instrumentos estandar ponderados.
+  - Nota mejorada auto: aplica PRI/PMI del alumno para ese RA (si hay varios, usar el de fecha mas reciente).
+  - Nota mejorada manual: si el docente la ajusta a mano, deja de recalcular y solo puede cambiarse manualmente.
+  - Tooltip en nota mejorada: listar PRIs/PMIs que afectan a ese RA para ese alumno y sus notas.
+- [-] Nota final del modulo: dos columnas y cambio de formula base.
+  - Nota final autocalculada: calcular siempre desde RAs originales y sus pesos (no desde medias trimestrales).
+  - Nota final mejorada auto: calcular desde RAs mejorados y sus pesos.
+  - Nota final mejorada manual: editable por docente; si se modifica a mano queda fija y solo cambia manualmente.
+  - Mostrar indicador visual cuando la nota final mejorada se haya ajustado manualmente.
 
 ### 3.6.5 - Exportación de Notas
 
@@ -90,6 +98,7 @@ Nuevo módulo de Evaluaciones al mismo nivel que Plantillas de Currículo y Prog
 - [x] Vista de detalle de contexto (`/evaluations/[id]`) con sub-pestañas:
   - Alumnado
   - Matriz de notas
+  - PRIS/PMIS
   - Notas calculadas (solo lectura)
   - Exportación
 - [ ] Responsive y accesible (breakpoints 320px, 768px, 1280px).
@@ -111,9 +120,23 @@ Nuevo módulo de Evaluaciones al mismo nivel que Plantillas de Currículo y Prog
 - [x] Revisar y homogenizar los mensajes de error visibles para que sean claros y estén en castellano.
 - [x] Ajustar la pantalla de instrumentos: tipografía ligeramente más pequeña para el nombre, truncamiento a 20 caracteres con tooltip, y redistribuir espacios (menos para tipo/UT/RA, más para CEs).
 
+### 3.6.9 - PRIS/PMIS (Instrumentos especiales de recuperacion/mejora)
+
+- [x] Instrumentos: añadir checkbox único `PRI/PMI` en alta/edición.
+- [x] Instrumentos `PRI/PMI`: permitir seleccionar solo RAs afectados (sin pesos RA, sin pesos CE, sin edición CE).
+- [x] Motor: excluir instrumentos `PRI/PMI` del cálculo trimestral y de la matriz de notas estándar.
+- [x] Nueva pestaña/sección `PRIS/PMIS` después de `Matriz de notas`.
+- [x] Tabla `PRIS/PMIS`: filas de alumnos ordenados por apellidos/nombre y columnas por instrumento `PRI/PMI`.
+- [x] Celdas `PRIS/PMIS`: numeric stepper por alumno/instrumento; valor vacío = alumno no participante.
+- [x] Regla de reemplazo RA: si hay varios `PRI/PMI` para un RA/alumno y no hay override manual, usar la nota con fecha más reciente.
+- [x] Overrides manuales RA mejorada: persistencia y precedencia total sobre recálculo.
+- [x] Indicadores visuales en RA mejorada y nota final mejorada cuando haya override manual.
+- [-] Actualizar exportaciones para incluir columnas nuevas (RA original/mejorada y notas finales original/mejorada) y excluir `PRI/PMI` de la matriz estándar.
+- [ ] Cobertura de tests del motor para: reemplazo por fecha, `null -> valor` por PRI/PMI, y precedencia de override manual.
+
 ### Phase 3.7 - Futuro: Congelación de notas por trimestre (Opción B)
 
-> **Nota:** Esta tarea se implementará después del MVP, cuando sea necesario proteger las notas de trimestres ya cerrados ante cambios de pesos.
+> **Nota:** Esta tarea es distinta de los nuevos toggles de cierre global de T1/T2/T3 en 3.6.4. Aquí se mantiene la idea de congelación histórica avanzada (versionado completo de pesos y auditoría).
 
 - [ ] Definir concepto de "trimestre cerrado": las notas calculadas de un trimestre se congelan y no se ven afectadas por cambios futuros de pesos.
 - [ ] Mecanismo para que el profesor "cierre" un trimestre explícitamente.

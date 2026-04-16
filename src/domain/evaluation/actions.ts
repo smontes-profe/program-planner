@@ -9,13 +9,22 @@ import {
   updateStudentSchema,
   bulkImportStudentsSchema,
   upsertInstrumentScoreSchema,
+  updateTrimesterLockSchema,
+  upsertTrimesterAdjustedOverrideSchema,
+  upsertRAManualOverrideSchema,
+  upsertFinalManualOverrideSchema,
 } from "./schemas";
 import {
   type EvaluationContext,
   type EvaluationStudent,
   type InstrumentScore,
   type EvaluationContextFull,
-  type StudentGradeSummary,
+  type EvaluationTrimesterLocks,
+  type EvaluationTrimesterAutoSnapshot,
+  type EvaluationTrimesterAdjustedOverride,
+  type EvaluationRAManualOverride,
+  type EvaluationFinalManualOverride,
+  type TrimesterKey,
 } from "./types";
 import { computeAllStudentGrades, type GradeComputationResult } from "./grade-engine";
 import { getPlan } from "@/domain/teaching-plan/actions";
@@ -372,9 +381,249 @@ export async function getScoresForContext(contextId: string): Promise<ActionResp
   return { ok: true, data: (data || []) as InstrumentScore[] };
 }
 
+export async function getTrimesterLocks(contextId: string): Promise<ActionResponse<EvaluationTrimesterLocks>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("evaluation_trimester_locks")
+    .select("*")
+    .eq("context_id", contextId)
+    .maybeSingle();
+
+  if (error) return { ok: false, error: error.message };
+  if (data) return { ok: true, data: data as EvaluationTrimesterLocks };
+
+  const updatedByProfileId = await resolveUpdatedByProfileId(supabase);
+  const { data: inserted, error: insertError } = await supabase
+    .from("evaluation_trimester_locks")
+    .insert({
+      context_id: contextId,
+      updated_by_profile_id: updatedByProfileId,
+    })
+    .select("*")
+    .single();
+
+  if (insertError || !inserted) {
+    return { ok: false, error: insertError?.message || "No se pudo inicializar el estado de cierres." };
+  }
+  return { ok: true, data: inserted as EvaluationTrimesterLocks };
+}
+
+export async function updateTrimesterLock(payload: {
+  context_id: string;
+  trimester_key: TrimesterKey;
+  closed: boolean;
+}): Promise<ActionResponse<EvaluationTrimesterLocks>> {
+  const validated = updateTrimesterLockSchema.safeParse(payload);
+  if (!validated.success) return { ok: false, error: "Datos inv?lidos" };
+
+  const supabase = await createClient();
+  const current = await getTrimesterLocks(validated.data.context_id);
+  if (!current.ok) return current;
+
+  const fieldName =
+    validated.data.trimester_key === "T1"
+      ? "t1_auto_closed"
+      : validated.data.trimester_key === "T2"
+        ? "t2_auto_closed"
+        : "t3_auto_closed";
+
+  if (validated.data.closed) {
+    const gradesResult = await computeStudentGrades(validated.data.context_id, {
+      ignoreTrimesterLocks: true,
+    });
+
+    if (!gradesResult.ok) {
+      return { ok: false, error: gradesResult.error };
+    }
+
+    const snapshotRows = gradesResult.data.studentGrades.map((student) => {
+      const trimester = student.trimesterGrades.find(t => t.key === validated.data.trimester_key);
+      return {
+        context_id: validated.data.context_id,
+        student_id: student.studentId,
+        trimester_key: validated.data.trimester_key,
+        auto_grade: trimester?.autoGrade ?? null,
+        completion_percent: trimester?.autoCompletionPercent ?? 0,
+        captured_at: new Date().toISOString(),
+      };
+    });
+
+    if (snapshotRows.length > 0) {
+      const { error: snapshotError } = await supabase
+        .from("evaluation_trimester_auto_snapshots")
+        .upsert(snapshotRows, { onConflict: "context_id,student_id,trimester_key" });
+
+      if (snapshotError) {
+        return { ok: false, error: snapshotError.message };
+      }
+    }
+  }
+
+  const updatedByProfileId = await resolveUpdatedByProfileId(supabase);
+  const { data, error } = await supabase
+    .from("evaluation_trimester_locks")
+    .update({
+      [fieldName]: validated.data.closed,
+      updated_by_profile_id: updatedByProfileId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("context_id", validated.data.context_id)
+    .select("*")
+    .single();
+
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/evaluations/${validated.data.context_id}`);
+  return { ok: true, data: data as EvaluationTrimesterLocks };
+}
+
+export async function getTrimesterAdjustedOverrides(
+  contextId: string
+): Promise<ActionResponse<EvaluationTrimesterAdjustedOverride[]>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("evaluation_trimester_adjusted_overrides")
+    .select("*")
+    .eq("context_id", contextId);
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, data: (data || []) as EvaluationTrimesterAdjustedOverride[] };
+}
+
+export async function getTrimesterAutoSnapshots(
+  contextId: string
+): Promise<ActionResponse<EvaluationTrimesterAutoSnapshot[]>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("evaluation_trimester_auto_snapshots")
+    .select("*")
+    .eq("context_id", contextId);
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, data: (data || []) as EvaluationTrimesterAutoSnapshot[] };
+}
+
+export async function upsertTrimesterAdjustedOverride(payload: {
+  context_id: string;
+  student_id: string;
+  trimester_key: TrimesterKey;
+  adjusted_grade: number;
+}): Promise<ActionResponse<EvaluationTrimesterAdjustedOverride>> {
+  const validated = upsertTrimesterAdjustedOverrideSchema.safeParse(payload);
+  if (!validated.success) return { ok: false, error: "Datos invÃ¡lidos" };
+
+  const supabase = await createClient();
+  const updatedByProfileId = await resolveUpdatedByProfileId(supabase);
+  const { data, error } = await supabase
+    .from("evaluation_trimester_adjusted_overrides")
+    .upsert(
+      {
+        ...validated.data,
+        updated_by_profile_id: updatedByProfileId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "context_id,student_id,trimester_key" }
+    )
+    .select("*")
+    .single();
+
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/evaluations/${validated.data.context_id}`);
+  return { ok: true, data: data as EvaluationTrimesterAdjustedOverride };
+}
+
+export async function getRAManualOverrides(
+  contextId: string
+): Promise<ActionResponse<EvaluationRAManualOverride[]>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("evaluation_ra_manual_overrides")
+    .select("*")
+    .eq("context_id", contextId);
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, data: (data || []) as EvaluationRAManualOverride[] };
+}
+
+export async function upsertRAManualOverride(payload: {
+  context_id: string;
+  student_id: string;
+  plan_ra_id: string;
+  improved_grade: number;
+}): Promise<ActionResponse<EvaluationRAManualOverride>> {
+  const validated = upsertRAManualOverrideSchema.safeParse(payload);
+  if (!validated.success) return { ok: false, error: "Datos invÃ¡lidos" };
+
+  const supabase = await createClient();
+  const updatedByProfileId = await resolveUpdatedByProfileId(supabase);
+  const { data, error } = await supabase
+    .from("evaluation_ra_manual_overrides")
+    .upsert(
+      {
+        ...validated.data,
+        updated_by_profile_id: updatedByProfileId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "context_id,student_id,plan_ra_id" }
+    )
+    .select("*")
+    .single();
+
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/evaluations/${validated.data.context_id}`);
+  return { ok: true, data: data as EvaluationRAManualOverride };
+}
+
+export async function getFinalManualOverrides(
+  contextId: string
+): Promise<ActionResponse<EvaluationFinalManualOverride[]>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("evaluation_final_manual_overrides")
+    .select("*")
+    .eq("context_id", contextId);
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, data: (data || []) as EvaluationFinalManualOverride[] };
+}
+
+export async function upsertFinalManualOverride(payload: {
+  context_id: string;
+  student_id: string;
+  improved_final_grade: number;
+}): Promise<ActionResponse<EvaluationFinalManualOverride>> {
+  const validated = upsertFinalManualOverrideSchema.safeParse(payload);
+  if (!validated.success) return { ok: false, error: "Datos invÃ¡lidos" };
+
+  const supabase = await createClient();
+  const updatedByProfileId = await resolveUpdatedByProfileId(supabase);
+  const { data, error } = await supabase
+    .from("evaluation_final_manual_overrides")
+    .upsert(
+      {
+        ...validated.data,
+        updated_by_profile_id: updatedByProfileId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "context_id,student_id" }
+    )
+    .select("*")
+    .single();
+
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/evaluations/${validated.data.context_id}`);
+  return { ok: true, data: data as EvaluationFinalManualOverride };
+}
+
 // ─────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────
+
+async function resolveUpdatedByProfileId(supabase: any): Promise<string | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user?.id ?? null;
+}
 
 async function contextId_from_student(
   supabase: any,
@@ -397,6 +646,7 @@ export async function computeStudentGrades(
   options?: {
     plans?: TeachingPlanFull[];
     scores?: InstrumentScore[];
+    ignoreTrimesterLocks?: boolean;
   }
 ): Promise<ActionResponse<GradeComputationResult>> {
   const supabase = await createClient();
@@ -429,7 +679,30 @@ export async function computeStudentGrades(
     scores = scoresResult.data;
   }
 
-  // 4. Compute
-  const result = computeAllStudentGrades(context, plans, scores);
+  // 4. Load lock and override sources
+  const [locksResult, snapshotsResult, trimesterOverridesResult, raOverridesResult, finalOverridesResult] = await Promise.all([
+    getTrimesterLocks(contextId),
+    getTrimesterAutoSnapshots(contextId),
+    getTrimesterAdjustedOverrides(contextId),
+    getRAManualOverrides(contextId),
+    getFinalManualOverrides(contextId),
+  ]);
+
+  if (!locksResult.ok) return locksResult;
+  if (!snapshotsResult.ok) return snapshotsResult;
+  if (!trimesterOverridesResult.ok) return trimesterOverridesResult;
+  if (!raOverridesResult.ok) return raOverridesResult;
+  if (!finalOverridesResult.ok) return finalOverridesResult;
+
+  // 5. Compute
+  const result = computeAllStudentGrades(context, plans, scores, {
+    trimesterLocks: locksResult.data,
+    trimesterAutoSnapshots: snapshotsResult.data,
+    trimesterAdjustedOverrides: trimesterOverridesResult.data,
+    raManualOverrides: raOverridesResult.data,
+    finalManualOverrides: finalOverridesResult.data,
+    ignoreTrimesterLocks: options?.ignoreTrimesterLocks,
+  });
+
   return { ok: true, data: result };
 }

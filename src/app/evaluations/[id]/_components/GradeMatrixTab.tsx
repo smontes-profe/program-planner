@@ -55,11 +55,13 @@ export function GradeMatrixTab({ context, plans, scores, scoreError }: GradeMatr
 
   const planGroups = useMemo(() => {
     return plans.map(plan => {
-      const columns: InstrumentColumn[] = (plan.instruments || []).map(instrument => ({
-        instrumentId: instrument.id,
-        instrumentCode: instrument.code || instrument.name,
-        instrumentName: instrument.name,
-      }));
+      const columns: InstrumentColumn[] = (plan.instruments || [])
+        .filter(instrument => !instrument.is_pri_pmi)
+        .map(instrument => ({
+          instrumentId: instrument.id,
+          instrumentCode: instrument.code || instrument.name,
+          instrumentName: instrument.name,
+        }));
 
       return { plan, columns };
     });

@@ -62,6 +62,7 @@ function InstrumentForm({ plan, initialData, onSubmit, onCancel, isPending, erro
     code: initialData?.code || "",
     name: initialData?.name || "",
     type: (initialData?.type as InstrumentType) || "exam",
+    is_pri_pmi: initialData?.is_pri_pmi || false,
     description: initialData?.description || "",
   });
 
@@ -102,12 +103,17 @@ function InstrumentForm({ plan, initialData, onSubmit, onCancel, isPending, erro
     // Build RA coverages array
     const raCoveragesArray = Object.entries(raCoverages)
       .filter(([, percent]) => percent >= 0)
-      .map(([raId, coveragePercent]) => ({ raId, coveragePercent }));
+      .map(([raId, coveragePercent]) => ({
+        raId,
+        coveragePercent: formData.is_pri_pmi ? 0 : coveragePercent
+      }));
 
     // Build CE weights array
     let weightsArray: { ceId: string; weight: number }[];
 
-    if (ceWeightAutoEnabled) {
+    if (formData.is_pri_pmi) {
+      weightsArray = [];
+    } else if (ceWeightAutoEnabled) {
       // When automation is ON, compute CE weights from RA coverage × CE weight_in_ra
       weightsArray = [];
       for (const { raId, coveragePercent } of raCoveragesArray) {
@@ -132,7 +138,12 @@ function InstrumentForm({ plan, initialData, onSubmit, onCancel, isPending, erro
         .map(([ceId, weight]) => ({ ceId, weight }));
     }
 
-    onSubmit(formData, Array.from(selectedUnits), raCoveragesArray, weightsArray);
+    onSubmit(
+      formData,
+      formData.is_pri_pmi ? [] : Array.from(selectedUnits),
+      raCoveragesArray,
+      weightsArray
+    );
   };
 
   const toggleUnit = (uId: string) => {
@@ -231,6 +242,22 @@ function InstrumentForm({ plan, initialData, onSubmit, onCancel, isPending, erro
           </Select>
         </div>
 
+        <div className="flex items-center gap-3 rounded-md border border-zinc-200 dark:border-zinc-800 px-3 py-2">
+          <Checkbox
+            id="inst-pri-pmi"
+            checked={formData.is_pri_pmi}
+            onCheckedChange={(checked) => setFormData({ ...formData, is_pri_pmi: Boolean(checked) })}
+          />
+          <div className="space-y-0.5">
+            <Label htmlFor="inst-pri-pmi" className="cursor-pointer">
+              Instrumento especial PRI/PMI
+            </Label>
+            <p className="text-[11px] text-zinc-500">
+              Re-evaluaciÃ³n individual por RA. Sin pesos RA/CE y fuera de la matriz estÃ¡ndar.
+            </p>
+          </div>
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="inst-desc">Descripción (opcional)</Label>
           <Textarea 
@@ -242,6 +269,7 @@ function InstrumentForm({ plan, initialData, onSubmit, onCancel, isPending, erro
       </div>
 
       {/* UT Selection */}
+      {!formData.is_pri_pmi && (
       <div className="space-y-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
         <h4 className="text-sm font-semibold flex items-center gap-2">
           Unidades de Trabajo vinculadas
@@ -264,6 +292,7 @@ function InstrumentForm({ plan, initialData, onSubmit, onCancel, isPending, erro
           ))}
         </div>
       </div>
+      )}
 
       {/* RA Selection + Coverage Percent */}
       <div className="space-y-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
@@ -285,7 +314,7 @@ function InstrumentForm({ plan, initialData, onSubmit, onCancel, isPending, erro
                 <Label htmlFor={`ra-${ra.id}`} className="text-xs font-medium cursor-pointer flex-1">
                   RA {ra.code} - {ra.description}
                 </Label>
-                {selectedRas.has(ra.id) && (
+                {!formData.is_pri_pmi && selectedRas.has(ra.id) && (
                   <div className="flex items-center gap-1 shrink-0">
                     <Input 
                       type="number"
@@ -308,7 +337,7 @@ function InstrumentForm({ plan, initialData, onSubmit, onCancel, isPending, erro
       </div>
 
       {/* CE Weights */}
-      {selectedRas.size > 0 && (
+      {selectedRas.size > 0 && !formData.is_pri_pmi && (
         <div className="space-y-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
           <h4 className="text-sm font-semibold flex items-center gap-2">
             Pesos sobre Criterios de Evaluación (%)
@@ -609,12 +638,17 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
                       </TableCell>
                       <TableCell className="min-w-0">
                         <div className="flex flex-col">
-                          <span
-                            className="font-medium text-sm text-zinc-900 dark:text-zinc-100 truncate max-w-[220px]"
-                            title={inst.name}
-                          >
-                            {inst.name}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="font-medium text-sm text-zinc-900 dark:text-zinc-100 truncate max-w-[220px]"
+                              title={inst.name}
+                            >
+                              {inst.name}
+                            </span>
+                            {inst.is_pri_pmi && (
+                              <Badge variant="warning" className="text-[10px] py-0">PRI/PMI</Badge>
+                            )}
+                          </div>
                           {inst.description && (
                             <span className="text-xs text-zinc-400 truncate max-w-[220px]" title={inst.description}>
                               {inst.description}
@@ -648,7 +682,7 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
                               <TooltipTrigger className="cursor-help">
                                 <Badge variant="neutral" className="bg-zinc-100 text-[10px] py-0 hover:bg-zinc-200 gap-0.5">
                                   RA {ra!.code}
-                                  {ra!.coverage > 0 && (
+                                  {!inst.is_pri_pmi && ra!.coverage > 0 && (
                                     <span className="text-emerald-600 font-bold ml-0.5">{ra!.coverage}%</span>
                                   )}
                                 </Badge>
@@ -656,7 +690,7 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
                               <TooltipContent>
                                 <div className="space-y-1">
                                   <p className="font-bold">{ra!.description}</p>
-                                  {ra!.coverage > 0 && (
+                                  {!inst.is_pri_pmi && ra!.coverage > 0 && (
                                     <p className="text-emerald-400">Cobertura: {ra!.coverage}% de la nota del RA</p>
                                   )}
                                 </div>
@@ -667,7 +701,9 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
                       </TableCell>
                       <TableCell className="min-w-0">
                         <div className="flex flex-col gap-1.5">
-                          {ces.length > 0 ? (
+                          {inst.is_pri_pmi ? (
+                            <span className="text-[11px] text-zinc-400">No aplica (PRI/PMI)</span>
+                          ) : ces.length > 0 ? (
                             Array.from(cesByRA.entries()).map(([raId, raCes]) => (
                               <div key={raId} className="flex flex-col gap-0.5">
                                 <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400">

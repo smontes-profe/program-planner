@@ -82,6 +82,7 @@ export async function getPlan(planId: string): Promise<ActionResponse<TeachingPl
 
   const mappedInstruments = (data.instruments || []).map((i: any) => ({
     ...i,
+    is_pri_pmi: Boolean(i.is_pri_pmi),
     unit_ids: i.units_coverage?.map((uc: any) => uc.unit_id) || [],
     ra_ids: i.ras_coverage?.map((rc: any) => rc.plan_ra_id) || [],
     ra_coverages: (i.ras_coverage || []).map((rc: any) => ({
@@ -706,7 +707,7 @@ export async function updatePlanUnitOrder(planId: string, orderedIds: string[]):
 
 export async function addPlanInstrument(
   planId: string,
-  payload: { code: string; type: string; name: string; description?: string | null },
+  payload: { code: string; type: string; is_pri_pmi?: boolean; name: string; description?: string | null },
   unitIds: string[] = [],
   raCoverages: { raId: string; coveragePercent: number }[] = [],
   ceWeights: { ceId: string; weight: number }[] = []
@@ -772,7 +773,7 @@ export async function addPlanInstrument(
 export async function updatePlanInstrument(
   planId: string,
   instrumentId: string,
-  payload: { code?: string; type?: string; name?: string; description?: string | null },
+  payload: { code?: string; type?: string; is_pri_pmi?: boolean; name?: string; description?: string | null },
   unitIds?: string[],
   raCoverages?: { raId: string; coveragePercent: number }[],
   ceWeights?: { ceId: string; weight: number }[]

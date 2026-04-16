@@ -51,3 +51,31 @@ export const upsertInstrumentScoreSchema = z.object({
   score_date: z.string().date().nullable().optional(),
   notes: z.string().nullable().optional(),
 });
+
+// â”€â”€â”€ Trimester Locks + Manual Overrides â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+export const updateTrimesterLockSchema = z.object({
+  context_id: z.string().uuid(),
+  trimester_key: z.enum(["T1", "T2", "T3"]),
+  closed: z.boolean(),
+});
+
+export const upsertTrimesterAdjustedOverrideSchema = z.object({
+  context_id: z.string().uuid(),
+  student_id: z.string().uuid(),
+  trimester_key: z.enum(["T1", "T2", "T3"]),
+  adjusted_grade: z.coerce.number().min(0).max(10),
+});
+
+export const upsertRAManualOverrideSchema = z.object({
+  context_id: z.string().uuid(),
+  student_id: z.string().uuid(),
+  plan_ra_id: z.string().uuid(),
+  improved_grade: z.coerce.number().min(0).max(10),
+});
+
+export const upsertFinalManualOverrideSchema = z.object({
+  context_id: z.string().uuid(),
+  student_id: z.string().uuid(),
+  improved_final_grade: z.coerce.number().min(0).max(10),
+});

@@ -3,6 +3,7 @@
  */
 
 export type EvaluationContextStatus = 'draft' | 'active' | 'closed';
+export type TrimesterKey = 'T1' | 'T2' | 'T3';
 
 export interface EvaluationContext {
   id: string;
@@ -53,29 +54,107 @@ export interface InstrumentScore {
   updated_at: string;
 }
 
+export interface EvaluationTrimesterLocks {
+  context_id: string;
+  t1_auto_closed: boolean;
+  t2_auto_closed: boolean;
+  t3_auto_closed: boolean;
+  updated_by_profile_id: string | null;
+  updated_at: string;
+}
+
+export interface EvaluationTrimesterAdjustedOverride {
+  context_id: string;
+  student_id: string;
+  trimester_key: TrimesterKey;
+  adjusted_grade: number;
+  updated_by_profile_id: string | null;
+  updated_at: string;
+}
+
+export interface EvaluationTrimesterAutoSnapshot {
+  context_id: string;
+  student_id: string;
+  trimester_key: TrimesterKey;
+  auto_grade: number | null;
+  completion_percent: number;
+  captured_at: string;
+}
+
+export interface EvaluationRAManualOverride {
+  context_id: string;
+  student_id: string;
+  plan_ra_id: string;
+  improved_grade: number;
+  updated_by_profile_id: string | null;
+  updated_at: string;
+}
+
+export interface EvaluationFinalManualOverride {
+  context_id: string;
+  student_id: string;
+  improved_final_grade: number;
+  updated_by_profile_id: string | null;
+  updated_at: string;
+}
+
+export interface StudentTrimesterGradeSummary {
+  key: TrimesterKey;
+  autoGrade: number | null;
+  autoCompletionPercent: number;
+  autoHasMissingData: boolean;
+  autoIsLocked: boolean;
+  adjustedGrade: number | null;
+  adjustedIsManual: boolean;
+  adjustedHasMissingData: boolean;
+}
+
+export interface StudentRAPriPmiImpact {
+  instrumentId: string;
+  instrumentCode: string;
+  instrumentName: string;
+  scoreValue: number;
+  scoreDate: string | null;
+  isApplied: boolean;
+}
+
+export interface StudentRAGradeSummary {
+  raId: string;
+  raCode: string;
+  weightInPlan: number;
+  originalGrade: number | null;
+  originalCompletionPercent: number;
+  originalHasMissingData: boolean;
+  improvedAutoGrade: number | null;
+  improvedGrade: number | null;
+  improvedCompletionPercent: number;
+  improvedHasMissingData: boolean;
+  improvedIsManual: boolean;
+  priPmiImpacts: StudentRAPriPmiImpact[];
+}
+
 /** Computed grade for a student at different levels */
 export interface StudentGradeSummary {
   studentId: string;
   studentName: string;
   studentFirstName: string;
   studentLastName: string | null;
-  // Final grade (all RAs combined)
+  // Legacy aliases kept for compatibility with existing consumers
   finalGrade: number | null;
   finalCompletionPercent: number;
-  // Per RA
-  raGrades: {
-    raId: string;
-    raCode: string;
-    grade: number | null;
-    completionPercent: number;
-    weightInPlan: number;
-  }[];
-  // Per trimester
-  trimesterGrades: {
-    key: 'T1' | 'T2' | 'T3';
-    grade: number | null;
-    completionPercent: number;
-  }[];
+  // Final grade columns
+  finalOriginalAutoGrade: number | null;
+  finalOriginalCompletionPercent: number;
+  finalOriginalHasMissingData: boolean;
+  finalImprovedAutoGrade: number | null;
+  finalImprovedGrade: number | null;
+  finalImprovedCompletionPercent: number;
+  finalImprovedHasMissingData: boolean;
+  finalImprovedIsManual: boolean;
+  // Per RA (original vs improved)
+  raGrades: StudentRAGradeSummary[];
+  // Per trimester (auto vs adjusted)
+  trimesterGrades: StudentTrimesterGradeSummary[];
 }
 
 export interface RAReference {

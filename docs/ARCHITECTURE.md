@@ -14,7 +14,7 @@
 - `organization`: organization and membership management.
 - `curriculum`: versioned curriculum templates by region/module/year.
 - `teaching-plan`: teacher-owned planning graph.
-- `evaluation`: evaluation contexts, student management, instrument grade entry, and grade computation engine. Includes CSV import/export of students and grades.
+- `evaluation`: evaluation contexts, student management, standard instrument grade entry, PRI/PMI grade entry, grade computation engine (original/improved/manual), and CSV import/export of students and grades.
 - `collaboration`: import/fork and lineage.
 - `admin`: cross-organization moderation, access request review, and platform role management.
 - `ui-system`: design tokens, responsive layout primitives, accessibility patterns.
@@ -223,6 +223,27 @@ erDiagram
     }
 ```
 
+### 4.1 Planned Evaluation Extension (PRI/PMI + manual overrides)
+
+Target schema additions for the upcoming evaluation upgrade:
+
+- `evaluation_instruments`
+  - `is_pri_pmi boolean not null default false`
+  - `recovery_effect_mode text not null default 'replace_ra_grade'`
+- `instrument_ra_coverage`
+  - For standard instruments: keeps `%` coverage behavior.
+  - For PRI/PMI instruments: stores affected RAs with no percentage semantics.
+- `instrument_student_scores`
+  - Used for both standard instruments and PRI/PMI.
+  - For PRI/PMI, empty score means non-participating student.
+- New manual override storage:
+  - `evaluation_ra_manual_overrides` (context_id, student_id, ra_id, improved_manual_grade, updated_by, updated_at)
+  - `evaluation_trimester_adjusted_overrides` (context_id, student_id, trimester_key, adjusted_grade, updated_by, updated_at)
+  - `evaluation_final_manual_overrides` (context_id, student_id, improved_final_manual_grade, updated_by, updated_at)
+- New trimester lock storage:
+  - `evaluation_trimester_locks` (context_id, t1_auto_closed, t2_auto_closed, t3_auto_closed, updated_by, updated_at)
+  - Optional snapshot table if immutable audit of frozen auto values is required.
+
 ## 5. Authorization and RLS Strategy
 
 RLS is mandatory and default-deny.
@@ -292,6 +313,17 @@ sequenceDiagram
 1. Teacher opens the `Pesos` tab, flips the “Automatizar pesos de CEs” switch, and can expand each RA to see its CE list and enter the percentage share (validated to sum 100%). The system marks those RA → CE distributions as canonical for the plan.
 2. When editing an instrument, the UI now pairs each selected RA with a coverage percent input and exposes the CE share fields only if automation is off or the RA’s CE shares are invalidated. If automation is active and valid, the CE share inputs are disabled and the derived values are shown for transparency.
 3. Saving the instrument persists `INSTRUMENT_RA_COVERAGE` rows (RA coverage percent) plus `INSTRUMENT_CE_WEIGHT` rows whose `coverage_percent` is computed as `RA coverage × CE share`. Grade entry workflows read the same `INSTRUMENT_CE_WEIGHT` rows, so automated CE weights automatically apply to all instruments that touch the RA.
+
+### 6.4 PRI/PMI resolution and improved grades
+
+1. Teacher marks an instrument as `PRI/PMI` using a single checkbox and selects affected RAs (no RA weights, no CE weights).
+2. Teacher enters optional per-student scores in the dedicated `PRIS/PMIS` tab; blank cell means no participation.
+3. Grade engine computes RA original grades from standard instruments only.
+4. For each student/RA, grade engine computes RA improved auto grade:
+   - no PRI/PMI score => keep RA original
+   - one or more PRI/PMI scores => use the most recent score
+5. If teacher manually edits RA improved or final improved value, that value becomes persistent override and stops auto-recompute.
+6. Trimester auto columns ignore PRI/PMI; trimester auto lock freezes only auto column recomputation.
 
 ## 7. Versioning and Immutability
 

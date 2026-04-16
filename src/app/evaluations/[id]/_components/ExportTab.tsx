@@ -1,8 +1,8 @@
 "use client";
 
-import { type EvaluationContextFull, type GradeComputationResult, type StudentGradeSummary } from "@/domain/evaluation/types";
+import { type EvaluationContextFull, type GradeComputationResult } from "@/domain/evaluation/types";
 import { Button } from "@/components/ui/button";
-import { Download, FileSpreadsheet, Users, BarChart3 } from "lucide-react";
+import { Download, FileSpreadsheet, Users } from "lucide-react";
 
 interface ExportTabProps {
   readonly context: EvaluationContextFull;
@@ -13,15 +13,17 @@ export function ExportTab({ context, gradesResult }: ExportTabProps) {
   function exportStudentGradesCSV() {
     if (!gradesResult) return;
 
-    const headers = ["Nombre", "Email", "Nota Final", "Completado (%)"];
+    const headers = ["Nombre", "Email", "Final auto (original)", "Final mejorada", "Completado (%)"];
     // Add RA columns
     if (gradesResult.studentGrades.length > 0) {
       for (const ra of gradesResult.studentGrades[0].raGrades) {
-        headers.push(`RA ${ra.raCode}`);
+        headers.push(`RA ${ra.raCode} original`);
+        headers.push(`RA ${ra.raCode} mejorada`);
       }
       // Add trimester columns
       for (const tri of gradesResult.studentGrades[0].trimesterGrades) {
-        headers.push(tri.key);
+        headers.push(`${tri.key} auto`);
+        headers.push(`${tri.key} ajustada`);
       }
     }
 
@@ -30,14 +32,17 @@ export function ExportTab({ context, gradesResult }: ExportTabProps) {
       const row = [
         sg.studentName,
         student?.student_email || "",
-        sg.finalGrade !== null ? sg.finalGrade.toFixed(2) : "",
+        sg.finalOriginalAutoGrade !== null ? sg.finalOriginalAutoGrade.toFixed(2) : "",
+        sg.finalImprovedGrade !== null ? sg.finalImprovedGrade.toFixed(2) : "",
         sg.finalCompletionPercent.toFixed(0),
       ];
       for (const ra of sg.raGrades) {
-        row.push(ra.grade !== null ? ra.grade.toFixed(2) : "");
+        row.push(ra.originalGrade !== null ? ra.originalGrade.toFixed(2) : "");
+        row.push(ra.improvedGrade !== null ? ra.improvedGrade.toFixed(2) : "");
       }
       for (const tri of sg.trimesterGrades) {
-        row.push(tri.grade !== null ? tri.grade.toFixed(1) : "");
+        row.push(tri.autoGrade !== null ? tri.autoGrade.toFixed(2) : "");
+        row.push(tri.adjustedGrade !== null ? tri.adjustedGrade.toFixed(2) : "");
       }
       return row.join(",");
     });

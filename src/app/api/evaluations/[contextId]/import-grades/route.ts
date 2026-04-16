@@ -118,7 +118,9 @@ export async function POST(
     (context.plan_ids || []).map((planId) => getPlan(planId))
   );
   const plans = planResults.filter((pr) => pr.ok).map((pr) => pr.data);
-  const planInstruments = plans.flatMap((plan) => plan.instruments ?? []);
+  const planInstruments = plans
+    .flatMap((plan) => plan.instruments ?? [])
+    .filter((instrument) => !instrument.is_pri_pmi);
   const instrumentById = new Map(planInstruments.map((instrument) => [instrument.id, instrument]));
   const instrumentByCode = new Map(
     planInstruments
