@@ -1,6 +1,6 @@
 "use server";
 
-import { randomBytes, scryptSync } from "crypto";
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -47,7 +47,13 @@ const approveRequestSchema = z.object({
   request_id: z.string().uuid(),
   account_type: z.enum(["admin", "user"]),
   organization_id: z.string().uuid(),
-  assigned_password: z.string().min(8, "La contrasena asignada debe tener al menos 8 caracteres."),
+  assigned_password: z
+    .string()
+    .trim()
+    .refine(
+      (value) => value.length === 0 || value.length >= 8,
+      "La contrasena de reemplazo debe tener al menos 8 caracteres."
+    ),
   reviewer_notes: z.string().trim().max(500).optional(),
 });
 
@@ -92,10 +98,50 @@ async function requirePlatformAdmin() {
   return { userId: user.id };
 }
 
-function hashPasswordRequest(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const hash = scryptSync(password, salt, 64).toString("hex");
-  return `scrypt:${salt}:${hash}`;
+function protectRequestedPassword(password: string) {
+  const secretSeed = process.env.ACCESS_REQUEST_PASSWORD_ENCRYPTION_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!secretSeed) {
+    throw new Error("Missing password encryption secret.");
+  }
+
+  const key = createHash("sha256").update(secretSeed).digest();
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const encrypted = Buffer.concat([cipher.update(password, "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return `enc_v1:${iv.toString("base64url")}:${tag.toString("base64url")}:${encrypted.toString("base64url")}`;
+}
+
+function getRequestedPasswordIfRecoverable(serializedPassword: string | null | undefined): string | null {
+  if (!serializedPassword) {
+    return null;
+  }
+  if (!serializedPassword.startsWith("enc_v1:")) {
+    return null;
+  }
+
+  const [, ivPart, tagPart, encryptedPart] = serializedPassword.split(":");
+  if (!ivPart || !tagPart || !encryptedPart) {
+    return null;
+  }
+
+  const secretSeed = process.env.ACCESS_REQUEST_PASSWORD_ENCRYPTION_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!secretSeed) {
+    return null;
+  }
+
+  try {
+    const key = createHash("sha256").update(secretSeed).digest();
+    const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(ivPart, "base64url"));
+    decipher.setAuthTag(Buffer.from(tagPart, "base64url"));
+    const decrypted = Buffer.concat([
+      decipher.update(Buffer.from(encryptedPart, "base64url")),
+      decipher.final(),
+    ]);
+    return decrypted.toString("utf8");
+  } catch {
+    return null;
+  }
 }
 
 function toAdminRedirect(urlSafeMessage: string, isError = false): never {
@@ -163,7 +209,7 @@ export async function submitAccessRequestAction(
   const { error } = await adminClient.from("access_requests").insert({
     full_name: payload.full_name,
     email: payload.email.toLowerCase(),
-    requested_password_hash: hashPasswordRequest(payload.password),
+    requested_password_hash: protectRequestedPassword(payload.password),
   });
 
   if (error) {
@@ -208,7 +254,7 @@ export async function approveAccessRequestAction(formData: FormData) {
   const data = validated.data;
   const { data: request, error: requestError } = await adminClient
     .from("access_requests")
-    .select("id, email, full_name, status")
+    .select("id, email, full_name, status, requested_password_hash")
     .eq("id", data.request_id)
     .maybeSingle();
 
@@ -219,11 +265,23 @@ export async function approveAccessRequestAction(formData: FormData) {
     return toAdminRedirect("La solicitud ya fue revisada.", true);
   }
 
+  let passwordToApply = data.assigned_password;
+  if (!passwordToApply) {
+    const recoveredPassword = getRequestedPasswordIfRecoverable(request.requested_password_hash);
+    if (!recoveredPassword) {
+      return toAdminRedirect(
+        "No se pudo recuperar la contrasena solicitada. Escribe una contrasena en el campo de reemplazo para aprobar esta solicitud.",
+        true
+      );
+    }
+    passwordToApply = recoveredPassword;
+  }
+
   let profileId: string | null = null;
 
   const { data: createdUser, error: createError } = await adminClient.auth.admin.createUser({
     email: request.email.toLowerCase(),
-    password: data.assigned_password,
+    password: passwordToApply,
     email_confirm: true,
     user_metadata: { full_name: request.full_name },
   });
@@ -247,7 +305,7 @@ export async function approveAccessRequestAction(formData: FormData) {
     const existingProfileId = existingProfile.id;
     profileId = existingProfileId;
     const { error: updateAuthError } = await adminClient.auth.admin.updateUserById(existingProfileId, {
-      password: data.assigned_password,
+      password: passwordToApply,
       email_confirm: true,
       user_metadata: { full_name: request.full_name },
     });
@@ -297,6 +355,7 @@ export async function approveAccessRequestAction(formData: FormData) {
       reviewed_at: new Date().toISOString(),
       reviewed_by_profile_id: userId,
       updated_at: new Date().toISOString(),
+      requested_password_hash: "redacted",
     })
     .eq("id", data.request_id);
   if (statusError) {
@@ -331,6 +390,7 @@ export async function rejectAccessRequestAction(formData: FormData) {
       reviewed_at: new Date().toISOString(),
       reviewed_by_profile_id: userId,
       updated_at: new Date().toISOString(),
+      requested_password_hash: "redacted",
     })
     .eq("id", data.request_id)
     .eq("status", "pending");

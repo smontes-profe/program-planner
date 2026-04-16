@@ -242,6 +242,7 @@ Visibility rules:
 Admin provisioning rules:
 
 - Access requests are stored in `public.access_requests`.
+- Requested passwords are stored server-side in encrypted format and can be reused at approval time.
 - Only `platform_admin` can read/update/delete access requests.
 - Public request submission is handled server-side using service-role server actions (never direct client DB access).
 - Account creation/update on approval is executed through Supabase Auth Admin APIs from server-only code.

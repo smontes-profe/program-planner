@@ -117,7 +117,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             Solicitudes pendientes ({pendingRequests.length})
           </CardTitle>
           <CardDescription>
-            Aprueba o rechaza nuevas solicitudes. Al aprobar, debes asignar clave, rol y organizacion.
+            Aprueba o rechaza nuevas solicitudes. Al aprobar, asigna rol y organizacion, y opcionalmente reemplaza la contrasena solicitada.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -168,14 +168,13 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                     </div>
 
                     <div className="space-y-1 md:col-span-2">
-                      <Label htmlFor={`assigned-password-${request.id}`}>Contrasena asignada</Label>
+                      <Label htmlFor={`assigned-password-${request.id}`}>Reemplazar contrasena solicitada</Label>
                       <Input
                         id={`assigned-password-${request.id}`}
                         name="assigned_password"
                         type="text"
                         minLength={8}
-                        required
-                        placeholder="Introduce la clave inicial del usuario"
+                        placeholder="Dejar en blanco para respetar la contrasena solicitada"
                       />
                     </div>
 

@@ -50,8 +50,8 @@ These decisions are mandatory for implementation unless explicitly replaced in a
 - Only `platform_admin` can approve/reject requests and provision accounts.
 - On approval, the admin assigns:
   - account type (`admin` or `user`)
-  - initial password
   - target organization membership
+  - optional password replacement (if left empty, the system keeps the password requested by the applicant)
 - Password recovery and self-service password change remain available.
 
 ## 4. Core Domain Model
