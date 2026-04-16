@@ -70,10 +70,11 @@ interface InstrumentColumn {
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { contextId?: string } }
+  routeContext: { params: Promise<{ contextId: string }> }
 ) {
+  const params = await routeContext.params;
   const formData = await req.formData();
-  let contextId = params?.contextId;
+  let contextId = params.contextId;
   if (!contextId) {
     const fallback = formData.get("context_id");
     if (typeof fallback === "string" && fallback.trim() !== "") {

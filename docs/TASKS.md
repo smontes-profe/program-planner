@@ -164,6 +164,7 @@ Nuevo módulo de Evaluaciones al mismo nivel que Plantillas de Currículo y Prog
 - [x] Configure GitHub secrets (`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`).
 - [x] Vercel environment segregation.
 - [ ] Block merge on failed quality checks.
+- [x] Corregir tipado del Route Handler `import-grades` para Next 16 (`params` como `Promise`) y evitar fallo de `next build` en Vercel.
 
 ## Phase 8.1 - UX Quality Gates
 
