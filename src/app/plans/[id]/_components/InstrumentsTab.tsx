@@ -291,7 +291,7 @@ function InstrumentForm({ plan, initialData, onSubmit, onCancel, isPending, erro
                       type="number"
                       min={0}
                       max={100}
-                      step={0.01}
+                      step={1}
                       className="h-7 w-16 text-right text-xs font-mono"
                       value={raCoverages[ra.id] ?? ""}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleRaCoverageChange(ra.id, e.target.value)}
@@ -393,7 +393,7 @@ function InstrumentForm({ plan, initialData, onSubmit, onCancel, isPending, erro
                                   type="number"
                                   min="0"
                                   max="100"
-                                  step="0.01"
+                                  step="1"
                                   className="h-8 w-16 text-right text-xs"
                                   value={ceWeights[ce.id] || ""}
                                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCeWeightChange(ce.id, e.target.value)}
@@ -550,9 +550,9 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
               <TableRow>
                 <TableHead className="w-[80px]">Código</TableHead>
                 <TableHead>Instrumento</TableHead>
-                <TableHead className="w-[110px]">Tipo</TableHead>
-                <TableHead className="w-[120px]">UTs</TableHead>
-                <TableHead className="w-[160px]">RAs (cobertura)</TableHead>
+                <TableHead className="w-[90px]">Tipo</TableHead>
+                <TableHead className="w-[100px]">UTs</TableHead>
+                <TableHead className="w-[140px]">RAs (cobertura)</TableHead>
                 <TableHead>CEs</TableHead>
                 <TableHead className="text-right w-[100px]">Acciones</TableHead>
               </TableRow>
@@ -607,17 +607,24 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
                       <TableCell className="font-mono text-xs font-bold text-zinc-400">
                         {inst.code}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="min-w-0">
                         <div className="flex flex-col">
-                          <span className="font-medium text-zinc-900 dark:text-zinc-100">{inst.name}</span>
+                          <span
+                            className="font-medium text-sm text-zinc-900 dark:text-zinc-100 truncate max-w-[220px]"
+                            title={inst.name}
+                          >
+                            {inst.name}
+                          </span>
                           {inst.description && (
-                            <span className="text-xs text-zinc-400 truncate max-w-[150px]">{inst.description}</span>
+                            <span className="text-xs text-zinc-400 truncate max-w-[220px]" title={inst.description}>
+                              {inst.description}
+                            </span>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
                         <Select value={inst.type} onValueChange={(v) => v && handleTypeChange(inst.id, v)}>
-                          <SelectTrigger className="h-6 w-auto min-w-[110px] border-0 bg-transparent shadow-none px-1 py-0 text-[11px] font-medium focus:ring-0 focus:outline-none">
+                          <SelectTrigger className="h-6 w-auto min-w-[90px] border-0 bg-transparent shadow-none px-1 py-0 text-[11px] font-medium focus:ring-0 focus:outline-none">
                             <SelectValue>{getInstrumentTypeLabel(inst.type)}</SelectValue>
                           </SelectTrigger>
                           <SelectContent>
@@ -627,14 +634,14 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
                           </SelectContent>
                         </Select>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="max-w-[100px] min-w-0">
                         <div className="flex flex-wrap gap-1">
                           {unitCodes.map(uc => (
                             <Badge key={uc.id} variant="outline" className="text-[10px] py-0">{uc.code}</Badge>
                           ))}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="max-w-[140px] min-w-0">
                         <div className="flex flex-wrap gap-1">
                           {rasWithCoverage.map(ra => (
                             <Tooltip key={ra!.id}>
@@ -658,7 +665,7 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
                           ))}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="min-w-0">
                         <div className="flex flex-col gap-1.5">
                           {ces.length > 0 ? (
                             Array.from(cesByRA.entries()).map(([raId, raCes]) => (

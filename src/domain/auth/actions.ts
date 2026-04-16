@@ -3,22 +3,80 @@
 import { createClient } from "@/lib/supabase";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { z } from "zod";
+
+const emailSchema = z.string().trim().email("Email no valido");
+const passwordSchema = z
+  .string()
+  .min(8, "La contrasena debe tener al menos 8 caracteres")
+  .max(128, "La contrasena es demasiado larga");
+
+type AuthActionState = {
+  ok: boolean;
+  error?: string;
+  message?: string;
+  fields?: Record<string, string>;
+};
+
+function getStringField(formData: FormData, key: string): string {
+  const value = formData.get(key);
+  return typeof value === "string" ? value.trim() : "";
+}
+
+async function getAppBaseUrl() {
+  const envUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.VERCEL_PROJECT_PRODUCTION_URL;
+
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  const protocol = h.get("x-forwarded-proto") ?? "https";
+
+  if (host) return `${protocol}://${host}`;
+  if (envUrl) {
+    const withProtocol = envUrl.startsWith("http") ? envUrl : `https://${envUrl}`;
+    return withProtocol;
+  }
+
+  return "http://localhost:3000";
+}
 
 /**
  * Sign in with email and password
  */
-export async function signInAction(prevState: any, formData: FormData) {
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
+export async function signInAction(prevState: AuthActionState, formData: FormData): Promise<AuthActionState> {
+  const emailRaw = getStringField(formData, "email");
+  const password = getStringField(formData, "password");
+
+  const parsedEmail = emailSchema.safeParse(emailRaw);
+  if (!parsedEmail.success) {
+    return {
+      ok: false,
+      error: "Introduce un email valido.",
+      fields: { email: emailRaw },
+    };
+  }
+
+  if (!password) {
+    return {
+      ok: false,
+      error: "La contrasena es obligatoria.",
+      fields: { email: emailRaw },
+    };
+  }
+
+  const email = parsedEmail.data;
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    return { 
-      ok: false, 
-      error: "Credenciales inválidas o error de red.",
-      fields: { email } 
+    return {
+      ok: false,
+      error: "Credenciales invalidas o cuenta no confirmada.",
+      fields: { email },
     };
   }
 
@@ -29,29 +87,147 @@ export async function signInAction(prevState: any, formData: FormData) {
 /**
  * Sign up with email and password
  */
-export async function signUpAction(prevState: any, formData: FormData) {
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
-  const fullName = formData.get("full_name") as string;
-  const supabase = await createClient();
+export async function signUpAction(_prevState: AuthActionState, _formData: FormData): Promise<AuthActionState> {
+  void _prevState;
+  void _formData;
+  return {
+    ok: false,
+    error: "El registro directo esta deshabilitado. Usa 'Solicitar acceso'.",
+  };
+}
 
-  const { error } = await supabase.auth.signUp({ 
-    email, 
-    password,
-    options: {
-      data: { full_name: fullName }
-    }
-  });
-
-  if (error) {
-    return { 
-      ok: false, 
-      error: `Error al registrarse: ${error.message}`,
-      fields: { email, full_name: fullName }
+/**
+ * Request password reset email
+ */
+export async function requestPasswordResetAction(
+  prevState: AuthActionState,
+  formData: FormData
+): Promise<AuthActionState> {
+  const emailRaw = getStringField(formData, "email");
+  const parsedEmail = emailSchema.safeParse(emailRaw);
+  if (!parsedEmail.success) {
+    return {
+      ok: false,
+      error: "Introduce un email valido.",
+      fields: { email: emailRaw },
     };
   }
 
-  return { ok: true, message: "Usuario creado. Ya puedes iniciar sesión.", fields: { email, full_name: fullName } };
+  const supabase = await createClient();
+  const baseUrl = await getAppBaseUrl();
+  const redirectTo = `${baseUrl}/auth/confirm?next=/auth/reset-password`;
+
+  const { error } = await supabase.auth.resetPasswordForEmail(parsedEmail.data, {
+    redirectTo,
+  });
+
+  if (error) {
+    return {
+      ok: false,
+      error: "No se pudo enviar el correo de recuperacion. Intentalo de nuevo.",
+      fields: { email: parsedEmail.data },
+    };
+  }
+
+  return {
+    ok: true,
+    message: "Si existe una cuenta para ese email, te hemos enviado instrucciones de recuperacion.",
+    fields: { email: parsedEmail.data },
+  };
+}
+
+/**
+ * Update password from recovery flow
+ */
+export async function resetPasswordWithRecoveryAction(
+  prevState: AuthActionState,
+  formData: FormData
+): Promise<AuthActionState> {
+  const password = getStringField(formData, "password");
+  const confirmPassword = getStringField(formData, "confirm_password");
+
+  const parsedPassword = passwordSchema.safeParse(password);
+  if (!parsedPassword.success) {
+    return {
+      ok: false,
+      error: parsedPassword.error.issues[0]?.message ?? "Contrasena no valida.",
+    };
+  }
+
+  if (password !== confirmPassword) {
+    return {
+      ok: false,
+      error: "Las contrasenas no coinciden.",
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    return {
+      ok: false,
+      error: "No se pudo actualizar la contrasena. Solicita de nuevo el enlace de recuperacion.",
+    };
+  }
+
+  return {
+    ok: true,
+    message: "Contrasena actualizada. Ya puedes iniciar sesion con la nueva contrasena.",
+  };
+}
+
+/**
+ * Update password for a logged user
+ */
+export async function updateOwnPasswordAction(
+  prevState: AuthActionState,
+  formData: FormData
+): Promise<AuthActionState> {
+  const currentPassword = getStringField(formData, "current_password");
+  const newPassword = getStringField(formData, "new_password");
+  const confirmPassword = getStringField(formData, "confirm_password");
+
+  if (!currentPassword) {
+    return { ok: false, error: "Debes indicar tu contrasena actual." };
+  }
+
+  const parsedNewPassword = passwordSchema.safeParse(newPassword);
+  if (!parsedNewPassword.success) {
+    return {
+      ok: false,
+      error: parsedNewPassword.error.issues[0]?.message ?? "Contrasena no valida.",
+    };
+  }
+
+  if (newPassword !== confirmPassword) {
+    return { ok: false, error: "Las contrasenas nuevas no coinciden." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user?.email) {
+    return { ok: false, error: "Sesion no valida. Vuelve a iniciar sesion." };
+  }
+
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  });
+  if (signInError) {
+    return { ok: false, error: "La contrasena actual no es correcta." };
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+  if (updateError) {
+    return { ok: false, error: "No se pudo actualizar la contrasena." };
+  }
+
+  return { ok: true, message: "Contrasena actualizada correctamente." };
 }
 
 /**
@@ -59,7 +235,10 @@ export async function signUpAction(prevState: any, formData: FormData) {
  */
 export async function signOutAction() {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    redirect(`/auth?error=${encodeURIComponent("No se pudo cerrar la sesion. Intentalo de nuevo.")}`);
+  }
   revalidatePath("/");
-  redirect("/");
+  redirect("/auth");
 }

@@ -5,7 +5,13 @@ export const metadata = {
   description: "Accede a tu cuenta de planificación académica.",
 };
 
-export default function AuthPage() {
+interface AuthPageProps {
+  searchParams?: { error?: string };
+}
+
+export default function AuthPage({ searchParams }: AuthPageProps) {
+  const initialError = searchParams?.error ? decodeURIComponent(searchParams.error) : null;
+
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-6 overflow-hidden relative">
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden opacity-30">
@@ -14,7 +20,7 @@ export default function AuthPage() {
       </div>
       
       <div className="z-10 w-full max-w-[420px]">
-        <AuthForm />
+        <AuthForm initialError={initialError} />
       </div>
     </div>
   );

@@ -32,6 +32,13 @@ import { EditCEButton } from "./EditCEButton";
 import { DeleteCEButton } from "./DeleteCEButton";
 
 // ─── Sortable RA Item ───────────────────────────────────────
+const MAX_DESCRIPTION_LENGTH = 120;
+
+function truncateText(text: string | undefined) {
+  if (!text) return "";
+  return text.length > MAX_DESCRIPTION_LENGTH ? `${text.slice(0, MAX_DESCRIPTION_LENGTH)}...` : text;
+}
+
 function SortableRA({ ra, templateId, isDraft, isAnyDragging }: any) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const {
@@ -65,8 +72,11 @@ function SortableRA({ ra, templateId, isDraft, isAnyDragging }: any) {
               <GripVertical className="h-4 w-4 text-zinc-400" />
             </div>
             <span className="text-sm font-bold font-mono text-zinc-400 shrink-0">RA {ra.code}</span>
-            <p className="text-zinc-800 dark:text-zinc-200 text-sm truncate font-medium flex-1">
-              {ra.description}
+            <p
+              className="text-zinc-800 dark:text-zinc-200 text-sm truncate font-medium flex-1"
+              title={ra.description}
+            >
+              {truncateText(ra.description)}
             </p>
           </div>
           
@@ -135,11 +145,14 @@ function SortableCE({ ce, templateId, raId, isDraft }: any) {
         <GripVertical className="h-4 w-4 text-zinc-300" />
       </div>
       <div className="font-mono text-zinc-400 text-xs font-bold pt-0.5">{ce.code}</div>
-      <div className="flex-1">
-        <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed font-medium">
-          {ce.description}
-        </p>
-      </div>
+        <div className="flex-1">
+          <p
+            className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed font-medium truncate"
+            title={ce.description}
+          >
+            {truncateText(ce.description)}
+          </p>
+        </div>
       <div className="flex items-start gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0">
         <EditCEButton templateId={templateId} ce={ce} />
         <DeleteCEButton templateId={templateId} ceId={ce.id} />

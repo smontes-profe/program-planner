@@ -10,13 +10,13 @@
 
 ## 2. Logical Modules
 
-- `auth`: sign-up/sign-in/session management.
+- `auth`: sign-in, password recovery, password update, and admin-managed account provisioning.
 - `organization`: organization and membership management.
 - `curriculum`: versioned curriculum templates by region/module/year.
 - `teaching-plan`: teacher-owned planning graph.
 - `evaluation`: evaluation contexts, student management, instrument grade entry, and grade computation engine. Includes CSV import/export of students and grades.
 - `collaboration`: import/fork and lineage.
-- `admin`: cross-organization moderation and support.
+- `admin`: cross-organization moderation, access request review, and platform role management.
 - `ui-system`: design tokens, responsive layout primitives, accessibility patterns.
 
 ## 3. Context Diagram
@@ -238,6 +238,14 @@ Visibility rules:
 - `private`: owner, org managers in same organization, platform admins.
 - `organization`: any active membership in same organization.
 - `company`: any authenticated active member in any organization.
+
+Admin provisioning rules:
+
+- Access requests are stored in `public.access_requests`.
+- Requested passwords are stored server-side in encrypted format and can be reused at approval time.
+- Only `platform_admin` can read/update/delete access requests.
+- Public request submission is handled server-side using service-role server actions (never direct client DB access).
+- Account creation/update on approval is executed through Supabase Auth Admin APIs from server-only code.
 
 ## 6. Key Flows
 
