@@ -245,6 +245,16 @@ Nuevo módulo de Evaluaciones al mismo nivel que Plantillas de Currículo y Prog
 - [-] Implementar recuperación de contraseña funcional (flujo completo de solicitud + actualización) o degradar explícitamente como `WIP` si hay bloqueo técnico real.
 - [x] Habilitar espacio para usuarios autenticados donde puedan cambiar su contraseña de forma segura.
 
+### Phase 1.7 - Acceso Gestionado por Admin (Crítico)
+
+- [x] Convertir el registro público en "Solicitar acceso" (nombre, email, contraseña solicitada) y retirar el alta directa desde login.
+- [x] Asignar `platform_admin` al usuario `smontes@ilerna.com` para gestión centralizada.
+- [x] Implementar tabla `access_requests` y flujo de revisión (pendiente, aprobada, rechazada).
+- [x] Crear panel de administración para revisar solicitudes y aprobar/rechazar.
+- [x] En aprobación, crear usuario y permitir asignar tipo de cuenta (`admin` o `usuario normal`) y organización de destino.
+- [x] Añadir listado de usuarios existentes en panel admin y permitir cambiar privilegio de `platform_admin`.
+- [-] Revisar notificaciones por email para nuevas solicitudes y resolución (si no es viable ahora, dejarlo explicitado como pendiente).
+
 ## Phase 2.5 - Curriculum Fixes and improvements
 
 - [x] No se puede editar ni eliminar un RA ya creado.

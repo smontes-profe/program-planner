@@ -27,3 +27,4 @@ This doc is to be used as a persistent "memory" for AI agents working on this pr
 - **RA** — Resultado de Aprendizaje (equivalente a "objetivo" en ESO/Bach)
 - **CE / CCEE** — Criterio/Criterios de Evaluación
 - **BOJA** — Boletín Oficial de la Junta de Andalucía (fuente legal de los currículos)
+- **Acceso critico (abril 2026):** El alta directa por signup queda deshabilitada. El flujo correcto es Solicitar acceso + revision en panel /admin por platform_admin. Mantener esta restriccion por sensibilidad de datos de alumnado.

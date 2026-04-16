@@ -43,6 +43,17 @@ These decisions are mandatory for implementation unless explicitly replaced in a
 - `org_manager`: all teacher capabilities + manage organization users and shared assets in their organization.
 - `platform_admin`: global access and moderation across all organizations.
 
+### 3.3 Access Provisioning Model
+
+- Public self-signup is disabled.
+- Unauthenticated users can only submit an access request (`full_name`, `email`, requested password).
+- Only `platform_admin` can approve/reject requests and provision accounts.
+- On approval, the admin assigns:
+  - account type (`admin` or `user`)
+  - initial password
+  - target organization membership
+- Password recovery and self-service password change remain available.
+
 ## 4. Core Domain Model
 
 ### 4.1 Curriculum Template

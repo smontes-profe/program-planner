@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED_PREFIXES = ["/curriculum", "/plans", "/evaluations", "/account"];
+const PROTECTED_PREFIXES = ["/curriculum", "/plans", "/evaluations", "/account", "/admin"];
 const AUTH_PATH_PREFIX = "/auth";
 const AUTH_PATHS_ALLOWED_WHEN_LOGGED = ["/auth/reset-password", "/auth/confirm"];
 
@@ -54,5 +54,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/curriculum/:path*", "/plans/:path*", "/evaluations/:path*", "/account/:path*", "/auth", "/auth/:path*"],
+  matcher: ["/curriculum/:path*", "/plans/:path*", "/evaluations/:path*", "/account/:path*", "/admin/:path*", "/auth", "/auth/:path*"],
 };

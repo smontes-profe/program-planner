@@ -6,11 +6,10 @@ import Link from "next/link";
 import { GraduationCap, LogOut, BookCopy, CalendarDays, BarChart3, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const NAV_LINKS = [
+const BASE_NAV_LINKS = [
   { href: "/curriculum", label: "Curriculos", icon: <BookCopy className="h-4 w-4" /> },
   { href: "/plans", label: "Programaciones", icon: <CalendarDays className="h-4 w-4" /> },
   { href: "/evaluations", label: "Evaluaciones", icon: <BarChart3 className="h-4 w-4" /> },
-  { href: "/account", label: "Mi cuenta", icon: <ShieldCheck className="h-4 w-4" /> },
 ];
 
 export async function Navbar() {
@@ -18,6 +17,15 @@ export async function Navbar() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const { data: profile } = user
+    ? await supabase.from("profiles").select("is_platform_admin").eq("id", user.id).maybeSingle()
+    : { data: null as { is_platform_admin?: boolean } | null };
+  const isPlatformAdmin = Boolean(profile?.is_platform_admin);
+  const navLinks = [
+    ...BASE_NAV_LINKS,
+    { href: "/account", label: "Mi cuenta", icon: <ShieldCheck className="h-4 w-4" /> },
+    ...(isPlatformAdmin ? [{ href: "/admin", label: "Admin", icon: <ShieldCheck className="h-4 w-4" /> }] : []),
+  ];
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-zinc-200 bg-white/80 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/80">
@@ -37,7 +45,7 @@ export async function Navbar() {
           <div className="flex items-center gap-2">
             {user && (
               <div className="hidden md:flex items-center gap-1 ml-4">
-                {NAV_LINKS.map((link) => (
+                {navLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
@@ -86,8 +94,11 @@ export async function Navbar() {
                 <Link href="/auth" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-9")}>
                   Entrar
                 </Link>
-                <Link href="/auth" className={cn(buttonVariants({ variant: "default", size: "sm" }), "h-9 bg-emerald-600 hover:bg-emerald-700")}>
-                  Empezar
+                <Link
+                  href="/request-access"
+                  className={cn(buttonVariants({ variant: "default", size: "sm" }), "h-9 bg-emerald-600 hover:bg-emerald-700")}
+                >
+                  Solicitar acceso
                 </Link>
               </div>
             )}

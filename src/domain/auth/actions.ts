@@ -87,87 +87,12 @@ export async function signInAction(prevState: AuthActionState, formData: FormDat
 /**
  * Sign up with email and password
  */
-export async function signUpAction(prevState: AuthActionState, formData: FormData): Promise<AuthActionState> {
-  const emailRaw = getStringField(formData, "email");
-  const password = getStringField(formData, "password");
-  const fullName = getStringField(formData, "full_name");
-
-  const parsedEmail = emailSchema.safeParse(emailRaw);
-  if (!parsedEmail.success) {
-    return {
-      ok: false,
-      error: "Introduce un email valido.",
-      fields: { email: emailRaw, full_name: fullName },
-    };
-  }
-
-  const parsedPassword = passwordSchema.safeParse(password);
-  if (!parsedPassword.success) {
-    return {
-      ok: false,
-      error: parsedPassword.error.issues[0]?.message ?? "Contrasena no valida.",
-      fields: { email: parsedEmail.data, full_name: fullName },
-    };
-  }
-
-  if (!fullName) {
-    return {
-      ok: false,
-      error: "El nombre completo es obligatorio.",
-      fields: { email: parsedEmail.data, full_name: fullName },
-    };
-  }
-
-  const email = parsedEmail.data;
-  const supabase = await createClient();
-
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { full_name: fullName },
-    },
-  });
-
-  if (error) {
-    return {
-      ok: false,
-      error: `Error al registrarse: ${error.message}`,
-      fields: { email, full_name: fullName },
-    };
-  }
-
-  const identitiesCount = data.user?.identities?.length ?? 0;
-  const isExistingUser = !!data.user && !data.session && identitiesCount === 0;
-
-  if (isExistingUser) {
-    return {
-      ok: false,
-      error: "Ya existe una cuenta con ese email. Usa Iniciar sesion o recupera la contrasena.",
-      fields: { email, full_name: fullName },
-    };
-  }
-
-  if (!data.user) {
-    return {
-      ok: false,
-      error: "No se pudo crear la cuenta. Intentalo de nuevo.",
-      fields: { email, full_name: fullName },
-    };
-  }
-
-  if (!data.session) {
-    return {
-      ok: true,
-      message: "Cuenta creada. Revisa tu email para confirmar la cuenta antes de iniciar sesion.",
-      fields: { email, full_name: fullName },
-    };
-  }
-
+export async function signUpAction(_prevState: AuthActionState, _formData: FormData): Promise<AuthActionState> {
+  void _prevState;
+  void _formData;
   return {
-    ok: true,
-    message: "Cuenta creada correctamente.",
-    fields: { email, full_name: fullName },
+    ok: false,
+    error: "El registro directo esta deshabilitado. Usa 'Solicitar acceso'.",
   };
 }
 
