@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 import { GradeMatrixCsvImport } from "./GradeMatrixCsvImport";
-import { type EvaluationContextFull, type InstrumentScore } from "@/domain/evaluation/types";
+import { type EvaluationContextFull, type InstrumentScore, type TrimesterKey } from "@/domain/evaluation/types";
 import type { TeachingPlanFull } from "@/domain/teaching-plan/types";
 import { upsertInstrumentScore } from "@/domain/evaluation/actions";
 
@@ -13,12 +15,6 @@ interface GradeMatrixTabProps {
   readonly plans: TeachingPlanFull[];
   readonly scores: InstrumentScore[];
   readonly scoreError?: string;
-}
-
-interface InstrumentColumn {
-  instrumentId: string;
-  instrumentCode: string;
-  instrumentName: string;
 }
 
 const scoreKey = (studentId: string, instrumentId: string) => `${studentId}:${instrumentId}`;
@@ -33,10 +29,18 @@ const buildScoreMap = (scores: InstrumentScore[]) => {
   return map;
 };
 
+interface InstrumentColumn {
+  instrumentId: string;
+  instrumentCode: string;
+  instrumentName: string;
+  trimesters: TrimesterKey[];
+}
+
 export function GradeMatrixTab({ context, plans, scores, scoreError }: GradeMatrixTabProps) {
   const [scoreValues, setScoreValues] = useState<Record<string, string>>(() => buildScoreMap(scores));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pendingKey, setPendingKey] = useState<string | null>(null);
+  const [selectedTrimesters, setSelectedTrimesters] = useState<Set<TrimesterKey>>(new Set(["T1", "T2", "T3"]));
   const [, startTransition] = useTransition();
 
   useEffect(() => {
@@ -55,15 +59,32 @@ export function GradeMatrixTab({ context, plans, scores, scoreError }: GradeMatr
 
   const planGroups = useMemo(() => {
     return plans.map(plan => {
-      const columns: InstrumentColumn[] = (plan.instruments || []).map(instrument => ({
-        instrumentId: instrument.id,
-        instrumentCode: instrument.code || instrument.name,
-        instrumentName: instrument.name,
-      }));
+      const units = plan.units || [];
+      const columns: InstrumentColumn[] = (plan.instruments || [])
+        .filter(instrument => !instrument.is_pri_pmi)
+        .map(instrument => {
+          // Determine trimesters for this instrument from its units
+          const instTrimesters: TrimesterKey[] = [];
+          const instUnits = units.filter(u => (instrument.unit_ids || []).includes(u.id));
+          if (instUnits.some(u => u.active_t1)) instTrimesters.push("T1");
+          if (instUnits.some(u => u.active_t2)) instTrimesters.push("T2");
+          if (instUnits.some(u => u.active_t3)) instTrimesters.push("T3");
+          
+          return {
+            instrumentId: instrument.id,
+            instrumentCode: instrument.code || instrument.name,
+            instrumentName: instrument.name,
+            trimesters: instTrimesters,
+          };
+        })
+        .filter(col => {
+          if (col.trimesters.length === 0) return true; // Show if no units (fallback)
+          return col.trimesters.some(t => selectedTrimesters.has(t));
+        });
 
       return { plan, columns };
     });
-  }, [plans]);
+  }, [plans, selectedTrimesters]);
 
   const handleSave = useCallback(
     (key: string, studentId: string, instrumentId: string) => {
@@ -124,11 +145,9 @@ export function GradeMatrixTab({ context, plans, scores, scoreError }: GradeMatr
       <>
         <div className="flex items-center gap-2">
             <Input
-              className="min-w-[3rem]"
-              type="number"
-              min={0}
-              max={10}
-              step={1}
+              className="min-w-[4rem]"
+              type="text"
+              inputMode="decimal"
             value={value}
             onChange={e => setScoreValues(prev => ({ ...prev, [key]: e.target.value }))}
             onBlur={() => handleSave(key, studentId, instrument.instrumentId)}
@@ -165,7 +184,33 @@ export function GradeMatrixTab({ context, plans, scores, scoreError }: GradeMatr
             Filas = alumnos, columnas = instrumentos. Edita la nota (0-10) y se guarda automáticamente para el instrumento completo; el motor distribuye ese valor a RA/CE con los pesos configurados en la programación.
           </p>
         </div>
-        <GradeMatrixCsvImport contextId={context.id} />
+        <GradeMatrixCsvImport 
+          contextId={context.id} 
+          students={context.students} 
+          plans={plans}
+        />
+        
+        {/* Trimester filters */}
+        <div className="flex items-center gap-4 bg-zinc-50 dark:bg-zinc-900/50 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800">
+          <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mr-2">Filtrar por trimestre:</span>
+          {(["T1", "T2", "T3"] as TrimesterKey[]).map(t => (
+            <label key={t} className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200 cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
+              <Checkbox 
+                checked={selectedTrimesters.has(t)} 
+                onCheckedChange={(checked) => {
+                  setSelectedTrimesters(prev => {
+                    const next = new Set(prev);
+                    if (checked) next.add(t);
+                    else next.delete(t);
+                    return next;
+                  });
+                }} 
+              />
+              <span className="font-medium">{t}</span>
+            </label>
+          ))}
+        </div>
+
         {scoreError && (
           <div className="rounded-md border border-rose-300 bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700 dark:border-rose-600 dark:bg-rose-900/40 dark:text-rose-200">
             No se pudieron cargar las notas ({scoreError})
@@ -181,11 +226,11 @@ export function GradeMatrixTab({ context, plans, scores, scoreError }: GradeMatr
               Esta programación no tiene instrumentos definidos todavía.
             </div>
           ) : (
-            <div className="overflow-x-auto max-w-full rounded-xl border border-zinc-200 dark:border-zinc-800">
+            <div className="overflow-auto max-w-full max-h-[70vh] rounded-xl border border-zinc-200 dark:border-zinc-800 relative">
               <table className="w-full min-w-[640px] text-sm">
-                <thead>
-            <tr className="bg-zinc-50 text-left text-xs font-semibold tracking-wide text-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-400">
-              <th className="px-4 py-3">Alumno</th>
+                <thead className="sticky top-0 z-20 bg-zinc-50 dark:bg-zinc-900 shadow-sm border-b border-zinc-200 dark:border-zinc-800">
+            <tr className="text-left text-xs font-semibold tracking-wide text-zinc-600 dark:text-zinc-400">
+              <th className="px-4 py-3 sticky left-0 z-30 bg-zinc-50 dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 min-w-[200px]">Alumno</th>
               {group.columns.map(column => (
                 <th key={column.instrumentId} className="px-2 py-2">
                   <div className="space-y-1">
@@ -203,7 +248,7 @@ export function GradeMatrixTab({ context, plans, scores, scoreError }: GradeMatr
                 <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
                   {studentRows.map(student => (
                     <tr key={student.id} className="hover:bg-zinc-50/60 dark:hover:bg-zinc-900/30">
-                    <td className="px-4 py-3 align-top w-[220px]">
+                    <td className="px-4 py-3 align-top w-[220px] sticky left-0 z-10 bg-white dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800">
                       <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-50 leading-tight">
                         {student.last_name ? `${student.last_name}, ${student.student_name}` : student.student_name}
                       </div>

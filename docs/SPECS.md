@@ -203,15 +203,34 @@ Business rules:
 ### 4.4 Evaluation Entities
 
 - `EvaluationInstrument` belongs to a teaching plan.
-- Instrument types include `exam`, `project`, `activity`, `form`, `teacher_notebook`, `custom`.
+- Instrument types include `exam`, `project`, `activity`, `form`, `teacher_notebook`, `custom`, `pri_pmi`.
   - Instrument coverage is modeled per CE (`coverage_percent`).
   - Grade input supports:
     - `simple` mode: one grade replicated to all linked CE.
     - `advanced` mode: grade per CE.
+  - `pri_pmi` instruments are special:
+    - They are configured with a single checkbox (same behavior for PRI and PMI).
+    - They select affected RAs only (no RA percentage, no CE coverage editing, no CE weights).
+    - They store an optional per-student score (blank means the student does not participate).
+    - They do not participate in trimester grade computation.
+    - They can replace the RA original grade when computing the RA improved grade.
 
 ### 4.4.1 Instrument RA/CE coverage anatomy
 
 Each instrument defines both the set of RAs it touches and, for each RA, the percent of that RA’s grade that the instrument occupies. Within each RA, the instrument also records a CE-level share percentage so we can resolve how the instrument score flows from RA → CE. The CE share percentages for a given RA must sum to `100`; they represent the distribution of the instrument’s RA contribution across the RA’s criteria. When graders enter scores on an instrument, the `coverage_percent` stored for each CE is computed as the RA percentage multiplied by the CE share (both normalized) so that, for example, an instrument covering RA1 at `20%` with CE shares `a=20%`, `b=30%`, `c=50%` yields CE coverage of `4%`, `6%`, and `10%` of RA1, respectively. This explicit instrumentation makes it possible to trace any instrument grade back to the RA and CE(s) it supports.
+
+This RA/CE weighted model applies to standard instruments (`exam`, `project`, `activity`, `form`, `teacher_notebook`, `custom`). `pri_pmi` instruments are excluded from RA/CE weighting.
+
+### 4.4.2 PRI/PMI effects and manual precedence
+
+- Each `pri_pmi` score can affect one or more selected RAs for the same student.
+- Auto rule for RA improved grade:
+  - If there is no `pri_pmi` score for that RA/student, RA improved = RA original.
+  - If there are multiple `pri_pmi` scores for that RA/student, use the one with the most recent date.
+- Manual precedence:
+  - If RA improved grade is manually edited, it becomes fixed and no longer auto-recomputes.
+  - Once manually edited, it can only be changed manually.
+- `pri_pmi` score can replace an RA grade even when RA original is `null`.
 
 ## 5. Weight and Consistency Rules
 
@@ -235,7 +254,7 @@ Hard invariants:
 
 Soft invariants:
 
-1. For each CE, sum of instrument coverage SHOULD equal `100` while drafting.
+1. For each CE, sum of standard-instrument coverage SHOULD equal `100` while drafting.
 2. For final grade and publish readiness, CE coverage MUST be `100`.
 
 Rounding policy:
@@ -250,16 +269,42 @@ Rounding policy:
 
 - `instrument_ce_coverage_factor = instrument_ra_percent_normalized * ce_share_percent_normalized`
 - `ce_grade = sum(instrument_grade_for_ce * instrument_ce_coverage_factor)`
-- `ra_grade = sum(ce_grade * ce_weight_in_ra_normalized)`
-- `final_grade = sum(ra_grade * ra_weight_in_plan_normalized)`
+- `ra_original_grade = sum(ce_grade * ce_weight_in_ra_normalized)`
+- `final_original_auto_grade = sum(ra_original_grade * ra_weight_in_plan_normalized)`
+
+Additional formulas for PRI/PMI and improved grades:
+
+- `ra_improved_auto_grade`:
+  - default: `ra_original_grade`
+  - if PRI/PMI scores exist for that RA/student: use the score with the most recent date
+- `ra_improved_final_grade = ra_improved_manual_override ?? ra_improved_auto_grade`
+- `final_improved_auto_grade = sum(ra_improved_final_grade * ra_weight_in_plan_normalized)`
+- `final_improved_final_grade = final_improved_manual_override ?? final_improved_auto_grade`
+
+Trimester columns:
+
+- `trimester_auto_grade`: same weighted computation as current trimester grade engine (standard instruments only).
+- `trimester_adjusted_grade`:
+  - default: `floor(trimester_auto_grade)`
+  - if manually edited: fixed manual value until edited again.
 
 ### 6.2 Missing Data Behavior
 
 - If a CE has no graded instrument, CE grade is `null` (not zero).
 - RA/final values are computed as partial aggregates and include completion metadata.
+- If `ra_original_grade` is `null` and a PRI/PMI score exists, `ra_improved_auto_grade` can still take the PRI/PMI value.
 - UI must present both:
   - `computed_partial_grade`
   - `grade_completion_percent`
+
+### 6.3 Display and override requirements
+
+- RA grid must show two columns per RA: `original` and `improved`.
+- Improved RA cell must show a tooltip with affecting PRI/PMI instruments and score values.
+- If an improved RA value was manually edited, UI must show a manual-override indicator.
+- Final module area must show two columns:
+  - `final_original_auto_grade`
+  - `final_improved_final_grade` (manual override allowed, with indicator)
 
 ## 7. Trimester Logic
 
@@ -275,6 +320,11 @@ Derived outputs per trimester:
 Business rule:
 
 - CE may appear in multiple trimesters if covered by UT assigned to different trimesters.
+- Each evaluation context has global toggles: `T1 abierta/cerrada`, `T2 abierta/cerrada`, `T3 abierta/cerrada`.
+- If a trimester is closed:
+  - `trimester_auto_grade` is frozen (no recomputation from new/edited scores).
+  - `trimester_adjusted_grade` remains editable manually.
+- PRI/PMI instruments never affect trimester grades (open or closed).
 
 ## 8. Visibility and Collaboration
 
@@ -330,6 +380,7 @@ Baseline UX requirements:
 - Core tasks must be clear, with predictable navigation and explicit feedback states.
 - Forms must provide field-level and global error messages.
 - Destructive actions must require confirmation.
+- Evaluation detail view must expose a dedicated `PRIS/PMIS` section after the standard grade matrix; PRI/PMI instruments must not appear in the standard matrix tab.
 
 Accessibility requirements:
 

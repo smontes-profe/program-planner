@@ -44,6 +44,7 @@ Treat these as fixed unless the user explicitly revises them:
 - Import/fork is deep copy without post-import sync.
 - Authorization must be enforced in Supabase RLS.
 - `academic_year` and `region_code` must be normalized.
+- In Evaluations, final module grade is RA-weight based (not trimester-average based). PRI/PMI is a special instrument (single checkbox) that can replace RA grade and must be processed in its own section.
 
 ## 4. Implementation Standards
 

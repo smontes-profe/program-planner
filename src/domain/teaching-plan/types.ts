@@ -82,6 +82,7 @@ export interface PlanInstrument {
   plan_id: string;
   code: string;
   type: InstrumentType;
+  is_pri_pmi: boolean;
   name: string;
   description: string | null;
   created_at: string;
