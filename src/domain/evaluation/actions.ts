@@ -253,6 +253,7 @@ export async function addStudent(
 }
 
 export async function updateStudent(
+  contextId: string,
   studentId: string,
   payload: { student_name?: string; last_name?: string | null; student_code?: string | null; student_email?: string | null; active?: boolean }
 ): Promise<ActionResponse<EvaluationStudent>> {
@@ -268,11 +269,11 @@ export async function updateStudent(
     .single();
 
   if (error) return { ok: false, error: error.message };
-  revalidatePath(`/evaluations/${contextId_from_student(supabase, studentId)}`);
+  revalidatePath(`/evaluations/${contextId}`);
   return { ok: true, data: data as EvaluationStudent };
 }
 
-export async function deleteStudent(studentId: string): Promise<ActionResponse> {
+export async function deleteStudent(contextId: string, studentId: string): Promise<ActionResponse> {
   const supabase = await createClient();
   const { error } = await supabase
     .from("evaluation_students")
@@ -280,7 +281,7 @@ export async function deleteStudent(studentId: string): Promise<ActionResponse> 
     .eq("id", studentId);
 
   if (error) return { ok: false, error: error.message };
-  revalidatePath(`/evaluations/${contextId_from_student(supabase, studentId)}`);
+  revalidatePath(`/evaluations/${contextId}`);
   return { ok: true, data: null };
 }
 

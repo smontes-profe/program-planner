@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { type EvaluationContextFull, type EvaluationStudent } from "@/domain/evaluation/types";
-import { addStudent, deleteStudent, bulkImportStudents } from "@/domain/evaluation/actions";
+import { addStudent, deleteStudent, bulkImportStudents, updateStudent } from "@/domain/evaluation/actions";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Loader2, UserPlus, FileUp, AlertCircle, CheckCircle2, X, Info } from "lucide-react";
+import { Plus, Trash2, Loader2, UserPlus, FileUp, AlertCircle, CheckCircle2, X, Info, PencilLine, Check, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -135,17 +135,29 @@ export function StudentsTab({ context }: StudentsTabProps) {
   const [newCode, setNewCode] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [isPending, setIsPending] = useState(false);
   const router = useRouter();
   const [sortKey, setSortKey] = useState<SortKey>("last_name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [importPreview, setImportPreview] = useState<{ data: ParsedStudentRow[]; fileName: string } | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    student_name: "",
+    last_name: "",
+    student_code: "",
+    student_email: ""
+  });
 
   async function handleAdd() {
     if (!newName.trim()) return;
-    setIsPending(true);
-    const res = await addStudent(context.id, { student_name: newName, last_name: newLastName || null, student_code: newCode || null, student_email: newEmail || null });
-    setIsPending(false);
+    setPendingId("add");
+    const res = await addStudent(context.id, { 
+      student_name: newName, 
+      last_name: newLastName || null, 
+      student_code: newCode || null, 
+      student_email: newEmail || null 
+    });
+    setPendingId(null);
     if (res.ok) {
       setStudents(prev => [...prev, res.data]);
       setNewLastName("");
@@ -156,13 +168,48 @@ export function StudentsTab({ context }: StudentsTabProps) {
     }
   }
 
+  function startEditing(s: EvaluationStudent) {
+    setEditingId(s.id);
+    setEditForm({
+      student_name: s.student_name,
+      last_name: s.last_name || "",
+      student_code: s.student_code || "",
+      student_email: s.student_email || ""
+    });
+  }
+
+  async function handleUpdate() {
+    if (!editingId || !editForm.student_name.trim()) return;
+    
+    setPendingId(editingId);
+    try {
+      const res = await updateStudent(context.id, editingId, {
+        student_name: editForm.student_name,
+        last_name: editForm.last_name || null,
+        student_code: editForm.student_code || null,
+        student_email: editForm.student_email || null,
+      });
+      
+      if (res.ok) {
+        setStudents(prev => prev.map(s => s.id === editingId ? res.data : s));
+        setEditingId(null);
+        router.refresh();
+      }
+    } finally {
+      setPendingId(null);
+    }
+  }
+
   async function handleDelete(studentId: string) {
-    setIsPending(true);
-    const res = await deleteStudent(studentId);
-    setIsPending(false);
-    if (res.ok) {
-      setStudents(prev => prev.filter(s => s.id !== studentId));
-      router.refresh();
+    setPendingId(studentId);
+    try {
+      const res = await deleteStudent(context.id, studentId);
+      if (res.ok) {
+        setStudents(prev => prev.filter(s => s.id !== studentId));
+        router.refresh();
+      }
+    } finally {
+      setPendingId(null);
     }
   }
 
@@ -171,9 +218,9 @@ export function StudentsTab({ context }: StudentsTabProps) {
     const validData = importPreview.data.filter(s => !s.error);
     if (validData.length === 0) return;
     
-    setIsPending(true);
+    setPendingId("import");
     const res = await bulkImportStudents(context.id, validData);
-    setIsPending(false);
+    setPendingId(null);
     
     if (res.ok) {
       setStudents(prev => [...prev, ...res.data]);
@@ -280,8 +327,8 @@ export function StudentsTab({ context }: StudentsTabProps) {
           className="w-56"
           onKeyDown={(e) => e.key === "Enter" && handleAdd()}
         />
-        <Button onClick={handleAdd} disabled={isPending || !newName.trim()} size="sm">
-          {isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
+        <Button onClick={handleAdd} disabled={pendingId !== null || !newName.trim()} size="sm">
+          {pendingId === "add" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
           Añadir
         </Button>
       </div>
@@ -354,10 +401,10 @@ export function StudentsTab({ context }: StudentsTabProps) {
               <Button variant="outline" size="sm" onClick={() => setImportPreview(null)}>Cancelar</Button>
               <Button 
                 onClick={handleBulkImport} 
-                disabled={isPending || importPreview.data.filter(s => !s.error).length === 0} 
+                disabled={pendingId !== null || importPreview.data.filter(s => !s.error).length === 0} 
                 size="sm"
               >
-                {isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <UserPlus className="h-4 w-4 mr-1" />}
+                {pendingId === "import" ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <UserPlus className="h-4 w-4 mr-1" />}
                 Confirmar Importación
               </Button>
             </div>
@@ -393,25 +440,108 @@ export function StudentsTab({ context }: StudentsTabProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-              {filteredStudents.map((s, i) => (
-                <tr key={s.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors">
-                  <td className="px-4 py-2 text-zinc-400 font-mono text-xs">{i + 1}</td>
-                  <td className="px-4 py-2 font-mono text-xs text-zinc-500">{s.student_code || "—"}</td>
-                  <td className="px-4 py-2 text-zinc-700 dark:text-zinc-300 text-sm">{s.last_name || "—"}</td>
-                  <td className="px-4 py-2 font-medium text-zinc-900 dark:text-zinc-100 text-sm">{s.student_name}</td>
-                  <td className="px-4 py-2 text-zinc-500 text-xs">{s.student_email || "—"}</td>
-                  <td className="px-4 py-2 text-right">
-                    <button
-                      onClick={() => handleDelete(s.id)}
-                      disabled={isPending}
-                      className="p-1 text-zinc-400 hover:text-red-600 transition-colors"
-                      title="Eliminar alumno"
-                    >
-                      {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {filteredStudents.map((s, i) => {
+                const isEditing = editingId === s.id;
+                return (
+                  <tr key={s.id} className={cn(
+                    "transition-colors",
+                    isEditing ? "bg-emerald-50/50 dark:bg-emerald-900/10" : "hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30"
+                  )}>
+                    <td className="px-4 py-2 text-zinc-400 font-mono text-xs">{i + 1}</td>
+                    <td className="px-4 py-2">
+                      {isEditing ? (
+                        <Input
+                          value={editForm.student_code}
+                          onChange={e => setEditForm(prev => ({ ...prev, student_code: e.target.value }))}
+                          className="h-8 w-24 font-mono text-xs"
+                          placeholder="ID"
+                        />
+                      ) : (
+                        <span className="font-mono text-xs text-zinc-500">{s.student_code || "—"}</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2">
+                      {isEditing ? (
+                        <Input
+                          value={editForm.last_name}
+                          onChange={e => setEditForm(prev => ({ ...prev, last_name: e.target.value }))}
+                          className="h-8 w-full text-sm"
+                          placeholder="Apellidos"
+                        />
+                      ) : (
+                        <span className="text-zinc-700 dark:text-zinc-300 text-sm">{s.last_name || "—"}</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2">
+                      {isEditing ? (
+                        <Input
+                          value={editForm.student_name}
+                          onChange={e => setEditForm(prev => ({ ...prev, student_name: e.target.value }))}
+                          className="h-8 w-full text-sm font-medium"
+                          placeholder="Nombre"
+                        />
+                      ) : (
+                        <span className="font-medium text-zinc-900 dark:text-zinc-100 text-sm">{s.student_name}</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2">
+                      {isEditing ? (
+                        <Input
+                          value={editForm.student_email}
+                          onChange={e => setEditForm(prev => ({ ...prev, student_email: e.target.value }))}
+                          className="h-8 w-full text-xs"
+                          placeholder="Email"
+                        />
+                      ) : (
+                        <span className="text-zinc-500 text-xs">{s.student_email || "—"}</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {isEditing ? (
+                          <>
+                            <button
+                              onClick={handleUpdate}
+                              disabled={pendingId !== null}
+                              className="p-1 text-emerald-600 hover:text-emerald-700 transition-colors"
+                              title="Guardar"
+                            >
+                              {pendingId === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                            </button>
+                            <button
+                              onClick={() => setEditingId(null)}
+                              disabled={pendingId !== null}
+                              className="p-1 text-zinc-400 hover:text-zinc-600 transition-colors"
+                              title="Cancelar"
+                            >
+                              <Ban className="h-4 w-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => startEditing(s)}
+                              disabled={pendingId !== null}
+                              className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                              title="Editar"
+                            >
+                              <PencilLine className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(s.id)}
+                              disabled={pendingId !== null}
+                              className="p-1 text-zinc-400 hover:text-red-600 transition-colors"
+                              title="Eliminar alumno"
+                            >
+                              {pendingId === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

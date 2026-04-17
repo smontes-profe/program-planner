@@ -31,6 +31,7 @@ Nuevo módulo de Evaluaciones al mismo nivel que Plantillas de Currículo y Prog
 - [x] UI de lista de alumnos con búsqueda y filtrado por módulo/programación.
 - [x] El botón de "Seleccionar CSV de Moodle" que ponga "importar CSV". Que tenga al lado un botón redondito de "I" (de información), que muestre un tooltip con el formato esperado del CSV. Colocar estos dos botones arriba, antes de la fila de añadir nuevo alumno.
 - [x] Mover el campo de "Buscar alumno..." entre la fila de añadir alumno y la tabla de alumnos, y a la izquierda en lugar de a la derecha.
+- [x] En la sección Alumnado: Permitir edición inline de Apellidos, nombre, email de alumnos.
 
 ### 3.6.2 - Contexto de Evaluación
 
