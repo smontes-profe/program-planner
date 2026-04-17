@@ -186,7 +186,11 @@ export function GradeMatrixTab({ context, plans, scores, scoreError }: GradeMatr
             Filas = alumnos, columnas = instrumentos. Edita la nota (0-10) y se guarda automáticamente para el instrumento completo; el motor distribuye ese valor a RA/CE con los pesos configurados en la programación.
           </p>
         </div>
-        <GradeMatrixCsvImport contextId={context.id} />
+        <GradeMatrixCsvImport 
+          contextId={context.id} 
+          students={context.students} 
+          plans={plans}
+        />
         
         {/* Trimester filters */}
         <div className="flex items-center gap-4 bg-zinc-50 dark:bg-zinc-900/50 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800">

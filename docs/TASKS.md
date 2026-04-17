@@ -20,9 +20,9 @@ Status legend:
 ## Phase 3.7 - Evaluaciones: Mejoras pendientes
 
 - [x] Matriz de notas: Añadir selectores justo antes de la tabla (después del texto de explicación de imprtar csv), para poder marcar T1, T2, T3. Por defecto, deben estar marcados todos los trimestres. Si se modifican, la tabla debe mostrar solo las notas de los instrumentos correspondientes a los trimestres marcados.
-- [ ] Vista de configuración del contexto de evaluación: resumen de módulos vinculados y alumnos asignados.
-- [ ] Matriz de notas: Validación de CSV con preservación de datos en caso de error y reporte de errores por fila/columna.
-- [ ] Exportación de notas: Exportar matriz completa de instrumentos en CSV: filas = alumnos, columnas = instrumentos + notas calculadas.
+- [x] Matriz de notas: Validación de CSV con preservación de datos en caso de error y reporte de errores por fila/columna.
+- [] Matriz de notas: cuando hay scroll horizontal no se aprecia bien si estás en la parte de arriba de la tabla.
+- [ ] Exportación de notas: Permitir exportar notas por trimestre.
 - [ ] Exportación de notas: Exportar acta de evaluacion: documento resumen con notas finales por alumno y estadisticas del grupo.
 
 ## Phase 4 - Collaboration and Visibility

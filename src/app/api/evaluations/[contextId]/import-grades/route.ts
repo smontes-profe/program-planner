@@ -9,6 +9,7 @@ function parseCsvRows(content: string): ParsedCsvRow[] {
   let current = "";
   let row: string[] = [];
   let inQuotes = false;
+  const contentFiltered = content.replace(/^\uFEFF/, "");
 
   const pushCell = () => {
     row.push(current);
@@ -22,9 +23,9 @@ function parseCsvRows(content: string): ParsedCsvRow[] {
     row = [];
   };
 
-  for (let i = 0; i < content.length; i++) {
-    const char = content[i];
-    const nextChar = content[i + 1];
+  for (let i = 0; i < contentFiltered.length; i++) {
+    const char = contentFiltered[i];
+    const nextChar = contentFiltered[i + 1];
 
     if (char === '"') {
       if (inQuotes && nextChar === '"') {
@@ -73,19 +74,36 @@ export async function POST(
   routeContext: { params: Promise<{ contextId: string }> }
 ) {
   const params = await routeContext.params;
-  const formData = await req.formData();
-  let contextId = params.contextId;
-  if (!contextId) {
-    const fallback = formData.get("context_id");
-    if (typeof fallback === "string" && fallback.trim() !== "") {
-      contextId = fallback.trim();
-    }
-  }
+  const contextId = params.contextId;
 
   if (!contextId) {
     return NextResponse.json({ error: "Falta el ID del contexto" }, { status: 400 });
   }
 
+  const contentType = req.headers.get("content-type") || "";
+
+  // 1. Handle JSON (Bulk upsert validated scores)
+  if (contentType.includes("application/json")) {
+    try {
+      const body = await req.json();
+      const scores = body.scores;
+      if (!Array.isArray(scores)) {
+        return NextResponse.json({ error: "El cuerpo debe contener un array de notas" }, { status: 400 });
+      }
+
+      const result = await bulkUpsertScores(contextId, scores);
+      if (!result.ok) {
+        return NextResponse.json({ error: result.error }, { status: 500 });
+      }
+
+      return NextResponse.json({ importedCount: scores.length });
+    } catch (err) {
+      return NextResponse.json({ error: "Error al procesar JSON" }, { status: 400 });
+    }
+  }
+
+  // 2. Handle FormData (Legacy parser)
+  const formData = await req.formData();
   const file = formData.get("grades_csv");
   if (!file || !(file instanceof Blob)) {
     return NextResponse.json({ error: "No se ha enviado ningún archivo" }, { status: 400 });
@@ -96,7 +114,7 @@ export async function POST(
     return NextResponse.json({ error: "El archivo está vacío" }, { status: 400 });
   }
 
-  const rows = parseCsvRows(text.replace(/^\uFEFF/, ""));
+  const rows = parseCsvRows(text);
   const cleanedRows = rows.filter(row => row.some(cell => cell.trim().length > 0));
   if (cleanedRows.length <= 1) {
     return NextResponse.json({ error: "El archivo no contiene datos" }, { status: 400 });
@@ -136,26 +154,11 @@ export async function POST(
     const idMatch = rawLabel.match(/\|([A-Za-z0-9-]+)$/);
     const codeMatch = rawLabel.match(/^([0-9]+(?:\.[0-9]+)*)/);
     let instrumentId: string | undefined;
-    let instrumentCode: string | undefined;
 
-    if (idMatch) {
-      const candidate = idMatch[1];
-      if (instrumentById.has(candidate)) {
-        instrumentId = candidate;
-        instrumentCode = instrumentById.get(candidate)?.code ?? undefined;
-      }
-    }
-
-    if (!instrumentId && codeMatch) {
-      const candidateCode = codeMatch[1];
-      const planInstrument = instrumentByCode.get(candidateCode);
-      if (planInstrument) {
-        instrumentId = planInstrument.id;
-        instrumentCode = planInstrument.code;
-      } else {
-        missingHeaderInstruments.add(candidateCode);
-        continue;
-      }
+    if (idMatch && instrumentById.has(idMatch[1])) {
+      instrumentId = idMatch[1];
+    } else if (codeMatch && instrumentByCode.has(codeMatch[1])) {
+      instrumentId = instrumentByCode.get(codeMatch[1])!.id;
     }
 
     if (!instrumentId) {
@@ -174,15 +177,7 @@ export async function POST(
     });
   }
 
-  const studentsByEmail = new Map<string, { id: string; email: string | null }>();
-  for (const student of context.students) {
-    if (student.student_email) {
-      studentsByEmail.set(student.student_email.trim().toLowerCase(), {
-        id: student.id,
-        email: student.student_email,
-      });
-    }
-  }
+  const studentsByEmail = new Map(context.students.filter(s => s.student_email).map(s => [s.student_email!.trim().toLowerCase(), s]));
 
   const missingStudentEmails = new Set<string>();
   const invalidColumns: { row: number; column: string; value: string }[] = [];
@@ -197,46 +192,36 @@ export async function POST(
     const emailCell = normalizeString(row[2]).toLowerCase();
     const student = emailCell ? studentsByEmail.get(emailCell) : undefined;
     if (!student) {
-      if (emailCell) {
-        missingStudentEmails.add(emailCell);
-      }
+      if (emailCell) missingStudentEmails.add(emailCell);
       return;
     }
 
     headerInstruments.forEach(col => {
       const rawValue = normalizeString(row[col.columnIndex]);
-      if (!rawValue) return;
+      if (!rawValue || rawValue === "-") return;
 
       const numeric = Number(rawValue.replace(",", "."));
       if (Number.isNaN(numeric)) {
-        invalidColumns.push({
-          row: rowIndex + 2,
-          column: col.label,
-          value: rawValue,
-        });
+        invalidColumns.push({ row: rowIndex + 2, column: col.label, value: rawValue });
         return;
       }
 
-      let normalizedValue = numeric;
-      if (col.maxPoints && col.maxPoints > 0) {
-        normalizedValue = (numeric / col.maxPoints) * 10;
-      }
-      normalizedValue = Math.min(10, Math.max(0, normalizedValue));
+      let val = numeric;
+      if (col.maxPoints && col.maxPoints > 0) val = (numeric / col.maxPoints) * 10;
+      val = Math.min(10, Math.max(0, val));
 
       scoreRows.push({
         student_id: student.id,
         instrument_id: col.instrumentId,
         plan_ce_id: null,
-        score_value: Number(normalizedValue.toFixed(2)),
+        score_value: Number(val.toFixed(2)),
       });
     });
   });
 
   if (scoreRows.length > 0) {
     const result = await bulkUpsertScores(contextId, scoreRows);
-    if (!result.ok) {
-      return NextResponse.json({ error: result.error }, { status: 500 });
-    }
+    if (!result.ok) return NextResponse.json({ error: result.error }, { status: 500 });
   }
 
   return NextResponse.json({
