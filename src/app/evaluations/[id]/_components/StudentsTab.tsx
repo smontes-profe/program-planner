@@ -4,11 +4,17 @@ import { useEffect, useMemo, useState } from "react";
 import { type EvaluationContextFull, type EvaluationStudent } from "@/domain/evaluation/types";
 import { addStudent, deleteStudent, bulkImportStudents } from "@/domain/evaluation/actions";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Loader2, UserPlus, FileUp, AlertCircle, CheckCircle2, X } from "lucide-react";
+import { Plus, Trash2, Loader2, UserPlus, FileUp, AlertCircle, CheckCircle2, X, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface StudentsTabProps {
   readonly context: EvaluationContextFull;
@@ -236,15 +242,12 @@ export function StudentsTab({ context }: StudentsTabProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Alumnado</h2>
-        <Input
-          placeholder="Buscar alumno..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full sm:w-64"
-        />
       </div>
+
+      {/* Bulk import */}
+      <BulkImportForm onSelect={handleFileSelect} />
 
       {/* Add student form */}
       <div className="flex items-center gap-2 flex-wrap">
@@ -283,8 +286,14 @@ export function StudentsTab({ context }: StudentsTabProps) {
         </Button>
       </div>
 
-      {/* Bulk import */}
-      <BulkImportForm onSelect={handleFileSelect} />
+      <div className="py-2">
+        <Input
+          placeholder="Buscar alumno..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full sm:w-64"
+        />
+      </div>
 
       {importPreview && (
         <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 p-4 space-y-4 animate-in fade-in slide-in-from-top-2">
@@ -436,9 +445,28 @@ function BulkImportForm({ onSelect }: { onSelect: (csv: string, fileName: string
         <input type="file" accept=".csv,text/csv" onChange={handleFileChange} className="hidden" />
         <FileUp className="h-4 w-4 text-zinc-500" />
         <span className="text-zinc-700 dark:text-zinc-300 font-medium">
-          Seleccionar CSV de Moodle...
+          Importar CSV
         </span>
       </label>
+      
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button type="button" className="p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <Info className="h-4 w-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="p-3">
+            <p className="font-semibold mb-1">Formato esperado:</p>
+            <p className="mb-2 italic">CSV exportado de Moodle</p>
+            <ul className="space-y-1 list-disc pl-3">
+              <li>Cabeceras requeridas: <strong>Nombre</strong>, <strong>Apellidos</strong> e <strong>ID estudiante</strong> (o Número ID).</li>
+              <li>Soporta columna opcional: <strong>Email</strong> o <strong>Dirección de correo</strong>.</li>
+              <li>Formato: valores entre comillas y separados por comas.</li>
+            </ul>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     </div>
   );
 }

@@ -467,7 +467,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
                             {pendingKey === key && <Loader2 className="h-3 w-3 animate-spin text-emerald-500" />}
                             {tri.adjustedIsManual && (
                               <Tooltip>
-                                <TooltipTrigger>
+                                <TooltipTrigger asChild>
                                   <button type="button" onClick={() => resetTrimesterAdjusted(student.studentId, trimester)} className="rounded p-0.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30" aria-label="Restablecer ajuste">
                                     <PencilLine className="h-3 w-3" />
                                   </button>
@@ -501,7 +501,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
                           {pendingKey === key && <Loader2 className="h-3 w-3 animate-spin text-emerald-500" />}
                           {student.finalImprovedIsManual && (
                             <Tooltip>
-                              <TooltipTrigger>
+                              <TooltipTrigger asChild>
                                 <button type="button" onClick={() => resetFinalImproved(student.studentId)} className="rounded p-0.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30" aria-label="Restablecer nota final">
                                   <PencilLine className="h-3 w-3" />
                                 </button>
@@ -591,7 +591,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
                             {pendingKey === key && <Loader2 className="h-3 w-3 animate-spin text-emerald-500" />}
                             {ra.improvedIsManual && (
                               <Tooltip>
-                                <TooltipTrigger>
+                                <TooltipTrigger asChild>
                                   <button type="button" onClick={() => resetRAImproved(student.studentId, column.raId)} className="rounded p-0.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30" aria-label="Restablecer nota RA">
                                     <PencilLine className="h-3 w-3" />
                                   </button>
@@ -607,7 +607,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
                             )}
                             {ra.priPmiImpacts.length > 0 && (
                               <Tooltip>
-                                <TooltipTrigger>
+                                <TooltipTrigger asChild>
                                   <button type="button" className="rounded px-1 py-0.5 text-[10px] font-semibold text-emerald-600">PRI</button>
                                 </TooltipTrigger>
                                 <TooltipContent className="max-w-[280px] text-xs">
