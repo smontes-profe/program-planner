@@ -348,9 +348,104 @@ Nuevo módulo de Evaluaciones al mismo nivel que Plantillas de Currículo y Prog
   - [x] Una programación `published` es visible y seleccionable desde el módulo de Evaluaciones.
   - [x] Una programación `published` se puede seguir editando sin cambiar su estado (los cambios de peso se recalculan sobre todas las notas existentes — ver nota de Opción B a futuro).
   - [x] Panel de avisos en la vista de programación que muestre:
-    - RAs cuyo `weight_global` no suma 100%.
-    - Instrumentos sin pesos de RA definidos.
-    - CE sin pesos definidos dentro de un RA.
-  - [x] Botones de publicar/despublicar en la vista de detalle del plan.
+- [x] Botones de publicar/despublicar en la vista de detalle del plan.
   - [x] Actualizar badges de status en lista y detalle (solo `draft` = "Borrador", `published` = "Publicada").
  - [x] BUGFIX for github action
+
+---
+
+## Testing
+
+> Estado actual: **0 tests unitarios** en `src/`. Solo hay tests de UI-quality con Playwright (`tests/ui-quality/`). El motor de notas (`grade-engine.ts`) es el componente más crítico y más complejo, y no tiene cobertura. El runner es **Vitest** (`npm test`), con entorno `jsdom`. Los tests van en `src/**/*.test.ts`.
+
+### T1 — Motor de notas: cálculo de RA originales (`grade-engine.ts`)
+
+- [ ] RA con un solo instrumento y un solo CE con peso 100%: la nota RA = nota instrumento.
+- [ ] RA con dos instrumentos y dos CEs, pesos iguales: nota RA = media de los dos instrumentos.
+- [ ] RA con dos CEs y pesos distintos (30/70): la ponderación es correcta.
+- [ ] RA con CE sin nota de instrumento: `originalGrade = null`, `completionPercent < 100`.
+- [ ] RA con todos los CEs sin nota: `originalGrade = null`, `completionPercent = 0`.
+- [ ] RA con algún CE evaluado y otro no: `completionPercent` proporcional al número evaluado.
+- [ ] Instrumento PRI/PMI **no** contribuye a `originalGrade`.
+- [ ] Score específico por CE tiene precedencia sobre score genérico de instrumento (fallback).
+- [ ] Instrumento activo en T1 no aparece en la nota de T2 (segregación trimestral).
+- [ ] RA inactivo en T2 no forma parte de la nota trimestral T2.
+
+### T2 — Motor de notas: lógica PRI/PMI (`buildPriPmiImpactsForRA`)
+
+- [ ] Sin PRI/PMI para ese RA: `improvedAutoGrade = null`, `improvedGrade = originalGrade`.
+- [ ] PRI/PMI con nota mayor que `originalGrade`: `isApplied = true`, `improvedAutoGrade = scoreValue`.
+- [ ] PRI/PMI con nota igual a `originalGrade`: `isApplied = false`, no se aplica (no mejora).
+- [ ] PRI/PMI con nota menor que `originalGrade`: `isApplied = false`, `improvedGrade = originalGrade`.
+- [ ] Varios PRI/PMI para el mismo RA: se selecciona el de **mayor nota**, no el más reciente.
+- [ ] Varios PRI/PMI, el mejor no mejora la original: ninguno se marca `isApplied`.
+- [ ] Varios PRI/PMI, el mejor sí mejora: solo el primero (mayor) tiene `isApplied = true`.
+- [ ] PRI/PMI sin nota registrada (score_value null): se ignora completamente.
+- [ ] `originalGrade = null` (RA sin evaluar): cualquier PRI/PMI con nota se marca `isApplied = true` (mejora sobre null).
+
+### T3 — Motor de notas: overrides manuales
+
+- [ ] Override manual de RA: `improvedGrade = overrideValue`, `improvedIsManual = true`.
+- [ ] Override manual de RA con valor menor que `improvedAutoGrade`: el override prevalece igualmente (regla de precedencia total).
+- [ ] Sin override manual: `improvedIsManual = false`, `improvedGrade = improvedAutoGrade ?? originalGrade`.
+- [ ] Override manual de nota final: `finalImprovedGrade = overrideValue`, `finalImprovedIsManual = true`.
+- [ ] Sin override final: nota final calculada desde RAs mejorados ponderados.
+- [ ] Override manual de nota final no afecta a `finalOriginalAutoGrade`.
+
+### T4 — Motor de notas: notas trimestrales
+
+- [ ] Nota trimestral autocalculada sin notas: `autoGrade = null`.
+- [ ] Nota trimestral es media ponderada de RAs activos en ese trimestre con notas.
+- [ ] Override ajustado de trimestre: `adjustedGrade = overrideValue`, `adjustedIsManual = true`.
+- [ ] Sin override ajustado: `adjustedGrade = floor(autoGrade)`.
+- [ ] `autoGrade = null` sin override: `adjustedGrade = null`.
+- [ ] Trimestre cerrado con snapshot: `autoGrade` toma el valor del snapshot (no recalcula).
+- [ ] Trimestre cerrado sin snapshot: `autoGrade` recalcula igualmente (caso defensivo).
+
+### T5 — Motor de notas: nota final del módulo
+
+- [ ] Nota final original basada en `originalGrade` de RAs ponderados.
+- [ ] Nota final mejorada auto basada en `improvedGrade` de RAs ponderados.
+- [ ] Con un RA sin nota y otro con nota: `finalOriginalHasMissingData = true`, grade parcial.
+- [ ] Todos los RAs sin nota: `finalOriginalAutoGrade = null`.
+- [ ] Pesos de RA suman 100%: la ponderación es correcta.
+- [ ] Pesos de RA a 0 (o inexistentes): se hace media simple igual.
+- [ ] Nota final mejorada manual prevalece sobre autocalculada.
+
+### T6 — Motor de notas: estadísticas de grupo
+
+- [ ] Sin alumnos calificados: `averageFinalGrade = null`, `medianFinalGrade = null`.
+- [ ] Un solo alumno calificado: `averageFinalGrade = medianFinalGrade = stdDevFinalGrade = null`.
+- [ ] Media con dos alumnos: valor correcto.
+- [ ] Mediana con número impar de alumnos: elemento central.
+- [ ] Mediana con número par de alumnos: media de los dos centrales.
+- [ ] Desviación típica con valores iguales: `stdDev = 0`.
+
+### T7 — Helpers de UI: parseo y formateo de notas (`GradesTab.tsx`)
+
+- [ ] `parseGrade("")`: `ok = false`.
+- [ ] `parseGrade("abc")`: `ok = false`.
+- [ ] `parseGrade("5,5")`: `ok = true`, `value = 5.5` (coma como decimal).
+- [ ] `parseGrade("-1")`: `ok = false` (fuera de rango).
+- [ ] `parseGrade("10.5")`: `ok = false` (fuera de rango).
+- [ ] `parseGrade("7.5")`: `ok = true`, `value = 7.5`.
+- [ ] `parseGradeInteger("7.3")`: `ok = false` (decimal rechazado por validación explícita).  
+  *Nota: en `saveTrimesterAdjusted` el decimal se trunca silenciosamente antes de llamar a esta función; el test debe verificar el helper puro por separado.*
+- [ ] `formatInputValue(null)`: devuelve `""`.
+- [ ] `formatInputValue(7)`: devuelve `"7"` (sin decimales para enteros).
+- [ ] `formatInputValue(7.5)`: devuelve `"7.5"`.
+
+### T8 — Reglas de negocio de UI: validación de RA mejorada manual
+
+- [ ] Valor ingresado >= `improvedAutoGrade`: se acepta y persiste como override.
+- [ ] Valor ingresado < `improvedAutoGrade` (cuando hay PRI/PMI aplicado): se llama `resetRAImproved` (revertir).
+- [ ] Valor ingresado < `originalGrade` (cuando no hay PRI/PMI): se llama `resetRAImproved`.
+- [ ] Valor ingresado igual a `originalGrade` sin PRI/PMI: se acepta (es un override válido).
+
+### T9 — Reglas de negocio de UI: truncado de nota trimestral ajustada
+
+- [ ] Valor `7.9` ingresado: se guarda `7` (Math.floor silencioso).
+- [ ] Valor `5.0` ingresado: se guarda `5`.
+- [ ] Valor `10` ingresado: se guarda `10`.
+- [ ] Valor `-1` ingresado: error de rango, no se guarda.
+- [ ] Valor `11` ingresado: error de rango, no se guarda.
