@@ -23,8 +23,8 @@ Status legend:
 - [x] Matriz de notas: Validación de CSV con preservación de datos en caso de error y reporte de errores por fila/columna.
 - [x] Matriz de notas: cuando hay scroll horizontal no se aprecia bien si estás en la parte de arriba de la tabla.
 - [x] Matriz de notas: cambiar los numeric stepper por campos input a secas.
-- [ ] Exportación de notas: Cambiar la parte de notas por alumno por "Notas trimestrales" y Permitir exportar notas por trimestre de todas los alumnos.
-- [ ] Exportación de notas: Eliminar la parte de "Listado de alumnos" por "Acta de evaluacion": documento resumen con notas finales por alumno y estadisticas del grupo.
+- [x] Exportación de notas: Cambiar la parte de notas por alumno por "Notas trimestrales" y Permitir exportar notas por trimestre de todas los alumnos.
+- [x] Exportación de notas: Eliminar la parte de "Listado de alumnos" por "Acta de evaluacion": documento resumen con notas finales por alumno y estadisticas del grupo.
 
 ## Phase 4 - Collaboration and Visibility
 
