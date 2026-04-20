@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
 import { Layers, Loader2, Info } from "lucide-react";
+import { SHEET_CONTENT_FLEX_CLASS } from "@/lib/ui-constants";
 
 interface BulkAddRAButtonProps {
   readonly templateId: string;
@@ -90,7 +91,7 @@ export function BulkAddRAButton({ templateId }: BulkAddRAButtonProps) {
           <Layers className="h-4 w-4 mr-1.5" /> Añadir Módulo Completo
         </div>
       </SheetTrigger>
-      <SheetContent side="right" className="bg-white dark:bg-zinc-950 sm:max-w-lg w-full flex flex-col h-full p-0">
+      <SheetContent side="right" className={SHEET_CONTENT_FLEX_CLASS}>
         <div className="px-6 pt-6 pb-2 shrink-0 border-b border-zinc-100 dark:border-zinc-800">
           <SheetHeader>
             <SheetTitle>Añadir RAs y Criterios (Módulo Completo)</SheetTitle>

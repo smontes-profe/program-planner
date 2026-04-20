@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Edit2, Loader2 } from "lucide-react";
+import { SHEET_CONTENT_CLASS } from "@/lib/ui-constants";
 
 interface EditCEButtonProps {
   readonly templateId: string;
@@ -42,7 +43,7 @@ export function EditCEButton({ templateId, ce }: EditCEButtonProps) {
           <Edit2 className="h-3 w-3" />
         </div>
       </SheetTrigger>
-      <SheetContent side="right" className="bg-white dark:bg-zinc-950">
+      <SheetContent side="right" className={SHEET_CONTENT_CLASS}>
         <SheetHeader>
           <SheetTitle>Editar Criterio</SheetTitle>
           <SheetDescription>Edita los detalles de este Criterio de Evaluación.</SheetDescription>

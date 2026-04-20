@@ -363,7 +363,7 @@ function AddUTButton({ plan }: { readonly plan: TeachingPlanFull }) {
           <Plus className="h-4 w-4" /> Añadir UT
         </div>
       </SheetTrigger>
-      <SheetContent side="right" className="bg-white dark:bg-zinc-950 w-full sm:max-w-2xl">
+      <SheetContent side="right" className="bg-white dark:bg-zinc-950 w-full sm:max-w-md">
         <SheetHeader>
           <SheetTitle>Nueva Unidad de Trabajo</SheetTitle>
           <SheetDescription>Añade una UT al plan.</SheetDescription>
@@ -408,7 +408,7 @@ function UTItemActions({ plan, unit }: { readonly plan: TeachingPlanFull; readon
         <SheetTrigger className="h-8 w-8 flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-900 border-none transition-colors cursor-pointer">
           <Edit2 className="h-4 w-4" />
         </SheetTrigger>
-        <SheetContent side="right" className="bg-white dark:bg-zinc-950 w-full sm:max-w-2xl">
+        <SheetContent side="right" className="bg-white dark:bg-zinc-950 w-full sm:max-w-md">
           <SheetHeader>
             <SheetTitle>Editar Unidad de Trabajo</SheetTitle>
             <SheetDescription>Modifica la {unit.code}.</SheetDescription>

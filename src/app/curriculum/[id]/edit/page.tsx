@@ -43,7 +43,7 @@ export default async function EditCurriculumPage({ params }: EditCurriculumPageP
   const organizations = orgsResult.ok ? orgsResult.data : [];
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-2xl">
+    <div className="app-content max-w-2xl">
       <div className="mb-6">
         <Link 
           href={`/curriculum/${id}`} 

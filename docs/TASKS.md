@@ -6,74 +6,43 @@ Status legend:
 - `[-]` in progress
 - `[x]` done
 - `[!]` blocked
+- `[P0]` priority 0 (Highest priority. This should be done ASAP)
+- `[P1]` priority 1 (High priority. This should be done soon)
+- `[P2]` priority 2 (Medium priority. This should be done when possible)
+- `[P3]` priority 3 (Low priority. This should be done when time permits)
 
 (Old finished tasks can be found in TASKS_DONE.md)
 
-## Phase 3 - Teaching Plan Core
+## Phase 4 - Ongoing feedback and improvements
 
-- [x] Implement `teaching_plans` schema with:
-  - `organization_id`
-  - `owner_profile_id`
-  - `visibility_scope`
-  - lineage fields
+- [P1][x] Better responsiveness for different desktop resolutions (specially big ones).
+- [P1][x] Currículos: El panel de edición de RAs y CEs es demasiado grande. Hay que dejarlo a la mitad.
+- [P1][x] Currículos: El panel de "añadir módulo completo", sin embargo, se queda muy estrecho. Que se quede al mismo ancho que el de edición de RAs y CEs (una vez ajustados estos).
 
-## Phase 3.7 - Evaluaciones: Mejoras pendientes
 
-- [x] Matriz de notas: Añadir selectores justo antes de la tabla (después del texto de explicación de imprtar csv), para poder marcar T1, T2, T3. Por defecto, deben estar marcados todos los trimestres. Si se modifican, la tabla debe mostrar solo las notas de los instrumentos correspondientes a los trimestres marcados.
-- [x] Matriz de notas: Validación de CSV con preservación de datos en caso de error y reporte de errores por fila/columna.
-- [x] Matriz de notas: cuando hay scroll horizontal no se aprecia bien si estás en la parte de arriba de la tabla.
-- [x] Matriz de notas: cambiar los numeric stepper por campos input a secas.
-- [x] Exportación de notas: Cambiar la parte de notas por alumno por "Notas trimestrales" y Permitir exportar notas por trimestre de todas los alumnos.
-- [x] Exportación de notas: Después de "Notas trimestrales" añadir un bloque nuevo de "Notas por RAs" que permita exportar las notas de los alumnos por RAs y CEs.
-- [x] Exportación de notas: Después de "Notas por RAs" añadir un bloque nuevo de "Notas por instrumentos" que permita exportar las notas de los alumnos por instrumentos. Añadir un check de "incluir PRI/PMI" para que se muestren o no.
-- [x] Exportación de notas: Eliminar la parte de "Listado de alumnos" por "Acta de evaluacion": documento resumen con notas finales por alumno y estadisticas del grupo.
+## Phase 5 - Evaluation Engine
 
-## Phase 4 - Collaboration and Visibility
+- [P1] [ ] Add unit tests for formulas and edge cases.
 
-- [ ] Implement deep import/fork from template.
-- [ ] Implement deep import/fork from published plan.
-- [ ] Persist lineage (`source_*`, `imported_at`).
-- [ ] Implement visibility-based read/import policy:
-  - `private`
-  - `organization`
-  - `company`
-- [ ] Ensure no automatic source sync after import.
+## Phase 6 - Collaboration and Visibility
 
-## Phase 6 - Evaluation Engine
-
-- [ ] Add unit tests for formulas and edge cases.
-
-## Phase 8 - CI/CD and Release
-
-- [ ] GitHub Actions: lint + typecheck + test on PR.
-- [ ] Branch strategy: `develop` -> development deploy, `main` -> production deploy.
-- [x] Configure GitHub secrets (`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`).
-- [x] Vercel environment segregation.
-- [x] Corregir tipado del Route Handler `import-grades` para Next 16 (`params` como `Promise`) y evitar fallo de `next build` en Vercel.
-
-## Phase 8.1 - UX Quality Gates
-
-- [x] Add automated accessibility checks in CI scaffold for critical pages/components.
-- [x] Add responsive visual checks in CI scaffold for key breakpoints.
-- [ ] Define release gate for unresolved accessibility blockers.
-
-## Phase 8.2 - Mobile Progression
-
-- [ ] Define mobile-read and mobile-light-edit acceptance criteria.
-- [ ] Instrument analytics for mobile friction in core flows.
-- [ ] Prioritize and execute high-impact mobile improvements.
+- [x] Implement deep import/fork from template.
+- [P2][ ] Implement deep import/fork from published plan (including UTs and instruments).
+- [x] Persist lineage (`source_*`, `imported_at`).
+- [P2][ ] Implement visibility-based exploration and import UI (search/browse other teachers' plans).
+- [x] Ensure no automatic source sync after import.
 
 ### Phase 9 - Futuro: Congelación de notas por trimestre (Opción B)
 
 > **Nota:** Esta tarea es distinta de los nuevos toggles de cierre global de T1/T2/T3 en 3.6.4. Aquí se mantiene la idea de congelación histórica avanzada (versionado completo de pesos y auditoría).
 
-- [ ] Definir concepto de "trimestre cerrado": las notas calculadas de un trimestre se congelan y no se ven afectadas por cambios futuros de pesos.
-- [ ] Mecanismo para que el profesor "cierre" un trimestre explícitamente.
-- [ ] El motor de notas debe usar dos conjuntos de pesos:
+- [P3] [ ] Definir concepto de "trimestre cerrado": las notas calculadas de un trimestre se congelan y no se ven afectadas por cambios futuros de pesos.
+- [P3] [ ] Mecanismo para que el profesor "cierre" un trimestre explícitamente.
+- [P3] [ ] El motor de notas debe usar dos conjuntos de pesos:
   - Pesos vigentes al cierre del trimestre → para notas ya calculadas.
   - Pesos actuales → para trimestres abiertos y futuras entradas de notas.
-- [ ] UI para mostrar qué pesos se usaron en cada trimestre y permitir revisar histórico.
-- [ ] Auditoría de cambios de pesos con fecha y responsable.
+- [P3] [ ] UI para mostrar qué pesos se usaron en cada trimestre y permitir revisar histórico.
+- [P3] [ ] Auditoría de cambios de pesos con fecha y responsable.
 
 ## Ongoing Quality Tasks
 

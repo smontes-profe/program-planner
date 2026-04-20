@@ -9,7 +9,7 @@ export default function Home() {
         <div className="absolute bottom-[-10%] left-[-10%] w-[30%] h-[30%] bg-blue-500/10 rounded-full blur-[100px]" />
       </div>
 
-      <main className="flex w-full max-w-4xl flex-col items-center text-center gap-12 z-10">
+      <main className="app-content flex flex-col items-center text-center gap-12 z-10">
         <div className="flex flex-col items-center gap-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20 rounded-full text-emerald-700 dark:text-emerald-400 text-xs font-bold uppercase tracking-widest shadow-sm">
             <GraduationCap className="h-4 w-4" />
@@ -23,7 +23,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
           <Link 
             href="/curriculum" 
             className="group flex flex-col items-start p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm hover:shadow-md hover:border-emerald-500/30 transition-all text-left"

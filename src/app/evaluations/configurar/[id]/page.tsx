@@ -27,7 +27,7 @@ export default async function ConfigureContextPage({ params }: ConfigurePageProp
   const context = contextResult.data;
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-4xl space-y-6">
+    <div className="app-content max-w-4xl space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Configuración</p>

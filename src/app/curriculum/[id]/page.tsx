@@ -61,7 +61,7 @@ export default async function TemplateDetailsPage({ params }: TemplatePageProps)
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-5xl">
+    <div className="app-content">
       <div className="flex flex-col gap-6">
         <div className="flex justify-between items-start">
           <Link 

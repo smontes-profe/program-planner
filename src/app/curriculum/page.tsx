@@ -19,7 +19,7 @@ export default async function CurriculumPage() {
 
   if (!result.ok) {
     return (
-      <div className="container mx-auto py-8 px-4">
+    <div className="app-content">
         <Card className="border-destructive">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-destructive">
@@ -41,7 +41,7 @@ export default async function CurriculumPage() {
   const templates = result.data;
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="app-content">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Currículos</h1>

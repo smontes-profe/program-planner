@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Loader2 } from "lucide-react";
+import { SHEET_CONTENT_CLASS } from "@/lib/ui-constants";
 
 interface AddRAButtonProps {
   readonly templateId: string;
@@ -38,7 +39,7 @@ export function AddRAButton({ templateId }: AddRAButtonProps) {
           <Plus className="h-4 w-4" /> Añadir RA
         </div>
       </SheetTrigger>
-      <SheetContent side="right" className="bg-white dark:bg-zinc-950">
+      <SheetContent side="right" className={SHEET_CONTENT_CLASS}>
         <SheetHeader>
           <SheetTitle>Añadir RA</SheetTitle>
           <SheetDescription>Añade un Resultado de Aprendizaje a la plantilla.</SheetDescription>

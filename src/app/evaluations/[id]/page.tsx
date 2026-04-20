@@ -44,7 +44,7 @@ export default async function EvalDetailPage({ params, searchParams }: EvalDetai
   const errorMessage = searchParams?.error ? decodeURIComponent(searchParams.error) : null;
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-6xl">
+    <div className="app-content">
       <div className="flex flex-col gap-6">
         {/* Top bar */}
         <div className="flex justify-between items-start">

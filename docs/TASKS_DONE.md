@@ -86,6 +86,14 @@
 - [x] Enable curriculum deletion if no active teaching plans are dependent on it.
 - [x] Update ARCHITECTURE.md and ERD to reflect the decoupled model.
 
+## Phase 3 - Teaching Plan Core
+
+- [x] Implement `teaching_plans` schema with:
+  - `organization_id`
+  - `owner_profile_id`
+  - `visibility_scope`
+  - lineage fields
+
 ### Phase 3A - Plan Base + Resumen de Pesos ✅
 
 - [x] Implement plan RA/CE CRUD (cloned from template via deep copy).
@@ -248,3 +256,28 @@ Nuevo módulo de Evaluaciones al mismo nivel que Plantillas de Currículo y Prog
 - [x] Indicadores visuales en RA mejorada y nota final mejorada cuando haya override manual.
 - [x] Actualizar exportaciones para incluir columnas nuevas (RA original/mejorada y notas finales original/mejorada) y excluir PRI/PMI de la matriz estándar.
 - [ ] Cobertura de tests del motor para: reemplazo por fecha, `null -> valor` por PRI/PMI, y precedencia de override manual.
+
+## Phase 3.7 - Evaluaciones: Mejoras pendientes
+
+- [x] Matriz de notas: Añadir selectores justo antes de la tabla (después del texto de explicación de imprtar csv), para poder marcar T1, T2, T3. Por defecto, deben estar marcados todos los trimestres. Si se modifican, la tabla debe mostrar solo las notas de los instrumentos correspondientes a los trimestres marcados.
+- [x] Matriz de notas: Validación de CSV con preservación de datos en caso de error y reporte de errores por fila/columna.
+- [x] Matriz de notas: cuando hay scroll horizontal no se aprecia bien si estás en la parte de arriba de la tabla.
+- [x] Matriz de notas: cambiar los numeric stepper por campos input a secas.
+- [x] Exportación de notas: Cambiar la parte de notas por alumno por "Notas trimestrales" y Permitir exportar notas por trimestre de todas los alumnos.
+- [x] Exportación de notas: Después de "Notas trimestrales" añadir un bloque nuevo de "Notas por RAs" que permita exportar las notas de los alumnos por RAs y CEs.
+- [x] Exportación de notas: Después de "Notas por RAs" añadir un bloque nuevo de "Notas por instrumentos" que permita exportar las notas de los alumnos por instrumentos. Añadir un check de "incluir PRI/PMI" para que se muestren o no.
+- [x] Exportación de notas: Eliminar la parte de "Listado de alumnos" por "Acta de evaluacion": documento resumen con notas finales por alumno y estadisticas del grupo.
+
+## Phase 8 - CI/CD and Release
+
+- [x] GitHub Actions: lint + typecheck + test on PR (via quality-gates.yml).
+- [x] Branch strategy: `develop` -> development deploy, `main` -> production deploy (managed by Vercel).
+- [x] Configure GitHub secrets (`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`).
+- [x] Vercel environment segregation.
+- [x] Corregir tipado del Route Handler `import-grades` para Next 16 (`params` como `Promise`) y evitar fallo de `next build` en Vercel.
+
+## Phase 8.1 - UX Quality Gates
+
+- [x] Add automated accessibility checks (manual trigger via workflow_dispatch).
+- [x] Add responsive visual checks in CI scaffold for key breakpoints.
+- [x] Define release gate for unresolved accessibility blockers (Manual Review).
