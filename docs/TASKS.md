@@ -22,7 +22,7 @@ Status legend:
 
 ## Phase 5 - Evaluation Engine
 
-- [P1] [ ] Add unit tests for formulas and edge cases.
+- [P1] [x] Add unit tests for formulas and edge cases.
 
 ## Phase 6 - Collaboration and Visibility
 

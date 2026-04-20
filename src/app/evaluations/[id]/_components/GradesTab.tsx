@@ -17,6 +17,7 @@ import {
   upsertTrimesterAdjustedOverride,
 } from "@/domain/evaluation/actions";
 import { cn } from "@/lib/utils";
+import { parseGrade, parseGradeInteger, formatInputValue } from "@/domain/evaluation/grade-ui-helpers";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -648,31 +649,8 @@ function formatStudentName(student: StudentGradeSummary): string {
   return student.studentLastName ? `${student.studentLastName}, ${firstName}` : firstName || "-";
 }
 
-function parseGrade(raw: string): { ok: true; value: number } | { ok: false; error: string } {
-  const value = raw.replace(",", ".").trim();
-  const parsed = Number(value);
-  if (value.length === 0 || Number.isNaN(parsed)) return { ok: false, error: "Introduce una nota valida." };
-  if (parsed < 0 || parsed > 10) return { ok: false, error: "La nota debe estar entre 0 y 10." };
-  return { ok: true, value: Math.round(parsed * 100) / 100 };
-}
-
-function parseGradeInteger(raw: string): { ok: true; value: number } | { ok: false; error: string } {
-  const value = raw.replace(",", ".").trim();
-  const parsed = Number(value);
-  if (value.length === 0 || Number.isNaN(parsed)) return { ok: false, error: "Introduce una nota valida." };
-  if (parsed < 0 || parsed > 10) return { ok: false, error: "La nota debe estar entre 0 y 10." };
-  if (!Number.isInteger(parsed)) return { ok: false, error: "La nota ajustada debe ser un numero entero (sin decimales)." };
-  return { ok: true, value: parsed };
-}
-
 function formatGrade(value: number | null): string {
   return value === null ? "-" : value.toFixed(2);
-}
-
-function formatInputValue(value: number | null): string {
-  if (value === null) return "";
-  if (Number.isInteger(value)) return `${value}`;
-  return `${Math.round(value * 100) / 100}`;
 }
 
 function gradeColorClass(value: number | null): string {
