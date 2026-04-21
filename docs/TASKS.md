@@ -23,8 +23,9 @@ Status legend:
 - [P2][x] Notas calculadas: En la parte de las trimestrales, posibilidad de poder meter, además de números entre el 1 y el 10, "NE" (No evaluad@). 
 - [P1][x] Editar instrumento: Al marcar un RA, además del campo donde se introduce el pocentaje de cobertura, incluir otro en la izquierda (de lectura) donde indique el porciento que queda por cubrir de ese RA. 
 - [P1][x] Bloque Mis programaciones: Añadir una sección RAs vs Instrumentos. En esa sección mostraremos una matriz donde veamos la lista de RAs (solo código, y un tooltip para ver la descripción), qué porcentaje de cada RA está cubierto (rojo si falta, verde si está al 100%, azul si se ha superado el 100%),  los instrumentos que afectan a ese RA, y en qué porcentaje. 
-- [P1][ ] Bloque Mis programaciones, sección RAs vs Instrumentos: que los valores de porcentajes se puedan modificar directamente aquí. 
+- [P1][x] Bloque Mis programaciones, sección RAs vs Instrumentos: que los valores de porcentajes se puedan modificar directamente aquí. 
 - [P0][x] Editar instrumento: el cálculo de porcentaje restante de un RA parece que se hace bien cuando aun queda porcentaje por cubrir, pero mal cuando ya está cubierto por encima del 100% (por ejemplo, veo que en PROG_SEV_2526_DAW_2_MAÑANA_DESCLI_061, el RA4 está al 140% y sin embargo no lo registra así si intento editar algún instrumento y asignar porcentaje  en ese RA).
+- [P1][x] Bloque Mis programaciones: Marcar de un color identtificativo los instrumentos que afectan al RA (los que no estén al 0%)
 - [P2][ ] Alumnado: Añadir un campo de texto grande "Observaciones" donde los profesores puedan poner observaciones sobre las notas. 
 - [P2][ ] Notas calculadas: Los valores de "NE" se ven en rojo, no en gris. Además, añadir a la leyenda que "NE" es "No Evaluado".
 

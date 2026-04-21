@@ -221,6 +221,12 @@ Each instrument defines both the set of RAs it touches and, for each RA, the per
 
 This RA/CE weighted model applies to standard instruments (`exam`, `project`, `activity`, `form`, `teacher_notebook`, `custom`). `pri_pmi` instruments are excluded from RA/CE weighting.
 
+When a teacher edits a RA coverage directly from the `RAs vs Instrumentos` matrix:
+
+- If CE automation is enabled, the RA's CE weights are recalculated using the canonical `CE.weight_in_ra` shares already defined in `Pesos`.
+- If CE automation is disabled, the RA's CEs are redistributed evenly at `100%`, rounding down to 2 decimals and giving the remainder to the last CE.
+- The instrument editor remains the place where the teacher can later refine that RA's CE weights manually.
+
 ### 4.4.2 PRI/PMI effects and manual precedence
 
 - Each `pri_pmi` score can affect one or more selected RAs for the same student.

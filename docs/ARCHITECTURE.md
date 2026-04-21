@@ -313,6 +313,10 @@ sequenceDiagram
 1. Teacher opens the `Pesos` tab, flips the “Automatizar pesos de CEs” switch, and can expand each RA to see its CE list and enter the percentage share (validated to sum 100%). The system marks those RA → CE distributions as canonical for the plan.
 2. When editing an instrument, the UI now pairs each selected RA with a coverage percent input and exposes the CE share fields only if automation is off or the RA’s CE shares are invalidated. If automation is active and valid, the CE share inputs are disabled and the derived values are shown for transparency.
 3. Saving the instrument persists `INSTRUMENT_RA_COVERAGE` rows (RA coverage percent) plus `INSTRUMENT_CE_WEIGHT` rows whose `coverage_percent` is computed as `RA coverage × CE share`. Grade entry workflows read the same `INSTRUMENT_CE_WEIGHT` rows, so automated CE weights automatically apply to all instruments that touch the RA.
+4. When the matrix editor updates a single RA coverage inline, the same persistence rules apply:
+   - automated mode keeps the canonical CE shares from `plan_ce.weight_in_ra`
+   - manual mode redistributes the RA's CEs evenly at `100%`, with the last CE receiving the rounding remainder
+   - the instrument editor can still be used later to fine-tune the RA's CE weights
 
 ### 6.4 PRI/PMI resolution and improved grades
 
