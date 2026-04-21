@@ -667,6 +667,46 @@ export async function deleteFinalManualOverride(payload: {
   return { ok: true, data: null };
 }
 
+/**
+ * Borra todas las notas de instrumentos estándar (no PRI/PMI) de un contexto de evaluación.
+ * No afecta a overrides manuales ni a notas calculadas.
+ */
+export async function clearAllInstrumentScores(contextId: string): Promise<ActionResponse> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Usuario no autenticado" };
+
+  // Obtener los IDs de instrumentos no-PRI/PMI vinculados a este contexto
+  const { data: modules } = await supabase
+    .from("evaluation_context_modules")
+    .select("teaching_plan_id")
+    .eq("context_id", contextId);
+
+  if (!modules || modules.length === 0) return { ok: true, data: null };
+
+  const planIds = modules.map((m: any) => m.teaching_plan_id);
+
+  const { data: instruments } = await supabase
+    .from("plan_instruments")
+    .select("id")
+    .in("plan_id", planIds)
+    .eq("is_pri_pmi", false);
+
+  if (!instruments || instruments.length === 0) return { ok: true, data: null };
+
+  const instrumentIds = instruments.map((i: any) => i.id);
+
+  const { error } = await supabase
+    .from("instrument_student_scores")
+    .delete()
+    .eq("context_id", contextId)
+    .in("instrument_id", instrumentIds);
+
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/evaluations/${contextId}`);
+  return { ok: true, data: null };
+}
+
 // ─────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────

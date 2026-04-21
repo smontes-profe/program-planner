@@ -143,11 +143,22 @@ export function GradeMatrixCsvImport({ contextId, students, plans }: GradeMatrix
             instId = idMatch[1];
             instCode = instrumentMap.byId.get(instId)?.code;
           } else {
-            const codeMatch = raw.match(/^([0-9]+(?:\.[0-9]+)*)/);
-            if (codeMatch && instrumentMap.byCode.has(codeMatch[1])) {
-              const inst = instrumentMap.byCode.get(codeMatch[1])!;
+            // Estrategia 1: código numérico al principio (ej. "1.3. Casos prácticos...")
+            const numericCodeMatch = raw.match(/^([0-9]+(?:\.[0-9]+)*)/);
+            if (numericCodeMatch && instrumentMap.byCode.has(numericCodeMatch[1])) {
+              const inst = instrumentMap.byCode.get(numericCodeMatch[1])!;
               instId = inst.id;
               instCode = inst.code;
+            }
+
+            // Estrategia 2: primera palabra alfanumérica al principio (ej. "PT1 Proyecto T1...")
+            if (!instId) {
+              const alphaCodeMatch = raw.match(/^([A-Za-z0-9]+)\s/);
+              if (alphaCodeMatch && instrumentMap.byCode.has(alphaCodeMatch[1])) {
+                const inst = instrumentMap.byCode.get(alphaCodeMatch[1])!;
+                instId = inst.id;
+                instCode = inst.code;
+              }
             }
           }
 

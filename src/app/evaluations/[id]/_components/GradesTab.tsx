@@ -123,14 +123,21 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
     if (!student || !tri) return;
 
     const rawValue = trimesterInputs[key] ?? formatInputValue(tri.adjustedGrade);
-    const parsed = parseGrade(rawValue);
-    if (!parsed.ok) {
-      setErrors(prev => ({ ...prev, [key]: parsed.error }));
-      return;
-    }
 
-    // Truncar silenciosamente a entero
-    const intValue = Math.floor(parsed.value);
+    // Acepta "NE" directamente, o un número entero (con truncado silencioso si viene decimal)
+    let intValue: number;
+    const neCheck = rawValue.trim().toUpperCase();
+    if (neCheck === "NE") {
+      intValue = -1;
+    } else {
+      const parsed = parseGrade(rawValue);
+      if (!parsed.ok) {
+        setErrors(prev => ({ ...prev, [key]: parsed.error }));
+        return;
+      }
+      // Truncar silenciosamente a entero
+      intValue = Math.floor(parsed.value);
+    }
 
     setPendingKey(key);
     startTransition(() => {
@@ -449,22 +456,31 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
                         </td>
                         <td className="px-1 py-2 text-center">
                           <div className="inline-flex items-center gap-0.5">
-                            <Input
-                              className={cn(
-                                "h-7 w-[62px] text-center text-xs",
-                                errors[key]
-                                  ? "border-rose-400"
-                                  : tri.adjustedGrade !== null && tri.adjustedGrade >= 5
-                                    ? "border-emerald-400 dark:border-emerald-600"
-                                    : tri.adjustedGrade !== null
-                                      ? "border-rose-300 dark:border-rose-600"
-                                      : "",
-                              )}
-                              type="number" min={0} max={10} step={1}
-                              value={value}
-                              onChange={e => setTrimesterInputs(prev => ({ ...prev, [key]: e.target.value }))}
-                              onBlur={() => saveTrimesterAdjusted(student.studentId, trimester)}
-                            />
+                            {(() => {
+                              const isNE = value.trim().toUpperCase() === "NE" || tri.adjustedGrade === -1;
+                              const numericGrade = isNE ? -1 : tri.adjustedGrade;
+                              return (
+                                <Input
+                                  className={cn(
+                                    "h-7 w-[62px] text-center text-xs",
+                                    errors[key]
+                                      ? "border-rose-400"
+                                      : isNE
+                                        ? "border-zinc-400 text-zinc-500 dark:border-zinc-600 dark:text-zinc-400"
+                                        : numericGrade !== null && numericGrade >= 5
+                                          ? "border-emerald-400 dark:border-emerald-600"
+                                          : numericGrade !== null
+                                            ? "border-rose-300 dark:border-rose-600"
+                                            : "",
+                                  )}
+                                  type="text"
+                                  inputMode="text"
+                                  value={value}
+                                  onChange={e => setTrimesterInputs(prev => ({ ...prev, [key]: e.target.value }))}
+                                  onBlur={() => saveTrimesterAdjusted(student.studentId, trimester)}
+                                />
+                              );
+                            })()}
                             {pendingKey === key && <Loader2 className="h-3 w-3 animate-spin text-emerald-500" />}
                             {tri.adjustedIsManual && (
                               <Tooltip>
@@ -650,11 +666,14 @@ function formatStudentName(student: StudentGradeSummary): string {
 }
 
 function formatGrade(value: number | null): string {
-  return value === null ? "-" : value.toFixed(2);
+  if (value === null) return "-";
+  if (value === -1) return "NE";
+  return value.toFixed(2);
 }
 
 function gradeColorClass(value: number | null): string {
   if (value === null) return "text-zinc-400";
+  if (value === -1) return "text-zinc-500 dark:text-zinc-400";
   if (value >= 5) return "text-emerald-600 dark:text-emerald-400";
   return "text-rose-600 dark:text-rose-400";
 }

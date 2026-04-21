@@ -1,14 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { GradeMatrixCsvImport } from "./GradeMatrixCsvImport";
 import { type EvaluationContextFull, type InstrumentScore, type TrimesterKey } from "@/domain/evaluation/types";
 import type { TeachingPlanFull } from "@/domain/teaching-plan/types";
-import { upsertInstrumentScore } from "@/domain/evaluation/actions";
+import { upsertInstrumentScore, clearAllInstrumentScores } from "@/domain/evaluation/actions";
 
 interface GradeMatrixTabProps {
   readonly context: EvaluationContextFull;
@@ -40,12 +41,15 @@ export function GradeMatrixTab({ context, plans, scores, scoreError }: GradeMatr
   const [scoreValues, setScoreValues] = useState<Record<string, string>>(() => buildScoreMap(scores));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pendingKey, setPendingKey] = useState<string | null>(null);
+  const [isClearingAll, setIsClearingAll] = useState(false);
+  const [clearError, setClearError] = useState<string | null>(null);
   const [selectedTrimesters, setSelectedTrimesters] = useState<Set<TrimesterKey>>(new Set(["T1", "T2", "T3"]));
   const [, startTransition] = useTransition();
 
   useEffect(() => {
     setScoreValues(buildScoreMap(scores));
     setErrors({});
+    setClearError(null);
   }, [scores]);
 
   const studentRows = useMemo(
@@ -85,6 +89,24 @@ export function GradeMatrixTab({ context, plans, scores, scoreError }: GradeMatr
       return { plan, columns };
     });
   }, [plans, selectedTrimesters]);
+
+  const handleClearAll = async () => {
+    if (!confirm("¿Borrar TODAS las notas de instrumentos de todos los alumnos? Esta acción no se puede deshacer. Las notas calculadas (overrides manuales) no se verán afectadas.")) return;
+    setIsClearingAll(true);
+    setClearError(null);
+    try {
+      const result = await clearAllInstrumentScores(context.id);
+      if (!result.ok) {
+        setClearError(result.error);
+        return;
+      }
+      // Limpiar el estado local
+      setScoreValues({});
+      setErrors({});
+    } finally {
+      setIsClearingAll(false);
+    }
+  };
 
   const handleSave = useCallback(
     (key: string, studentId: string, instrumentId: string) => {
@@ -178,12 +200,29 @@ export function GradeMatrixTab({ context, plans, scores, scoreError }: GradeMatr
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-3">
-        <div>
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Matriz de notas</h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Filas = alumnos, columnas = instrumentos. Edita la nota (0-10) y se guarda automáticamente para el instrumento completo; el motor distribuye ese valor a RA/CE con los pesos configurados en la programación.
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Matriz de notas</h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              Filas = alumnos, columnas = instrumentos. Edita la nota (0-10) y se guarda automáticamente para el instrumento completo; el motor distribuye ese valor a RA/CE con los pesos configurados en la programación.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="shrink-0 border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-900/30"
+            onClick={handleClearAll}
+            disabled={isClearingAll}
+          >
+            {isClearingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            <span className="ml-1.5">Borrar todo</span>
+          </Button>
         </div>
+        {clearError && (
+          <div className="rounded-md border border-rose-300 bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700 dark:border-rose-600 dark:bg-rose-900/40 dark:text-rose-200">
+            Error al borrar: {clearError}
+          </div>
+        )}
         <GradeMatrixCsvImport 
           contextId={context.id} 
           students={context.students} 

@@ -18,6 +18,13 @@ Status legend:
 - [P1][x] Better responsiveness for different desktop resolutions (specially big ones).
 - [P1][x] Currículos: El panel de edición de RAs y CEs es demasiado grande. Hay que dejarlo a la mitad.
 - [P1][x] Currículos: El panel de "añadir módulo completo", sin embargo, se queda muy estrecho. Que se quede al mismo ancho que el de edición de RAs y CEs (una vez ajustados estos).
+- [P1][x] Matriz de Notas: Botón de "borrar todo" para borrar todas las notas.
+- [P2][x] Notas calculadas: En la parte de las trimestrales, posibilidad de poder meter, además de números entre el 1 y el 10, "NE" (No evaluad@). 
+- [P1][ ] Editar instrumento: Al marcar un RA, además del campo donde se introduce el pocentaje de cobertura, incluir otro en la izquierda (de lectura) donde indique el porciento que queda por cubrir de ese RA. 
+- [P2][ ] Alumnado: Añadir un campo de texto grande "Observaciones" donde los profesores puedan poner observaciones sobre las notas. 
+- [P2][ ] Notas calculadas: Los valores de "NE" se ven en rojo, no en gris. Además, añadir a la leyenda que "NE" es "No Evaluado".
+
+
 
 
 ## Phase 5 - Evaluation Engine
