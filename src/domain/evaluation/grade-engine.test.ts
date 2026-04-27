@@ -768,6 +768,43 @@ describe("T3 — Overrides manuales", () => {
     expect(student.finalImprovedGrade).toBe(student.finalImprovedAutoGrade);
   });
 
+  it("Sin override final: la nota final ajustada redondea de forma normal", () => {
+    const ra1Id = uid("ra");
+    const ra2Id = uid("ra");
+    const ce1Id = uid("ce");
+    const ce2Id = uid("ce");
+    const inst1Id = uid("inst");
+    const inst2Id = uid("inst");
+    const studentId = uid("student");
+
+    const ce1 = makeCE({ id: ce1Id, plan_ra_id: ra1Id, weight_in_ra: 100 });
+    const ce2 = makeCE({ id: ce2Id, plan_ra_id: ra2Id, weight_in_ra: 100 });
+    const ra1 = makeRA({ id: ra1Id, ces: [ce1], weight_global: 50 });
+    const ra2 = makeRA({ id: ra2Id, ces: [ce2], weight_global: 50 });
+    const inst1 = makeInstrument({
+      id: inst1Id,
+      ra_coverages: [{ instrument_id: inst1Id, plan_ra_id: ra1Id, coverage_percent: 100 }],
+      ce_weights: [{ instrument_id: inst1Id, plan_ce_id: ce1Id, weight: 100 }],
+    });
+    const inst2 = makeInstrument({
+      id: inst2Id,
+      ra_coverages: [{ instrument_id: inst2Id, plan_ra_id: ra2Id, coverage_percent: 100 }],
+      ce_weights: [{ instrument_id: inst2Id, plan_ce_id: ce2Id, weight: 100 }],
+    });
+    const plan = makePlan({ id: "plan-1", ras: [ra1, ra2], instruments: [inst1, inst2] });
+    const context = makeContext([studentId]);
+    const scores = [
+      makeScore({ instrument_id: inst1Id, student_id: studentId, score_value: 7.2 }),
+      makeScore({ instrument_id: inst2Id, student_id: studentId, score_value: 8 }),
+    ];
+
+    const result = computeAllStudentGrades(context, [plan], scores);
+    const student = result.studentGrades[0];
+
+    expect(student.finalImprovedAutoGrade).toBe(8);
+    expect(student.finalImprovedGrade).toBe(8);
+  });
+
   it("Override manual de nota final no afecta a finalOriginalAutoGrade", () => {
     const { plan, context, scores, studentId } = setupBasicPlan();
     const resultSin = computeAllStudentGrades(context, [plan], scores);

@@ -40,6 +40,7 @@ Status legend:
 - [P3][x] añadir mismo separador entre columnas que tenemos en las tablas de notas calculadas a las tablas de: Matriz de notas, RAs vs instrumentos, Instrumentos de evaluación.
 - [P3][x] RAs vs instrumentos: ahora mismo, para el scroll horizontal, se bloquea la columna de RAs. Debería bloquerase también la de Cobertura. Hacer que las columnas de los instrumentos tengan un 70% del ancho que tienen ahora. 
 - [P2][x] Notas calculadas: en Notas por RAS, mostrar el badge de PRI siempre que exista PRI/PMI y aclarar en el tooltip cuándo no se aplica porque se mantiene la nota original.
+- [P1][x] Notas calculadas: Para la nota Final ajustada, que inicialmente autocacule haciendo redondeo normal.
 
 
 ## Phase 5 - Evaluation Engine

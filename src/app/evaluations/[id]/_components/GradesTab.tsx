@@ -694,7 +694,8 @@ function gradeColorClass(value: number | null): string {
 function recomputeFinals(student: StudentGradeSummary): StudentGradeSummary {
   const original = computeWeighted(student.raGrades, "originalGrade", "originalCompletionPercent");
   const improved = computeWeighted(student.raGrades, "improvedGrade", "improvedCompletionPercent");
-  const finalImprovedGrade = student.finalImprovedIsManual ? student.finalImprovedGrade : improved.grade;
+  const finalImprovedAutoGrade = improved.grade === null ? null : Math.round(improved.grade);
+  const finalImprovedGrade = student.finalImprovedIsManual ? student.finalImprovedGrade : finalImprovedAutoGrade;
   const finalImprovedCompletionPercent = student.finalImprovedIsManual ? 100 : improved.completion;
 
   return {
@@ -702,7 +703,7 @@ function recomputeFinals(student: StudentGradeSummary): StudentGradeSummary {
     finalOriginalAutoGrade: original.grade,
     finalOriginalCompletionPercent: original.completion,
     finalOriginalHasMissingData: original.grade === null || original.completion < 100,
-    finalImprovedAutoGrade: improved.grade,
+    finalImprovedAutoGrade,
     finalImprovedGrade,
     finalImprovedCompletionPercent,
     finalImprovedHasMissingData: finalImprovedGrade === null || finalImprovedCompletionPercent < 100,

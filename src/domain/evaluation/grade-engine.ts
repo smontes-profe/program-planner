@@ -270,7 +270,8 @@ function computeSingleStudentGrade(params: ComputeSingleStudentGradeParams): Stu
   );
 
   const finalManualOverride = finalManualOverrideMap.get(studentId);
-  const finalImprovedGrade = finalManualOverride ?? finalImprovedAuto.grade;
+  const finalImprovedAutoGrade = roundNullableGrade(finalImprovedAuto.grade);
+  const finalImprovedGrade = finalManualOverride ?? finalImprovedAutoGrade;
   const finalImprovedIsManual = finalManualOverride !== undefined;
   const finalImprovedCompletionPercent = finalImprovedGrade === null
     ? finalImprovedAuto.completionPercent
@@ -286,7 +287,7 @@ function computeSingleStudentGrade(params: ComputeSingleStudentGradeParams): Stu
     finalOriginalAutoGrade: finalOriginal.grade,
     finalOriginalCompletionPercent: finalOriginal.completionPercent,
     finalOriginalHasMissingData: finalOriginal.grade === null || finalOriginal.completionPercent < 100,
-    finalImprovedAutoGrade: finalImprovedAuto.grade,
+    finalImprovedAutoGrade,
     finalImprovedGrade: normalizeNullableNumber(finalImprovedGrade),
     finalImprovedCompletionPercent,
     finalImprovedHasMissingData: finalImprovedGrade === null || finalImprovedCompletionPercent < 100,
@@ -580,6 +581,11 @@ function normalizeNullableNumber(value: number | null | undefined): number | nul
 
 function normalizePercent(value: number): number {
   return normalizeNumber(clamp(value, 0, 100));
+}
+
+function roundNullableGrade(value: number | null): number | null {
+  if (value === null || Number.isNaN(value)) return null;
+  return Math.round(value);
 }
 
 function clamp(value: number, min: number, max: number): number {
