@@ -73,6 +73,7 @@ function makeInstrument(
     code: "I1",
     type: "exam",
     is_pri_pmi: false,
+    ce_weight_auto: true,
     name: "Instrumento",
     description: null,
     created_at: "2024-01-01T00:00:00Z",

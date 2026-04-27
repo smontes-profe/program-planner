@@ -46,7 +46,7 @@ export async function updatePlanInstrumentRaCoverage(
 
   const { data: instrument, error: instrumentError } = await supabase
     .from("plan_instrument")
-    .select("id")
+    .select("id, ce_weight_auto")
     .eq("id", instrumentId)
     .eq("plan_id", planId)
     .single();
@@ -64,15 +64,18 @@ export async function updatePlanInstrumentRaCoverage(
   if (cesError) return { ok: false, error: `Error al leer CEs: ${cesError.message}` };
 
   const coveragePercent = validated.data.coverage_percent;
-  const ceWeights = buildMatrixCeWeights(
-    (ces ?? []).map((ce) => ({
-      ceId: ce.id,
-      weightInRa: Number(ce.weight_in_ra) || 0,
-      orderIndex: ce.order_index,
-    })),
-    coveragePercent,
-    Boolean(plan.ce_weight_auto)
-  );
+  const effectiveAuto = Boolean(plan.ce_weight_auto) && Boolean(instrument.ce_weight_auto);
+  const ceWeights = effectiveAuto
+    ? buildMatrixCeWeights(
+        (ces ?? []).map((ce) => ({
+          ceId: ce.id,
+          weightInRa: Number(ce.weight_in_ra) || 0,
+          orderIndex: ce.order_index,
+        })),
+        coveragePercent,
+        true
+      )
+    : [];
 
   const { error: deleteCoverageError } = await supabase
     .from("plan_instrument_ra")
@@ -100,17 +103,19 @@ export async function updatePlanInstrumentRaCoverage(
 
   const ceIds = (ces ?? []).map((ce) => ce.id);
   if (ceIds.length > 0) {
-    const { error: deleteCeError } = await supabase
-      .from("plan_instrument_ce")
-      .delete()
-      .eq("instrument_id", instrumentId)
-      .in("plan_ce_id", ceIds);
+    if (effectiveAuto || coveragePercent === 0) {
+      const { error: deleteCeError } = await supabase
+        .from("plan_instrument_ce")
+        .delete()
+        .eq("instrument_id", instrumentId)
+        .in("plan_ce_id", ceIds);
 
-    if (deleteCeError) {
-      return { ok: false, error: `Error al limpiar pesos de CE: ${deleteCeError.message}` };
+      if (deleteCeError) {
+        return { ok: false, error: `Error al limpiar pesos de CE: ${deleteCeError.message}` };
+      }
     }
 
-    if (coveragePercent > 0 && ceWeights.length > 0) {
+    if (effectiveAuto && coveragePercent > 0 && ceWeights.length > 0) {
       const { error: insertCeError } = await supabase
         .from("plan_instrument_ce")
         .insert(

@@ -83,6 +83,7 @@ export interface PlanInstrument {
   code: string;
   type: InstrumentType;
   is_pri_pmi: boolean;
+  ce_weight_auto: boolean;
   name: string;
   description: string | null;
   created_at: string;

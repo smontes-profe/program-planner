@@ -42,7 +42,7 @@ Status legend:
 - [P2][x] Notas calculadas: en Notas por RAS, mostrar el badge de PRI siempre que exista PRI/PMI y aclarar en el tooltip cuándo no se aplica porque se mantiene la nota original.
 - [P1][x] Notas calculadas: Para la nota Final ajustada, que inicialmente autocacule haciendo redondeo normal.
 - [P1][x] Notas calculadas: Calificaciones y situaciones especiales
-
+- [P1][x] Instrumentos: permitir desactivar la automatización de CE por instrumento y validar que sumen 100% al guardar.
 
 ## Phase 5 - Evaluation Engine
 

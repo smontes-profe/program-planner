@@ -97,10 +97,40 @@ function InstrumentForm({ plan, initialData, onSubmit, onCancel, isPending, erro
     }), {})
   );
 
-  const ceWeightAutoEnabled = plan.ce_weight_auto;
+  const [instrumentCeWeightAuto, setInstrumentCeWeightAuto] = useState<boolean>(initialData?.ce_weight_auto ?? true);
+  const ceWeightAutoEnabled = plan.ce_weight_auto && instrumentCeWeightAuto;
+  const [validationError, setValidationError] = useState("");
+
+  const seedManualCeWeightsForRa = (raId: string, currentWeights: Record<string, number>) => {
+    const ra = plan.ras.find((r) => r.id === raId);
+    if (!ra?.ces) return currentWeights;
+
+    const nextWeights = { ...currentWeights };
+    for (const ce of ra.ces) {
+      if (nextWeights[ce.id] === undefined) {
+        nextWeights[ce.id] = Number(ce.weight_in_ra) || 0;
+      }
+    }
+    return nextWeights;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setValidationError("");
+
+    if (!formData.is_pri_pmi && !ceWeightAutoEnabled) {
+      const invalidRas = plan.ras
+        .filter((ra) => selectedRas.has(ra.id))
+        .filter((ra) => Math.abs(getCeWeightSum(ra.id) - 100) > 0.1)
+        .map((ra) => `RA ${ra.code}`);
+
+      if (invalidRas.length > 0) {
+        setValidationError(
+          `Los pesos manuales de CE deben sumar 100% en cada RA (${invalidRas.join(", ")}).`
+        );
+        return;
+      }
+    }
 
     // Build RA coverages array
     const raCoveragesArray = Object.entries(raCoverages)
@@ -141,7 +171,10 @@ function InstrumentForm({ plan, initialData, onSubmit, onCancel, isPending, erro
     }
 
     onSubmit(
-      formData,
+      {
+        ...formData,
+        ce_weight_auto: instrumentCeWeightAuto,
+      },
       formData.is_pri_pmi ? [] : Array.from(selectedUnits),
       raCoveragesArray,
       weightsArray
@@ -170,18 +203,39 @@ function InstrumentForm({ plan, initialData, onSubmit, onCancel, isPending, erro
       }
     } else {
       next[raId] = 0;
+      if (!ceWeightAutoEnabled) {
+        setCeWeights((current) => seedManualCeWeightsForRa(raId, current));
+      }
     }
     setRaCoverages(next);
+    setValidationError("");
   };
 
   const handleRaCoverageChange = (raId: string, value: string) => {
     const num = Number.parseFloat(value) || 0;
     setRaCoverages(prev => ({ ...prev, [raId]: Math.min(100, Math.max(0, num)) }));
+    setValidationError("");
   };
 
   const handleCeWeightChange = (ceId: string, value: string) => {
     const num = Number.parseFloat(value) || 0;
     setCeWeights(prev => ({ ...prev, [ceId]: num }));
+    setValidationError("");
+  };
+
+  const handleCeWeightAutoToggle = (checked: boolean) => {
+    setInstrumentCeWeightAuto(checked);
+    setValidationError("");
+
+    if (!checked) {
+      setCeWeights((current) => {
+        let nextWeights = { ...current };
+        for (const raId of selectedRas) {
+          nextWeights = seedManualCeWeightsForRa(raId, nextWeights);
+        }
+        return nextWeights;
+      });
+    }
   };
 
   // Helper: compute remaining coverage for a RA as a signed balance.
@@ -382,12 +436,45 @@ function InstrumentForm({ plan, initialData, onSubmit, onCancel, isPending, erro
         <div className="space-y-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
           <h4 className="text-sm font-semibold flex items-center gap-2">
             Pesos sobre Criterios de Evaluación (%)
-            {ceWeightAutoEnabled && (
-              <Badge variant="secondary" className="text-[10px] gap-1">
-                <Zap className="h-3 w-3" /> Automatizado
+            {plan.ce_weight_auto && (
+              <Badge
+                variant="secondary"
+                className={cn(
+                  "text-[10px] gap-1",
+                  ceWeightAutoEnabled
+                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                    : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+                )}
+              >
+                {ceWeightAutoEnabled ? <><Zap className="h-3 w-3" /> Automatizado</> : "Manual"}
               </Badge>
             )}
           </h4>
+          {plan.ce_weight_auto ? (
+            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 px-3 py-2">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="inst-ce-auto"
+                  checked={instrumentCeWeightAuto}
+                  onCheckedChange={(checked) => handleCeWeightAutoToggle(Boolean(checked))}
+                />
+                <div className="space-y-0.5">
+                  <Label htmlFor="inst-ce-auto" className="cursor-pointer text-xs font-medium">
+                    Automatizar los CEs de este instrumento
+                  </Label>
+                  <p className="text-[10px] text-zinc-500">
+                    Si la desactivas, podrás fijar manualmente los porcentajes de cada CE para este instrumento.
+                    Los porcentajes de CEs dentro de cada RA deben sumar 100%.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-[10px] text-zinc-500 mb-4">
+              La automatización global de CEs está desactivada, así que este instrumento se edita manualmente.
+              Los porcentajes de CEs dentro de cada RA deben sumar 100%.
+            </p>
+          )}
           {ceWeightAutoEnabled ? (
             <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mb-4">
               Los pesos de CE están definidos en la pestaña de Pesos y se aplican automáticamente.
@@ -396,7 +483,6 @@ function InstrumentForm({ plan, initialData, onSubmit, onCancel, isPending, erro
           ) : (
             <p className="text-[10px] text-zinc-500 mb-4">
               Indica qué porcentaje de la nota del instrumento aporta a cada CE.
-              Los porcentajes de CEs dentro de cada RA deben sumar 100%.
             </p>
           )}
           
@@ -506,7 +592,9 @@ function InstrumentForm({ plan, initialData, onSubmit, onCancel, isPending, erro
         </div>
       )}
 
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {(validationError || error) && (
+        <p className="text-xs text-destructive">{validationError || error}</p>
+      )}
       
       <div className="flex gap-2 pt-4">
         <Button type="button" variant="ghost" onClick={onCancel} className="w-1/3" disabled={isPending}>
@@ -603,6 +691,7 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
                 </SheetDescription>
               </SheetHeader>
               <InstrumentForm 
+                key={editingInstrument?.id || "new"}
                 plan={plan} 
                 initialData={editingInstrument || undefined}
                 onSubmit={handleSubmit} 
@@ -799,7 +888,7 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
             <h4 className="text-sm font-semibold text-emerald-900 dark:text-emerald-300">Resumen de Cobertura</h4>
             <p className="text-xs text-emerald-700/80 dark:text-emerald-400/70 mt-1 leading-relaxed">
               Cada instrumento especifica qué porcentaje de la nota de cada RA cubre.
-              Los pesos de los CEs {plan.ce_weight_auto ? "se calculan automáticamente desde la pestaña de Pesos" : "se asignan manualmente por instrumento"}.
+              Los pesos de los CEs {plan.ce_weight_auto ? "se calculan automáticamente desde la pestaña de Pesos, salvo en los instrumentos que se pasen a manual" : "se asignan manualmente por instrumento"}.
             </p>
           </div>
         </div>

@@ -278,7 +278,7 @@ export function RaInstrumentMatrixTab({ plan }: RaInstrumentMatrixTabProps) {
                             raCode={ra.code}
                             instrumentCode={inst.code}
                             initialValue={percent}
-                            autoEnabled={plan.ce_weight_auto}
+                            autoEnabled={Boolean(plan.ce_weight_auto) && Boolean(inst.ce_weight_auto)}
                           />
                         </td>
                       );
