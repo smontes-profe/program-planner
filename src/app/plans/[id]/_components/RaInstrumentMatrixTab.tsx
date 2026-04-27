@@ -23,6 +23,9 @@ interface CoverageCellEditorProps {
   readonly autoEnabled: boolean;
 }
 
+const COLUMN_SEPARATOR_CLASS = "border-r border-zinc-200 dark:border-zinc-800";
+const INSTRUMENT_COLUMN_CLASS = "px-2 py-3 text-center min-w-[56px] w-[56px]";
+
 function formatCoverageValue(value: number): string {
   return value % 1 === 0 ? String(value) : value.toFixed(2);
 }
@@ -199,14 +202,14 @@ export function RaInstrumentMatrixTab({ plan }: RaInstrumentMatrixTabProps) {
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 dark:bg-zinc-900/50">
               <tr className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
-                <th className="sticky left-0 z-10 bg-zinc-50 dark:bg-zinc-900/50 px-4 py-3 text-left border-r border-zinc-200 dark:border-zinc-800 min-w-[120px]">
+                <th className={cn("sticky left-0 z-10 bg-zinc-50 dark:bg-zinc-900/50 px-4 py-3 text-left min-w-[120px]", COLUMN_SEPARATOR_CLASS)}>
                   RA
                 </th>
-                <th className="px-3 py-3 text-center border-r border-zinc-200 dark:border-zinc-800 min-w-[90px]">
+                <th className={cn("sticky left-[120px] z-10 bg-zinc-50 dark:bg-zinc-900/50 px-3 py-3 text-center min-w-[90px] w-[90px]", COLUMN_SEPARATOR_CLASS)}>
                   Cobertura
                 </th>
-                {activeInstruments.map((inst) => (
-                  <th key={inst.id} className="px-3 py-3 text-center min-w-[80px]">
+                {activeInstruments.map((inst, index) => (
+                  <th key={inst.id} className={cn(INSTRUMENT_COLUMN_CLASS, index < activeInstruments.length - 1 && COLUMN_SEPARATOR_CLASS)}>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <span className="cursor-help font-mono text-xs font-bold text-zinc-700 dark:text-zinc-300">
@@ -229,7 +232,7 @@ export function RaInstrumentMatrixTab({ plan }: RaInstrumentMatrixTabProps) {
 
                 return (
                   <tr key={ra.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30">
-                    <td className="sticky left-0 z-10 bg-white dark:bg-zinc-950 px-4 py-3 border-r border-zinc-200 dark:border-zinc-800">
+                    <td className={cn("sticky left-0 z-10 bg-white dark:bg-zinc-950 px-4 py-3", COLUMN_SEPARATOR_CLASS)}>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <span className="cursor-help font-mono text-xs font-bold text-zinc-800 dark:text-zinc-200">
@@ -243,7 +246,7 @@ export function RaInstrumentMatrixTab({ plan }: RaInstrumentMatrixTabProps) {
                       </Tooltip>
                     </td>
 
-                    <td className="px-3 py-3 text-center border-r border-zinc-200 dark:border-zinc-800">
+                    <td className={cn("sticky left-[120px] z-10 bg-white dark:bg-zinc-950 px-3 py-3 text-center min-w-[90px] w-[90px]", COLUMN_SEPARATOR_CLASS)}>
                       <span
                         className={cn(
                           "inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums",
@@ -259,12 +262,15 @@ export function RaInstrumentMatrixTab({ plan }: RaInstrumentMatrixTabProps) {
                       </span>
                     </td>
 
-                    {activeInstruments.map((inst) => {
+                    {activeInstruments.map((inst, index) => {
                       const entry = coverageByInstrument.find((c) => c.inst.id === inst.id);
                       const percent = entry?.percent ?? 0;
 
                       return (
-                        <td key={inst.id} className="px-3 py-3 text-center align-middle">
+                        <td
+                          key={inst.id}
+                          className={cn(INSTRUMENT_COLUMN_CLASS, index < activeInstruments.length - 1 && COLUMN_SEPARATOR_CLASS)}
+                        >
                           <CoverageCellEditor
                             planId={plan.id}
                             instrumentId={inst.id}

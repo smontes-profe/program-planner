@@ -28,16 +28,18 @@ Status legend:
 - [P1][x] Bloque Mis programaciones: Marcar de un color identtificativo los instrumentos que afectan al RA (los que no estén al 0%)
 - [P1][x] Alumnado: corregir warning de React por `key` duplicada en `StudentsTab` al renderizar listas de estudiantes.
 - [P2][x] Alumnado: Añadir un campo de texto grande "Observaciones" donde los profesores puedan poner observaciones sobre las notas. 
+- [P3][x] RAs vs instrumentos: ahora mismo, para el scroll horizontal, se bloquea la columna de RAs. Debería bloquerase también la de Cobertura. Hacer que las columnas de los instrumentos tengan un 70% del ancho que tienen ahora. 
 - [P3][x] Mis programaciones: los nombres de las programaciones suelen ser muy largos y en la lista de Mis programaciones, se suele cortar. Reducir el tamaño de los nombres de las programaciones.
 - [P3][x] RAs vs Instrumentos: Usar códigos de colores para los valores: los que no aporten (tengan 0) que aparezcacn en gris con un alfa al 50. 
 - [P2][x] Notas calculadas: en la parte de Notas por RAS, cambiar el color de PRI de verda a morado, y las notas modificadas por PRis que usen ese color. Además hay un pequeño bug: Cuando la nota original es superior que la que viene del PRI, debe mantener la nota original. Eso lo hace bien, pero aun así, lo marca como modificado por PRI.
+- [P2][-] Notas calculadas: en Notas por RAS, mostrar el badge de PRI siempre que exista PRI/PMI y aclarar en el tooltip cuándo no se aplica porque se mantiene la nota original.
 - [P0][x] BUG al importar notas.
 - [P2][x] Notas calculadas: Los valores de "NE" se ven en rojo, no en gris. Además, añadir a la leyenda que "NE" es "No Evaluado".
 - [P3][x] Notas calculadas: en la matriz de notas trimestrales, añadir un separador visual claro entre cada bloque de trimestre y final.
-- [P2][ ] Notas calculadas: labels erróneos. Para la nota final, al lado de "Auto" aparece "Mejorada". Debería poner "ajustada". Lo mismo pasa con todos los RAs. Junto a la original, lo que debe aparecer es "ajustada", no "mejorada".  
+- [P2][x] Notas calculadas: labels erróneos. Para la nota final, al lado de "Auto" aparece "Mejorada". Debería poner "ajustada". Lo mismo pasa con todos los RAs. Junto a la original, lo que debe aparecer es "ajustada", no "mejorada".  
 - [P3][x] Notas calculadas: Añadir separadores similares a los que tenemos entre las notas de trimestres para las columnas de RAs y alumnos. 
 - [P3][x] Notas calculadas: modificar el separador que hay entre columnas en las dos tablas para que sea un punto más fino y con un gris un poco más claro.
-
+- [P3][x] añadir mismo separador entre columnas que tenemos en las tablas de notas calculadas a las tablas de: Matriz de notas, RAs vs instrumentos, Instrumentos de evaluación.
 
 
 ## Phase 5 - Evaluation Engine

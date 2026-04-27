@@ -44,6 +44,8 @@ function getInstrumentTypeLabel(type: string) {
   return INSTRUMENT_TYPES.find(t => t.value === type)?.label || type;
 }
 
+const COLUMN_SEPARATOR_CLASS = "border-r border-zinc-200 dark:border-zinc-800";
+
 // ─── Instrument Form Component ──────────────────────────────────
 function InstrumentForm({ plan, initialData, onSubmit, onCancel, isPending, error }: {
   readonly plan: TeachingPlanFull,
@@ -616,12 +618,12 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
           <Table>
             <TableHeader className="bg-zinc-50/50 dark:bg-zinc-900/50">
               <TableRow>
-                <TableHead className="w-[80px]">Código</TableHead>
-                <TableHead>Instrumento</TableHead>
-                <TableHead className="w-[90px]">Tipo</TableHead>
-                <TableHead className="w-[100px]">UTs</TableHead>
-                <TableHead className="w-[140px]">RAs (cobertura)</TableHead>
-                <TableHead>CEs</TableHead>
+                <TableHead className={cn("w-[80px]", COLUMN_SEPARATOR_CLASS)}>Código</TableHead>
+                <TableHead className={COLUMN_SEPARATOR_CLASS}>Instrumento</TableHead>
+                <TableHead className={cn("w-[90px]", COLUMN_SEPARATOR_CLASS)}>Tipo</TableHead>
+                <TableHead className={cn("w-[100px]", COLUMN_SEPARATOR_CLASS)}>UTs</TableHead>
+                <TableHead className={cn("w-[140px]", COLUMN_SEPARATOR_CLASS)}>RAs (cobertura)</TableHead>
+                <TableHead className={COLUMN_SEPARATOR_CLASS}>CEs</TableHead>
                 <TableHead className="text-right w-[100px]">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -672,10 +674,10 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
 
                   return (
                     <TableRow key={inst.id}>
-                      <TableCell className="font-mono text-xs font-bold text-zinc-400">
+                      <TableCell className={cn("font-mono text-xs font-bold text-zinc-400", COLUMN_SEPARATOR_CLASS)}>
                         {inst.code}
                       </TableCell>
-                      <TableCell className="min-w-0">
+                      <TableCell className={cn("min-w-0", COLUMN_SEPARATOR_CLASS)}>
                         <div className="flex flex-col">
                           <div className="flex items-center gap-2">
                             <span
@@ -695,7 +697,7 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className={COLUMN_SEPARATOR_CLASS}>
                         <Select value={inst.type} onValueChange={(v) => v && handleTypeChange(inst.id, v)}>
                           <SelectTrigger className="h-6 w-auto min-w-[90px] border-0 bg-transparent shadow-none px-1 py-0 text-[11px] font-medium focus:ring-0 focus:outline-none">
                             <SelectValue>{getInstrumentTypeLabel(inst.type)}</SelectValue>
@@ -707,14 +709,14 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
                           </SelectContent>
                         </Select>
                       </TableCell>
-                      <TableCell className="max-w-[100px] min-w-0">
+                      <TableCell className={cn("max-w-[100px] min-w-0", COLUMN_SEPARATOR_CLASS)}>
                         <div className="flex flex-wrap gap-1">
                           {unitCodes.map(uc => (
                             <Badge key={uc.id} variant="outline" className="text-[10px] py-0">{uc.code}</Badge>
                           ))}
                         </div>
                       </TableCell>
-                      <TableCell className="max-w-[140px] min-w-0">
+                      <TableCell className={cn("max-w-[140px] min-w-0", COLUMN_SEPARATOR_CLASS)}>
                         <div className="flex flex-wrap gap-1">
                           {rasWithCoverage.map(ra => (
                             <Tooltip key={ra!.id}>
@@ -738,7 +740,7 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
                           ))}
                         </div>
                       </TableCell>
-                      <TableCell className="min-w-0">
+                      <TableCell className={cn("min-w-0", COLUMN_SEPARATOR_CLASS)}>
                         <div className="flex flex-col gap-1.5">
                           {inst.is_pri_pmi ? (
                             <span className="text-[11px] text-zinc-400">No aplica (PRI/PMI)</span>
