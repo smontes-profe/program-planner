@@ -500,7 +500,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
                                           : "",
                                 )}
                               >
-                                <SelectValue placeholder="Selecciona" />
+                                <SelectValue>{value === "" ? "---" : formatAdjustedGradeValue(Number(value))}</SelectValue>
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectGroup>
@@ -578,7 +578,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
                                         : "",
                               )}
                             >
-                              <SelectValue placeholder="Selecciona" />
+                              <SelectValue>{value === "" ? "Selecciona" : formatAdjustedGradeValue(Number(value))}</SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                               <SelectGroup>
