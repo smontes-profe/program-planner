@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { bulkUpsertScores, getEvaluationContext } from "@/domain/evaluation/actions";
+import { createInstrumentHeaderMaps, resolveInstrumentHeader } from "@/domain/evaluation/csv-import-utils";
 import { getPlan } from "@/domain/teaching-plan/actions";
 
 type ParsedCsvRow = string[];
@@ -136,44 +137,24 @@ export async function POST(
     (context.plan_ids || []).map((planId) => getPlan(planId))
   );
   const plans = planResults.filter((pr) => pr.ok).map((pr) => pr.data);
-  const planInstruments = plans
-    .flatMap((plan) => plan.instruments ?? [])
-    .filter((instrument) => !instrument.is_pri_pmi);
-  const instrumentById = new Map(planInstruments.map((instrument) => [instrument.id, instrument]));
-  const instrumentByCode = new Map(
-    planInstruments
-      .filter((instrument) => instrument.code)
-      .map((instrument) => [instrument.code?.trim() ?? "", instrument])
-  );
+  const instrumentHeaderMaps = createInstrumentHeaderMaps(plans);
 
   const headerInstruments: InstrumentColumn[] = [];
   const missingHeaderInstruments = new Set<string>();
 
   for (let colIndex = 6; colIndex < header.length; colIndex += 1) {
     const rawLabel = normalizeString(header[colIndex]);
-    const idMatch = rawLabel.match(/\|([A-Za-z0-9-]+)$/);
-    const codeMatch = rawLabel.match(/^([0-9]+(?:\.[0-9]+)*)/);
-    let instrumentId: string | undefined;
-
-    if (idMatch && instrumentById.has(idMatch[1])) {
-      instrumentId = idMatch[1];
-    } else if (codeMatch && instrumentByCode.has(codeMatch[1])) {
-      instrumentId = instrumentByCode.get(codeMatch[1])!.id;
-    }
-
-    if (!instrumentId) {
+    const resolved = resolveInstrumentHeader(rawLabel, instrumentHeaderMaps);
+    if (!resolved) {
       missingHeaderInstruments.add(rawLabel);
       continue;
     }
 
-    const maxMatch = rawLabel.match(/Puntos totales:\s*([0-9]+(?:[.,][0-9]+)?)/i);
-    const maxPoints = maxMatch ? Number(maxMatch[1].replace(",", ".")) : null;
-
     headerInstruments.push({
       columnIndex: colIndex,
-      instrumentId,
-      label: rawLabel.split("|")[0].trim(),
-      maxPoints,
+      instrumentId: resolved.instrumentId,
+      label: resolved.label,
+      maxPoints: resolved.maxPoints,
     });
   }
 
