@@ -414,6 +414,10 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
             <PencilLine className="h-3.5 w-3.5 text-blue-500" />
             <span>Ajuste manual</span>
           </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="font-mono font-semibold text-zinc-500/80 dark:text-zinc-400/80">NE</span>
+            <span>No Evaluado</span>
+          </span>
         </div>
 
         <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
@@ -675,7 +679,7 @@ function formatGrade(value: number | null): string {
 
 function gradeColorClass(value: number | null): string {
   if (value === null) return "text-zinc-400";
-  if (value === -1) return "text-zinc-500 dark:text-zinc-400";
+  if (value === -1) return "text-zinc-500/80 dark:text-zinc-400/80";
   if (value >= 5) return "text-emerald-600 dark:text-emerald-400";
   return "text-rose-600 dark:text-rose-400";
 }
