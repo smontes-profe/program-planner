@@ -549,7 +549,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
           </span>
           <span className="inline-flex items-center gap-1">
             <PencilLine className="h-3.5 w-3.5 text-blue-500" />
-            <span>Nota mejorada ajustada manualmente</span>
+            <span>Nota ajustada manualmente</span>
           </span>
           <span className="inline-flex items-center gap-1">
             <span className="rounded px-1 py-0.5 text-[10px] font-semibold text-emerald-600">PRI</span>

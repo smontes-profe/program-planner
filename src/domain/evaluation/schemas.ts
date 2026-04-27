@@ -26,6 +26,7 @@ export const createStudentSchema = z.object({
   last_name: z.string().max(255).nullable().optional(),
   student_code: z.string().max(50).nullable().optional(),
   student_email: z.string().email().nullable().optional(),
+  notes: z.string().nullable().optional(),
 });
 
 export const updateStudentSchema = createStudentSchema.extend({

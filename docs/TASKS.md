@@ -26,7 +26,8 @@ Status legend:
 - [P1][x] Bloque Mis programaciones, sección RAs vs Instrumentos: que los valores de porcentajes se puedan modificar directamente aquí. 
 - [P0][x] Editar instrumento: el cálculo de porcentaje restante de un RA parece que se hace bien cuando aun queda porcentaje por cubrir, pero mal cuando ya está cubierto por encima del 100% (por ejemplo, veo que en PROG_SEV_2526_DAW_2_MAÑANA_DESCLI_061, el RA4 está al 140% y sin embargo no lo registra así si intento editar algún instrumento y asignar porcentaje  en ese RA).
 - [P1][x] Bloque Mis programaciones: Marcar de un color identtificativo los instrumentos que afectan al RA (los que no estén al 0%)
-- [P2][ ] Alumnado: Añadir un campo de texto grande "Observaciones" donde los profesores puedan poner observaciones sobre las notas. 
+- [P1][x] Alumnado: corregir warning de React por `key` duplicada en `StudentsTab` al renderizar listas de estudiantes.
+- [P2][x] Alumnado: Añadir un campo de texto grande "Observaciones" donde los profesores puedan poner observaciones sobre las notas. 
 - [P2][ ] Notas calculadas: Los valores de "NE" se ven en rojo, no en gris. Además, añadir a la leyenda que "NE" es "No Evaluado".
 
 

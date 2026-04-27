@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { type EvaluationContextFull, type EvaluationStudent } from "@/domain/evaluation/types";
 import { addStudent, deleteStudent, bulkImportStudents, updateStudent } from "@/domain/evaluation/actions";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Loader2, UserPlus, FileUp, AlertCircle, CheckCircle2, X, Info, PencilLine, Check, Ban } from "lucide-react";
+import { Plus, Trash2, Loader2, UserPlus, FileUp, AlertCircle, CheckCircle2, X, Info, PencilLine, Check, Ban, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -145,7 +146,8 @@ export function StudentsTab({ context }: StudentsTabProps) {
     student_name: "",
     last_name: "",
     student_code: "",
-    student_email: ""
+    student_email: "",
+    notes: "",
   });
 
   async function handleAdd() {
@@ -174,7 +176,8 @@ export function StudentsTab({ context }: StudentsTabProps) {
       student_name: s.student_name,
       last_name: s.last_name || "",
       student_code: s.student_code || "",
-      student_email: s.student_email || ""
+      student_email: s.student_email || "",
+      notes: s.notes || "",
     });
   }
 
@@ -188,6 +191,7 @@ export function StudentsTab({ context }: StudentsTabProps) {
         last_name: editForm.last_name || null,
         student_code: editForm.student_code || null,
         student_email: editForm.student_email || null,
+        notes: editForm.notes || null,
       });
       
       if (res.ok) {
@@ -443,103 +447,137 @@ export function StudentsTab({ context }: StudentsTabProps) {
               {filteredStudents.map((s, i) => {
                 const isEditing = editingId === s.id;
                 return (
-                  <tr key={s.id} className={cn(
-                    "transition-colors",
-                    isEditing ? "bg-emerald-50/50 dark:bg-emerald-900/10" : "hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30"
-                  )}>
-                    <td className="px-4 py-2 text-zinc-400 font-mono text-xs">{i + 1}</td>
-                    <td className="px-4 py-2">
-                      {isEditing ? (
-                        <Input
-                          value={editForm.student_code}
-                          onChange={e => setEditForm(prev => ({ ...prev, student_code: e.target.value }))}
-                          className="h-8 w-24 font-mono text-xs"
-                          placeholder="ID"
-                        />
-                      ) : (
-                        <span className="font-mono text-xs text-zinc-500">{s.student_code || "—"}</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2">
-                      {isEditing ? (
-                        <Input
-                          value={editForm.last_name}
-                          onChange={e => setEditForm(prev => ({ ...prev, last_name: e.target.value }))}
-                          className="h-8 w-full text-sm"
-                          placeholder="Apellidos"
-                        />
-                      ) : (
-                        <span className="text-zinc-700 dark:text-zinc-300 text-sm">{s.last_name || "—"}</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2">
-                      {isEditing ? (
-                        <Input
-                          value={editForm.student_name}
-                          onChange={e => setEditForm(prev => ({ ...prev, student_name: e.target.value }))}
-                          className="h-8 w-full text-sm font-medium"
-                          placeholder="Nombre"
-                        />
-                      ) : (
-                        <span className="font-medium text-zinc-900 dark:text-zinc-100 text-sm">{s.student_name}</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2">
-                      {isEditing ? (
-                        <Input
-                          value={editForm.student_email}
-                          onChange={e => setEditForm(prev => ({ ...prev, student_email: e.target.value }))}
-                          className="h-8 w-full text-xs"
-                          placeholder="Email"
-                        />
-                      ) : (
-                        <span className="text-zinc-500 text-xs">{s.student_email || "—"}</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2 text-right">
-                      <div className="flex items-center justify-end gap-1">
+                  <Fragment key={s.id}>
+                    <tr className={cn(
+                      "transition-colors",
+                      isEditing ? "bg-emerald-50/50 dark:bg-emerald-900/10" : "hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30"
+                    )}>
+                      <td className="px-4 py-2 text-zinc-400 font-mono text-xs">{i + 1}</td>
+                      <td className="px-4 py-2">
                         {isEditing ? (
-                          <>
-                            <button
-                              onClick={handleUpdate}
-                              disabled={pendingId !== null}
-                              className="p-1 text-emerald-600 hover:text-emerald-700 transition-colors"
-                              title="Guardar"
-                            >
-                              {pendingId === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                            </button>
-                            <button
-                              onClick={() => setEditingId(null)}
-                              disabled={pendingId !== null}
-                              className="p-1 text-zinc-400 hover:text-zinc-600 transition-colors"
-                              title="Cancelar"
-                            >
-                              <Ban className="h-4 w-4" />
-                            </button>
-                          </>
+                          <Input
+                            value={editForm.student_code}
+                            onChange={e => setEditForm(prev => ({ ...prev, student_code: e.target.value }))}
+                            className="h-8 w-24 font-mono text-xs"
+                            placeholder="ID"
+                          />
                         ) : (
-                          <>
-                            <button
-                              onClick={() => startEditing(s)}
-                              disabled={pendingId !== null}
-                              className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-                              title="Editar"
-                            >
-                              <PencilLine className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(s.id)}
-                              disabled={pendingId !== null}
-                              className="p-1 text-zinc-400 hover:text-red-600 transition-colors"
-                              title="Eliminar alumno"
-                            >
-                              {pendingId === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                            </button>
-                          </>
+                          <span className="font-mono text-xs text-zinc-500">{s.student_code || "—"}</span>
                         )}
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                      <td className="px-4 py-2">
+                        {isEditing ? (
+                          <Input
+                            value={editForm.last_name}
+                            onChange={e => setEditForm(prev => ({ ...prev, last_name: e.target.value }))}
+                            className="h-8 w-full text-sm"
+                            placeholder="Apellidos"
+                          />
+                        ) : (
+                          <span className="text-zinc-700 dark:text-zinc-300 text-sm">{s.last_name || "—"}</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2">
+                        {isEditing ? (
+                          <Input
+                            value={editForm.student_name}
+                            onChange={e => setEditForm(prev => ({ ...prev, student_name: e.target.value }))}
+                            className="h-8 w-full text-sm font-medium"
+                            placeholder="Nombre"
+                          />
+                        ) : (
+                          <span className="font-medium text-zinc-900 dark:text-zinc-100 text-sm">{s.student_name}</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2">
+                        {isEditing ? (
+                          <Input
+                            value={editForm.student_email}
+                            onChange={e => setEditForm(prev => ({ ...prev, student_email: e.target.value }))}
+                            className="h-8 w-full text-xs"
+                            placeholder="Email"
+                          />
+                        ) : (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-zinc-500 text-xs">{s.student_email || "—"}</span>
+                            {s.notes && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <MessageSquare className="h-3.5 w-3.5 text-amber-500 shrink-0 cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-[280px] text-xs whitespace-pre-wrap">
+                                  {s.notes}
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {isEditing ? (
+                            <>
+                              <button
+                                onClick={handleUpdate}
+                                disabled={pendingId !== null}
+                                className="p-1 text-emerald-600 hover:text-emerald-700 transition-colors"
+                                title="Guardar"
+                              >
+                                {pendingId === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                              </button>
+                              <button
+                                onClick={() => setEditingId(null)}
+                                disabled={pendingId !== null}
+                                className="p-1 text-zinc-400 hover:text-zinc-600 transition-colors"
+                                title="Cancelar"
+                              >
+                                <Ban className="h-4 w-4" />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => startEditing(s)}
+                                disabled={pendingId !== null}
+                                className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                                title="Editar"
+                              >
+                                <PencilLine className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(s.id)}
+                                disabled={pendingId !== null}
+                                className="p-1 text-zinc-400 hover:text-red-600 transition-colors"
+                                title="Eliminar alumno"
+                              >
+                                {pendingId === s.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                    {/* Fila expandida de observaciones en modo edición */}
+                    {isEditing && (
+                      <tr className="bg-emerald-50/50 dark:bg-emerald-900/10">
+                        <td colSpan={6} className="px-4 pb-3 pt-0">
+                          <div className="space-y-1">
+                            <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+                              <MessageSquare className="h-3.5 w-3.5" />
+                              Observaciones
+                            </label>
+                            <Textarea
+                              value={editForm.notes}
+                              onChange={e => setEditForm(prev => ({ ...prev, notes: e.target.value }))}
+                              placeholder="Observaciones sobre las notas de este alumno..."
+                              className="text-sm resize-none min-h-[80px]"
+                              rows={3}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
             </tbody>

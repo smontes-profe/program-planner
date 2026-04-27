@@ -255,7 +255,7 @@ export async function addStudent(
 export async function updateStudent(
   contextId: string,
   studentId: string,
-  payload: { student_name?: string; last_name?: string | null; student_code?: string | null; student_email?: string | null; active?: boolean }
+  payload: { student_name?: string; last_name?: string | null; student_code?: string | null; student_email?: string | null; notes?: string | null; active?: boolean }
 ): Promise<ActionResponse<EvaluationStudent>> {
   const validated = updateStudentSchema.safeParse(payload);
   if (!validated.success) return { ok: false, error: "Datos inválidos" };
