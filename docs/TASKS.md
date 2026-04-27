@@ -34,7 +34,7 @@ Status legend:
 - [P0][x] BUG al importar notas.
 - [P2][x] Notas calculadas: Los valores de "NE" se ven en rojo, no en gris. Además, añadir a la leyenda que "NE" es "No Evaluado".
 - [P3][x] Notas calculadas: en la matriz de notas trimestrales, añadir un separador visual claro entre cada bloque de trimestre y final.
-
+- [P2][x] Notas calculadas: labels erróneos. Para la nota final, al lado de "Auto" aparece "Mejorada". Debería poner "ajustada". Lo mismo pasa con todos los RAs. Junto a la original, lo que debe aparecer es "ajustada", no "mejorada".  
 
 
 

@@ -438,7 +438,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
                   </Fragment>
                 ))}
                 <th className="px-1 py-1.5 text-center">Auto</th>
-                <th className="px-1 py-1.5 text-center">Mejorada</th>
+                <th className="px-1 py-1.5 text-center">Ajustada</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -571,7 +571,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
               </tr>
               <tr>
                 <th className="px-3 py-1.5 text-left">&nbsp;</th>
-                {raColumns.map(ra => <Fragment key={`${ra.raId}-labels`}><th className="px-1 py-1.5 text-center">Original</th><th className="px-1 py-1.5 text-center">Mejorada</th></Fragment>)}
+                {raColumns.map(ra => <Fragment key={`${ra.raId}-labels`}><th className="px-1 py-1.5 text-center">Original</th><th className="px-1 py-1.5 text-center">Ajustada</th></Fragment>)}
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -632,7 +632,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
                             {isPriApplied && (
                               <Tooltip>
                                 <TooltipTrigger>
-                                  <span className="rounded px-1 py-0.5 text-[10px] font-semibold text-violet-600 cursor-help">PRI</span>
+                                <span className="rounded px-1 py-0.5 text-[10px] font-semibold text-violet-600 cursor-help">PRI</span>
                                 </TooltipTrigger>
                                 <TooltipContent className="max-w-[280px] text-xs">
                                   {ra.priPmiImpacts.map(impact => (
