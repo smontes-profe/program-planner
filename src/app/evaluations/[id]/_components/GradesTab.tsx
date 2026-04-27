@@ -578,6 +578,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
                     if (!ra) return <Fragment key={`${student.studentId}-${column.raId}`}><td className="px-1 py-2 text-center">-</td><td className="px-1 py-2 text-center">-</td></Fragment>;
                     const key = `ra:${student.studentId}:${column.raId}`;
                     const value = raInputs[key] ?? formatInputValue(ra.improvedGrade);
+                    const isPriApplied = ra.improvedAutoGrade !== null && !ra.improvedIsManual;
                     return (
                       <Fragment key={`${student.studentId}-${column.raId}`}>
                         <td className="px-1 py-2 text-center">
@@ -598,6 +599,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
                             <Input
                               className={cn(
                                 "h-7 w-[62px] text-center text-xs",
+                                isPriApplied && "border-violet-300 text-violet-700 dark:border-violet-700 dark:text-violet-300",
                                 errors[key] && "border-rose-400",
                               )}
                               type="number" min={0} max={10} step={0.01}
@@ -622,10 +624,10 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
                             {ra.improvedHasMissingData && ra.originalCompletionPercent > 0 && (
                               <AlertTriangle className="h-3 w-3 text-amber-500" />
                             )}
-                            {ra.priPmiImpacts.length > 0 && (
+                            {isPriApplied && (
                               <Tooltip>
                                 <TooltipTrigger>
-                                  <span className="rounded px-1 py-0.5 text-[10px] font-semibold text-emerald-600 cursor-help">PRI</span>
+                                  <span className="rounded px-1 py-0.5 text-[10px] font-semibold text-violet-600 cursor-help">PRI</span>
                                 </TooltipTrigger>
                                 <TooltipContent className="max-w-[280px] text-xs">
                                   {ra.priPmiImpacts.map(impact => (

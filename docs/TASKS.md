@@ -30,7 +30,7 @@ Status legend:
 - [P2][x] Alumnado: Añadir un campo de texto grande "Observaciones" donde los profesores puedan poner observaciones sobre las notas. 
 - [P3][x] Mis programaciones: los nombres de las programaciones suelen ser muy largos y en la lista de Mis programaciones, se suele cortar. Reducir el tamaño de los nombres de las programaciones.
 - [P3][x] RAs vs Instrumentos: Usar códigos de colores para los valores: los que no aporten (tengan 0) que aparezcacn en gris con un alfa al 50. 
-- [P2][ ] Notas calculadas: en la parte de Notas por RAS, cambiar el color de PRI de verda a morado, y las notas modificadas por PRis que usen ese color. Además hay un pequeño bug: Cuando la nota original es superior que la que viene del PRI, debe mantener la nota original. Eso lo hace bien, pero aun así, lo marca como modificado por PRI.
+- [P2][x] Notas calculadas: en la parte de Notas por RAS, cambiar el color de PRI de verda a morado, y las notas modificadas por PRis que usen ese color. Además hay un pequeño bug: Cuando la nota original es superior que la que viene del PRI, debe mantener la nota original. Eso lo hace bien, pero aun así, lo marca como modificado por PRI.
 - [P2][ ] Notas calculadas: Los valores de "NE" se ven en rojo, no en gris. Además, añadir a la leyenda que "NE" es "No Evaluado".
 
 
