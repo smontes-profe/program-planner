@@ -83,6 +83,7 @@ export async function getPlan(planId: string): Promise<ActionResponse<TeachingPl
   const mappedInstruments = (data.instruments || []).map((i: any) => ({
     ...i,
     is_pri_pmi: Boolean(i.is_pri_pmi),
+    ce_weight_auto: Boolean(i.ce_weight_auto),
     unit_ids: i.units_coverage?.map((uc: any) => uc.unit_id) || [],
     ra_ids: i.ras_coverage?.map((rc: any) => rc.plan_ra_id) || [],
     ra_coverages: (i.ras_coverage || []).map((rc: any) => ({
@@ -705,9 +706,62 @@ export async function updatePlanUnitOrder(planId: string, orderedIds: string[]):
 // PLAN INSTRUMENT CRUD
 // ─────────────────────────────────────────────
 
+async function validateManualInstrumentCeWeights(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  planId: string,
+  isAutomationEnabled: boolean,
+  raCoverages: { raId: string; coveragePercent: number }[],
+  ceWeights: { ceId: string; weight: number }[]
+): Promise<string | null> {
+  if (isAutomationEnabled) return null;
+
+  const selectedRaIds = Array.from(new Set(raCoverages.map((rc) => rc.raId)));
+  if (selectedRaIds.length === 0) return null;
+
+  const [raResult, ceResult] = await Promise.all([
+    supabase
+      .from("plan_ra")
+      .select("id, code")
+      .eq("plan_id", planId)
+      .in("id", selectedRaIds),
+    supabase
+      .from("plan_ce")
+      .select("id, plan_ra_id")
+      .in("plan_ra_id", selectedRaIds),
+  ]);
+
+  if (raResult.error) {
+    return `Error al leer los RAs del instrumento: ${raResult.error.message}`;
+  }
+  if (ceResult.error) {
+    return `Error al leer los CEs del instrumento: ${ceResult.error.message}`;
+  }
+
+  const raCodeById = new Map((raResult.data ?? []).map((ra: any) => [ra.id, ra.code]));
+  const ceSumByRa = new Map<string, number>();
+
+  for (const ce of ceResult.data ?? []) {
+    const current = ceSumByRa.get(ce.plan_ra_id) ?? 0;
+    const next = ceWeights
+      .filter((weight) => weight.ceId === ce.id)
+      .reduce((sum, weight) => sum + Number(weight.weight || 0), 0);
+    ceSumByRa.set(ce.plan_ra_id, current + next);
+  }
+
+  const invalids: string[] = [];
+  for (const raId of selectedRaIds) {
+    const total = ceSumByRa.get(raId) ?? 0;
+    if (Math.abs(total - 100) > 0.1) {
+      invalids.push(`RA "${raCodeById.get(raId) || raId}": los porcentajes de CE deben sumar 100% (actual: ${total.toFixed(2)}%).`);
+    }
+  }
+
+  return invalids.length > 0 ? invalids.join(" ") : null;
+}
+
 export async function addPlanInstrument(
   planId: string,
-  payload: { code: string; type: string; is_pri_pmi?: boolean; name: string; description?: string | null },
+  payload: { code: string; type: string; is_pri_pmi?: boolean; ce_weight_auto?: boolean; name: string; description?: string | null },
   unitIds: string[] = [],
   raCoverages: { raId: string; coveragePercent: number }[] = [],
   ceWeights: { ceId: string; weight: number }[] = []
@@ -718,6 +772,27 @@ export async function addPlanInstrument(
   }
 
   const supabase = await createClient();
+  const { data: plan, error: planError } = await supabase
+    .from("teaching_plans")
+    .select("ce_weight_auto")
+    .eq("id", planId)
+    .single();
+
+  if (planError || !plan) {
+    return { ok: false, error: "Plan no encontrado" };
+  }
+
+  const isAutomationEnabled = Boolean(plan.ce_weight_auto) && Boolean(validated.data.ce_weight_auto ?? true);
+  const manualWeightsError = await validateManualInstrumentCeWeights(
+    supabase,
+    planId,
+    isAutomationEnabled,
+    raCoverages,
+    ceWeights
+  );
+  if (manualWeightsError) {
+    return { ok: false, error: manualWeightsError };
+  }
 
   // 1. Create instrument
   const { data: instrument, error } = await supabase
@@ -773,12 +848,36 @@ export async function addPlanInstrument(
 export async function updatePlanInstrument(
   planId: string,
   instrumentId: string,
-  payload: { code?: string; type?: string; is_pri_pmi?: boolean; name?: string; description?: string | null },
+  payload: { code?: string; type?: string; is_pri_pmi?: boolean; ce_weight_auto?: boolean; name?: string; description?: string | null },
   unitIds?: string[],
   raCoverages?: { raId: string; coveragePercent: number }[],
   ceWeights?: { ceId: string; weight: number }[]
 ): Promise<ActionResponse<any>> {
   const supabase = await createClient();
+
+  if (ceWeights !== undefined || raCoverages !== undefined) {
+    const { data: plan, error: planError } = await supabase
+      .from("teaching_plans")
+      .select("ce_weight_auto")
+      .eq("id", planId)
+      .single();
+
+    if (planError || !plan) {
+      return { ok: false, error: "Plan no encontrado" };
+    }
+
+    const isAutomationEnabled = Boolean(plan.ce_weight_auto) && Boolean(payload.ce_weight_auto ?? true);
+    const manualWeightsError = await validateManualInstrumentCeWeights(
+      supabase,
+      planId,
+      isAutomationEnabled,
+      raCoverages ?? [],
+      ceWeights ?? []
+    );
+    if (manualWeightsError) {
+      return { ok: false, error: manualWeightsError };
+    }
+  }
 
   // 1. Update metadata
   if (Object.keys(payload).length > 0) {

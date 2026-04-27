@@ -169,6 +169,7 @@ erDiagram
         uuid id PK
         uuid plan_id FK
         string type "exam|practice|project|oral|other"
+        boolean ce_weight_auto
         string name
         text description
         timestamptz created_at
@@ -311,11 +312,11 @@ sequenceDiagram
 ### 6.3 Configure CE weight automation and instrument coverage
 
 1. Teacher opens the `Pesos` tab, flips the “Automatizar pesos de CEs” switch, and can expand each RA to see its CE list and enter the percentage share (validated to sum 100%). The system marks those RA → CE distributions as canonical for the plan.
-2. When editing an instrument, the UI now pairs each selected RA with a coverage percent input and exposes the CE share fields only if automation is off or the RA’s CE shares are invalidated. If automation is active and valid, the CE share inputs are disabled and the derived values are shown for transparency.
-3. Saving the instrument persists `INSTRUMENT_RA_COVERAGE` rows (RA coverage percent) plus `INSTRUMENT_CE_WEIGHT` rows whose `coverage_percent` is computed as `RA coverage × CE share`. Grade entry workflows read the same `INSTRUMENT_CE_WEIGHT` rows, so automated CE weights automatically apply to all instruments that touch the RA.
+2. When editing an instrument, the UI now pairs each selected RA with a coverage percent input and exposes the CE share fields only if automation is off or the RA’s CE shares are invalidated. If automation is active and valid, the CE share inputs are disabled and the derived values are shown for transparency. Each instrument can also disable CE automation for itself with a local `ce_weight_auto` flag.
+3. Saving the instrument persists `INSTRUMENT_RA_COVERAGE` rows (RA coverage percent) plus `INSTRUMENT_CE_WEIGHT` rows whose `coverage_percent` is computed as `RA coverage × CE share` whenever the instrument is in automated mode. Grade entry workflows read the same `INSTRUMENT_CE_WEIGHT` rows, so automated CE weights automatically apply to all instruments that touch the RA; manual instruments keep their own stored CE weights and must validate that each RA sums to 100%.
 4. When the matrix editor updates a single RA coverage inline, the same persistence rules apply:
    - automated mode keeps the canonical CE shares from `plan_ce.weight_in_ra`
-   - manual mode redistributes the RA's CEs evenly at `100%`, with the last CE receiving the rounding remainder
+   - manual instruments keep their stored CE weights and the matrix only updates RA coverage
    - the instrument editor can still be used later to fine-tune the RA's CE weights
 
 ### 6.4 PRI/PMI resolution and improved grades
@@ -328,6 +329,23 @@ sequenceDiagram
    - one or more PRI/PMI scores => use the most recent score
 5. If teacher manually edits RA improved or final improved value, that value becomes persistent override and stops auto-recompute.
 6. Trimester auto columns ignore PRI/PMI; trimester auto lock freezes only auto column recomputation.
+
+### 6.5 Special adjusted-grade states
+
+- `trimester_adjusted_grade` and `final_improved_final_grade` are stored as numeric sentinels so the schema stays compact.
+- The UI exposes them through a dropdown with:
+  - numeric values `1..10`
+  - `NE` (`0`)
+  - `MH` (`-1`)
+  - `NM` (`-2`)
+  - `SCA` (`-3`)
+  - `PCO` (`-4`)
+  - `EX` (`-5`)
+  - `RC` (`-6`)
+  - `CV` (`-7`)
+  - `PFEOE` (`-8`)
+- `NE` is the neutral "No Evaluado" state and supersedes the previous `-1` sentinel.
+- Export and legend text must show the abbreviation, not the raw stored sentinel.
 
 ## 7. Versioning and Immutability
 

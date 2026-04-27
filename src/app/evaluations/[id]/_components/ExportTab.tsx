@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Download, FileSpreadsheet, ClipboardList, Database, LayoutGrid } from "lucide-react";
 import type { TeachingPlanFull } from "@/domain/teaching-plan/types";
+import { formatAdjustedGradeValue, isCountableAdjustedGradeValue } from "@/domain/evaluation/grade-values";
 
 interface ExportTabProps {
   readonly context: EvaluationContextFull;
@@ -58,13 +59,13 @@ export function ExportTab({ context, gradesResult, plans, scores }: ExportTabPro
         esc(sg.studentLastName),
         esc(sg.studentFirstName || sg.studentName),
         esc(t1?.autoGrade?.toFixed(2)),
-        esc(t1?.adjustedGrade?.toFixed(2)),
+        esc(formatAdjustedGradeValue(t1?.adjustedGrade)),
         esc(t2?.autoGrade?.toFixed(2)),
-        esc(t2?.adjustedGrade?.toFixed(2)),
+        esc(formatAdjustedGradeValue(t2?.adjustedGrade)),
         esc(t3?.autoGrade?.toFixed(2)),
-        esc(t3?.adjustedGrade?.toFixed(2)),
+        esc(formatAdjustedGradeValue(t3?.adjustedGrade)),
         esc(sg.finalOriginalAutoGrade?.toFixed(2)),
-        esc(sg.finalImprovedGrade?.toFixed(2)),
+        esc(formatAdjustedGradeValue(sg.finalImprovedGrade)),
       ].join(",");
     });
 
@@ -96,7 +97,7 @@ export function ExportTab({ context, gradesResult, plans, scores }: ExportTabPro
 
       allRAs.forEach(ra => {
         const raGrade = sg.raGrades.find(rg => rg.raId === ra.id);
-        row.push(esc(raGrade?.improvedGrade?.toFixed(2)));
+        row.push(esc(formatAdjustedGradeValue(raGrade?.improvedGrade)));
         
         // Para los CEs, el motor no los devuelve calculados. 
         // En una implementación real ideal estarían en el motor.
@@ -148,27 +149,38 @@ export function ExportTab({ context, gradesResult, plans, scores }: ExportTabPro
 
     const headers = ["Apellidos", "Nombre", "Nota Final", "Resultado"];
     const rows = sortedStudentGrades.map(sg => {
-      const grade = sg.finalImprovedGrade ?? 0;
+      const grade = sg.finalImprovedGrade;
+      const displayGrade = grade === null ? "" : formatAdjustedGradeValue(grade);
       return [
         esc(sg.studentLastName),
         esc(sg.studentFirstName || sg.studentName),
-        grade.toFixed(2),
-        grade >= 5 ? "Aprobad@" : "Suspens@"
+        esc(displayGrade),
+        grade !== null && isCountableAdjustedGradeValue(grade)
+          ? grade >= 5
+            ? "Aprobad@"
+            : "Suspens@"
+          : displayGrade || "Sin calificar",
       ].join(",");
     });
 
     const total = sortedStudentGrades.length;
-    const passed = sortedStudentGrades.filter(s => (s.finalImprovedGrade ?? 0) >= 5).length;
-    const average = sortedStudentGrades.reduce((acc, s) => acc + (s.finalImprovedGrade ?? 0), 0) / (total || 1);
+    const countableGrades = sortedStudentGrades
+      .map(s => s.finalImprovedGrade)
+      .filter((value): value is number => isCountableAdjustedGradeValue(value));
+    const specialGrades = total - countableGrades.length;
+    const passed = countableGrades.filter(value => value >= 5).length;
+    const average = countableGrades.length > 0 ? countableGrades.reduce((acc, value) => acc + value, 0) / countableGrades.length : 0;
 
     const statsBlock = [
       "",
       "--- ESTADÍSTICAS DEL GRUPO ---",
       `Total alumnos,${total}`,
+      `Calificaciones numéricas,${countableGrades.length}`,
       `Aprobados,${passed}`,
-      `Suspensos,${total - passed}`,
-      `% Aprobados,${((passed / (total || 1)) * 100).toFixed(1)}%`,
-      `Nota media grupo,${average.toFixed(2)}`,
+      `Suspensos,${countableGrades.length - passed}`,
+      `Situaciones especiales,${specialGrades}`,
+      `% Aprobados,${((passed / (countableGrades.length || 1)) * 100).toFixed(1)}%`,
+      `Nota media grupo,${countableGrades.length > 0 ? average.toFixed(2) : "-"}`,
     ];
 
     const content = [

@@ -23,6 +23,7 @@ import type {
   TrimesterKey,
 } from "./types";
 import type { TeachingPlanFull, PlanInstrument, PlanRA, PlanCE } from "@/domain/teaching-plan/types";
+import { isCountableAdjustedGradeValue } from "./grade-values";
 
 /** Full grade computation result for all students in a context */
 export interface GradeComputationResult {
@@ -133,7 +134,7 @@ export function computeAllStudentGrades(
 
   const finalGrades = studentGrades
     .map(s => s.finalImprovedGrade)
-    .filter((g): g is number => g !== null);
+    .filter((g): g is number => isCountableAdjustedGradeValue(g));
 
   const groupStats = {
     averageFinalGrade: finalGrades.length > 0
@@ -142,7 +143,7 @@ export function computeAllStudentGrades(
     medianFinalGrade: computeMedian(finalGrades),
     stdDevFinalGrade: computeStdDev(finalGrades),
     totalStudents: students.length,
-    gradedStudents: studentGrades.filter(s => s.finalImprovedGrade !== null).length,
+    gradedStudents: studentGrades.filter(s => isCountableAdjustedGradeValue(s.finalImprovedGrade)).length,
   };
 
   const raReferences = extractRAReferences(plans);
@@ -247,7 +248,7 @@ function computeSingleStudentGrade(params: ComputeSingleStudentGradeParams): Stu
       autoIsLocked,
       adjustedGrade: normalizeNullableNumber(adjustedGrade),
       adjustedIsManual: adjustedOverride !== undefined,
-      adjustedHasMissingData: autoHasMissingData,
+      adjustedHasMissingData: adjustedGrade === null ? autoHasMissingData : false,
     };
 
     return summary;
@@ -270,7 +271,8 @@ function computeSingleStudentGrade(params: ComputeSingleStudentGradeParams): Stu
   );
 
   const finalManualOverride = finalManualOverrideMap.get(studentId);
-  const finalImprovedGrade = finalManualOverride ?? finalImprovedAuto.grade;
+  const finalImprovedAutoGrade = roundNullableGrade(finalImprovedAuto.grade);
+  const finalImprovedGrade = finalManualOverride ?? finalImprovedAutoGrade;
   const finalImprovedIsManual = finalManualOverride !== undefined;
   const finalImprovedCompletionPercent = finalImprovedGrade === null
     ? finalImprovedAuto.completionPercent
@@ -286,7 +288,7 @@ function computeSingleStudentGrade(params: ComputeSingleStudentGradeParams): Stu
     finalOriginalAutoGrade: finalOriginal.grade,
     finalOriginalCompletionPercent: finalOriginal.completionPercent,
     finalOriginalHasMissingData: finalOriginal.grade === null || finalOriginal.completionPercent < 100,
-    finalImprovedAutoGrade: finalImprovedAuto.grade,
+    finalImprovedAutoGrade,
     finalImprovedGrade: normalizeNullableNumber(finalImprovedGrade),
     finalImprovedCompletionPercent,
     finalImprovedHasMissingData: finalImprovedGrade === null || finalImprovedCompletionPercent < 100,
@@ -440,8 +442,9 @@ function computeWeightedGradeAndCompletion(
   if (hasWeights) {
     for (const entry of positiveWeightEntries) {
       const weightFactor = entry.weight / 100;
-      if (entry.grade !== null) {
-        weightedGradeSum += entry.grade * weightFactor;
+      const grade = entry.grade;
+      if (grade !== null && isCountableAdjustedGradeValue(grade)) {
+        weightedGradeSum += grade * weightFactor;
         weightedGradeWeight += weightFactor;
       }
       weightedCompletionSum += clamp(entry.completionPercent, 0, 100) * weightFactor;
@@ -573,13 +576,16 @@ function normalizeNumber(value: number): number {
 
 function normalizeNullableNumber(value: number | null | undefined): number | null {
   if (value === null || value === undefined || Number.isNaN(value)) return null;
-  // -1 es el valor especial "NE" (No evaluad@): se trata como null en cálculos
-  if (value === -1) return null;
   return normalizeNumber(value);
 }
 
 function normalizePercent(value: number): number {
   return normalizeNumber(clamp(value, 0, 100));
+}
+
+function roundNullableGrade(value: number | null): number | null {
+  if (value === null || Number.isNaN(value)) return null;
+  return Math.round(value);
 }
 
 function clamp(value: number, min: number, max: number): number {

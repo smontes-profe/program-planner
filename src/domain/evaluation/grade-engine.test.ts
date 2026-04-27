@@ -73,6 +73,7 @@ function makeInstrument(
     code: "I1",
     type: "exam",
     is_pri_pmi: false,
+    ce_weight_auto: true,
     name: "Instrumento",
     description: null,
     created_at: "2024-01-01T00:00:00Z",
@@ -471,6 +472,60 @@ describe("T1 — Cálculo de RA originales", () => {
   });
 });
 
+describe("T7 — formatAdjustedGradeValue", () => {
+  it("formatAdjustedGradeValue(0): devuelve 'NE'", () => {
+    expect(formatAdjustedGradeValue(0)).toBe("NE");
+  });
+
+  it("formatAdjustedGradeValue(-1): devuelve 'MH'", () => {
+    expect(formatAdjustedGradeValue(-1)).toBe("MH");
+  });
+
+  it("formatAdjustedGradeValue(-8): devuelve 'PFEOE'", () => {
+    expect(formatAdjustedGradeValue(-8)).toBe("PFEOE");
+  });
+});
+
+describe("T7 — adjustedGradeValueToSelectValue", () => {
+  it("adjustedGradeValueToSelectValue(null): devuelve ''", () => {
+    expect(adjustedGradeValueToSelectValue(null)).toBe("");
+  });
+
+  it("adjustedGradeValueToSelectValue(0): devuelve '0'", () => {
+    expect(adjustedGradeValueToSelectValue(0)).toBe("0");
+  });
+});
+
+  it("Notas especiales no se incluyen en la media ni en el recuento de notas numéricas", () => {
+    const ceId = uid("ce");
+    const instId = uid("inst");
+    const raId = uid("ra");
+    const studentIds = [uid("student"), uid("student"), uid("student")];
+
+    const ce = makeCE({ id: ceId, plan_ra_id: raId, weight_in_ra: 100 });
+    const ra = makeRA({ id: raId, ces: [ce], weight_global: 100 });
+    const inst = makeInstrument({
+      id: instId,
+      ra_coverages: [{ instrument_id: instId, plan_ra_id: raId, coverage_percent: 100 }],
+      ce_weights: [{ instrument_id: instId, plan_ce_id: ceId, weight: 100 }],
+    });
+    const plan = makePlan({ id: "plan-special", ras: [ra], instruments: [inst] });
+    const context = makeContext(studentIds);
+    const scoreRecords = studentIds.map(student_id =>
+      makeScore({ instrument_id: instId, student_id, score_value: 8 })
+    );
+    const finalManualOverrides: EvaluationFinalManualOverride[] = [
+      { context_id: "ctx-1", student_id: studentIds[0], improved_final_grade: 8, updated_by_profile_id: null, updated_at: "2024-01-01T00:00:00Z" },
+      { context_id: "ctx-1", student_id: studentIds[1], improved_final_grade: 0, updated_by_profile_id: null, updated_at: "2024-01-01T00:00:00Z" },
+      { context_id: "ctx-1", student_id: studentIds[2], improved_final_grade: -1, updated_by_profile_id: null, updated_at: "2024-01-01T00:00:00Z" },
+    ];
+
+    const result = computeAllStudentGrades(context, [plan], scoreRecords, { finalManualOverrides });
+
+    expect(result.groupStats.averageFinalGrade).toBe(8);
+    expect(result.groupStats.gradedStudents).toBe(1);
+  });
+
 // ---------------------------------------------------------------------------
 // T2 — Motor de notas: lógica PRI/PMI
 // ---------------------------------------------------------------------------
@@ -768,6 +823,43 @@ describe("T3 — Overrides manuales", () => {
     expect(student.finalImprovedGrade).toBe(student.finalImprovedAutoGrade);
   });
 
+  it("Sin override final: la nota final ajustada redondea de forma normal", () => {
+    const ra1Id = uid("ra");
+    const ra2Id = uid("ra");
+    const ce1Id = uid("ce");
+    const ce2Id = uid("ce");
+    const inst1Id = uid("inst");
+    const inst2Id = uid("inst");
+    const studentId = uid("student");
+
+    const ce1 = makeCE({ id: ce1Id, plan_ra_id: ra1Id, weight_in_ra: 100 });
+    const ce2 = makeCE({ id: ce2Id, plan_ra_id: ra2Id, weight_in_ra: 100 });
+    const ra1 = makeRA({ id: ra1Id, ces: [ce1], weight_global: 50 });
+    const ra2 = makeRA({ id: ra2Id, ces: [ce2], weight_global: 50 });
+    const inst1 = makeInstrument({
+      id: inst1Id,
+      ra_coverages: [{ instrument_id: inst1Id, plan_ra_id: ra1Id, coverage_percent: 100 }],
+      ce_weights: [{ instrument_id: inst1Id, plan_ce_id: ce1Id, weight: 100 }],
+    });
+    const inst2 = makeInstrument({
+      id: inst2Id,
+      ra_coverages: [{ instrument_id: inst2Id, plan_ra_id: ra2Id, coverage_percent: 100 }],
+      ce_weights: [{ instrument_id: inst2Id, plan_ce_id: ce2Id, weight: 100 }],
+    });
+    const plan = makePlan({ id: "plan-1", ras: [ra1, ra2], instruments: [inst1, inst2] });
+    const context = makeContext([studentId]);
+    const scores = [
+      makeScore({ instrument_id: inst1Id, student_id: studentId, score_value: 7.2 }),
+      makeScore({ instrument_id: inst2Id, student_id: studentId, score_value: 8 }),
+    ];
+
+    const result = computeAllStudentGrades(context, [plan], scores);
+    const student = result.studentGrades[0];
+
+    expect(student.finalImprovedAutoGrade).toBe(8);
+    expect(student.finalImprovedGrade).toBe(8);
+  });
+
   it("Override manual de nota final no afecta a finalOriginalAutoGrade", () => {
     const { plan, context, scores, studentId } = setupBasicPlan();
     const resultSin = computeAllStudentGrades(context, [plan], scores);
@@ -862,6 +954,25 @@ describe("T4 — Notas trimestrales", () => {
 
     expect(t1?.adjustedGrade).toBe(8);
     expect(t1?.adjustedIsManual).toBe(true);
+  });
+
+  it("Override ajustado de trimestre con NE: adjustedGrade = 0 y no marca missing", () => {
+    const { plan, context, studentId } = setupTrimesterPlan();
+    const scores = [makeScore({ instrument_id: plan.instruments![0].id, student_id: studentId, score_value: 7.5 })];
+    const override: EvaluationTrimesterAdjustedOverride = {
+      context_id: "ctx-1",
+      student_id: studentId,
+      trimester_key: "T1",
+      adjusted_grade: 0,
+      updated_by_profile_id: null,
+      updated_at: "2024-01-01T00:00:00Z",
+    };
+
+    const result = computeAllStudentGrades(context, [plan], scores, { trimesterAdjustedOverrides: [override] });
+    const t1 = result.studentGrades[0].trimesterGrades.find(t => t.key === "T1");
+
+    expect(t1?.adjustedGrade).toBe(0);
+    expect(t1?.adjustedHasMissingData).toBe(false);
   });
 
   it("Sin override ajustado: adjustedGrade = floor(autoGrade)", () => {
@@ -1226,7 +1337,12 @@ describe("T6 — Estadísticas de grupo", () => {
 // T7 — Helpers de UI: parseo y formateo de notas
 // ---------------------------------------------------------------------------
 
-import { parseGrade, parseGradeInteger, formatInputValue } from "./grade-ui-helpers";
+import { parseGrade, formatInputValue } from "./grade-ui-helpers";
+import {
+  adjustedGradeValueToSelectValue,
+  formatAdjustedGradeValue,
+  parseAdjustedGradeValue,
+} from "./grade-values";
 
 describe("T7 — parseGrade", () => {
   it('parseGrade(""): ok = false', () => {
@@ -1258,9 +1374,27 @@ describe("T7 — parseGrade", () => {
   });
 });
 
-describe("T7 — parseGradeInteger", () => {
-  it('parseGradeInteger("7.3"): ok = false (decimal rechazado)', () => {
-    expect(parseGradeInteger("7.3").ok).toBe(false);
+describe("T7 — parseAdjustedGradeValue", () => {
+  it('parseAdjustedGradeValue("7"): ok = true, value = 7', () => {
+    const result = parseAdjustedGradeValue("7");
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.value).toBe(7);
+  });
+
+  it('parseAdjustedGradeValue("0"): ok = true, value = 0 (NE)', () => {
+    const result = parseAdjustedGradeValue("0");
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.value).toBe(0);
+  });
+
+  it('parseAdjustedGradeValue("-1"): ok = true, value = -1 (MH)', () => {
+    const result = parseAdjustedGradeValue("-1");
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.value).toBe(-1);
+  });
+
+  it('parseAdjustedGradeValue("7.3"): ok = false (decimal rechazado)', () => {
+    expect(parseAdjustedGradeValue("7.3").ok).toBe(false);
   });
 });
 
@@ -1325,37 +1459,33 @@ describe("T8 — Validación de RA mejorada manual", () => {
 
 describe("T9 — Truncado de nota trimestral ajustada", () => {
   /**
-   * En saveTrimesterAdjusted, el valor se trunca con Math.floor antes de llamar a parseGradeInteger.
-   * Testeamos el comportamiento combinado: floor + validación de rango.
+   * El selector de notas ajustadas solo acepta valores del catálogo permitido.
    */
 
-  function processTrimesterInput(raw: string): { ok: true; value: number } | { ok: false; error: string } {
-    const parsed = parseGrade(raw);
-    if (!parsed.ok) return parsed;
-    const floored = Math.floor(parsed.value);
-    return parseGradeInteger(String(floored));
+  function processTrimesterInput(raw: string) {
+    return parseAdjustedGradeValue(raw);
   }
 
-  it("Valor 7.9 ingresado: se guarda 7 (Math.floor silencioso)", () => {
-    const result = processTrimesterInput("7.9");
+  it("Valor 7 ingresado: se guarda 7", () => {
+    const result = processTrimesterInput("7");
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.value).toBe(7);
   });
 
-  it("Valor 5.0 ingresado: se guarda 5", () => {
-    const result = processTrimesterInput("5.0");
+  it("Valor 0 ingresado: se guarda 0 y se muestra como NE", () => {
+    const result = processTrimesterInput("0");
     expect(result.ok).toBe(true);
-    if (result.ok) expect(result.value).toBe(5);
+    if (result.ok) expect(result.value).toBe(0);
   });
 
-  it("Valor 10 ingresado: se guarda 10", () => {
-    const result = processTrimesterInput("10");
+  it("Valor -1 ingresado: se guarda -1 y se muestra como MH", () => {
+    const result = processTrimesterInput("-1");
     expect(result.ok).toBe(true);
-    if (result.ok) expect(result.value).toBe(10);
+    if (result.ok) expect(result.value).toBe(-1);
   });
 
-  it("Valor -1 ingresado: error de rango, no se guarda", () => {
-    expect(processTrimesterInput("-1").ok).toBe(false);
+  it("Valor 7.9 ingresado: error de formato, no se guarda", () => {
+    expect(processTrimesterInput("7.9").ok).toBe(false);
   });
 
   it("Valor 11 ingresado: error de rango, no se guarda", () => {

@@ -50,6 +50,7 @@ export const planInstrumentSchema = z.object({
   code: z.string().min(1, "El cÃ³digo es obligatorio"),
   type: z.enum(["exam", "practice", "project", "oral", "activity", "other"]),
   is_pri_pmi: z.boolean().default(false),
+  ce_weight_auto: z.boolean().default(true),
   name: z.string().min(1, "El nombre es obligatorio"),
   description: z.string().optional().nullable(),
 });
