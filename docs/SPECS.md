@@ -293,6 +293,15 @@ Trimester columns:
 - `trimester_adjusted_grade`:
   - default: `floor(trimester_auto_grade)`
   - if manually edited: fixed manual value until edited again.
+  - editable values: integers `1..10` plus special codes `NE`, `MH`, `NM`, `SCA`, `PCO`, `EX`, `RC`, `CV`, `PFEOE`.
+  - internal stored values: `0` for `NE`, `-1` for `MH`, `-2` for `NM`, `-3` for `SCA`, `-4` for `PCO`, `-5` for `EX`, `-6` for `RC`, `-7` for `CV`, `-8` for `PFEOE`.
+
+Final adjusted grade:
+
+- `final_improved_final_grade`:
+  - default: `round(final_improved_auto_grade)` with normal rounding.
+  - editable values: integers `1..10` plus the same special codes as the trimester adjusted grade.
+  - internal stored values: same mapping as above, with `0` representing `NE`.
 
 ### 6.2 Missing Data Behavior
 
@@ -311,6 +320,7 @@ Trimester columns:
 - Final module area must show two columns:
   - `final_original_auto_grade`
   - `final_improved_final_grade` (manual override allowed, with indicator)
+  - adjusted values are rendered through a dropdown selector, not a free-text input.
 
 ## 7. Trimester Logic
 

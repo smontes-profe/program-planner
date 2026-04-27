@@ -23,6 +23,7 @@ import type {
   TrimesterKey,
 } from "./types";
 import type { TeachingPlanFull, PlanInstrument, PlanRA, PlanCE } from "@/domain/teaching-plan/types";
+import { isCountableAdjustedGradeValue } from "./grade-values";
 
 /** Full grade computation result for all students in a context */
 export interface GradeComputationResult {
@@ -133,7 +134,7 @@ export function computeAllStudentGrades(
 
   const finalGrades = studentGrades
     .map(s => s.finalImprovedGrade)
-    .filter((g): g is number => g !== null);
+    .filter((g): g is number => isCountableAdjustedGradeValue(g));
 
   const groupStats = {
     averageFinalGrade: finalGrades.length > 0
@@ -142,7 +143,7 @@ export function computeAllStudentGrades(
     medianFinalGrade: computeMedian(finalGrades),
     stdDevFinalGrade: computeStdDev(finalGrades),
     totalStudents: students.length,
-    gradedStudents: studentGrades.filter(s => s.finalImprovedGrade !== null).length,
+    gradedStudents: studentGrades.filter(s => isCountableAdjustedGradeValue(s.finalImprovedGrade)).length,
   };
 
   const raReferences = extractRAReferences(plans);
@@ -247,7 +248,7 @@ function computeSingleStudentGrade(params: ComputeSingleStudentGradeParams): Stu
       autoIsLocked,
       adjustedGrade: normalizeNullableNumber(adjustedGrade),
       adjustedIsManual: adjustedOverride !== undefined,
-      adjustedHasMissingData: autoHasMissingData,
+      adjustedHasMissingData: adjustedGrade === null ? autoHasMissingData : false,
     };
 
     return summary;
@@ -441,8 +442,9 @@ function computeWeightedGradeAndCompletion(
   if (hasWeights) {
     for (const entry of positiveWeightEntries) {
       const weightFactor = entry.weight / 100;
-      if (entry.grade !== null) {
-        weightedGradeSum += entry.grade * weightFactor;
+      const grade = entry.grade;
+      if (grade !== null && isCountableAdjustedGradeValue(grade)) {
+        weightedGradeSum += grade * weightFactor;
         weightedGradeWeight += weightFactor;
       }
       weightedCompletionSum += clamp(entry.completionPercent, 0, 100) * weightFactor;
@@ -574,8 +576,6 @@ function normalizeNumber(value: number): number {
 
 function normalizeNullableNumber(value: number | null | undefined): number | null {
   if (value === null || value === undefined || Number.isNaN(value)) return null;
-  // -1 es el valor especial "NE" (No evaluad@): se trata como null en cálculos
-  if (value === -1) return null;
   return normalizeNumber(value);
 }
 

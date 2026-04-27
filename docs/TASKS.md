@@ -41,6 +41,7 @@ Status legend:
 - [P3][x] RAs vs instrumentos: ahora mismo, para el scroll horizontal, se bloquea la columna de RAs. Debería bloquerase también la de Cobertura. Hacer que las columnas de los instrumentos tengan un 70% del ancho que tienen ahora. 
 - [P2][x] Notas calculadas: en Notas por RAS, mostrar el badge de PRI siempre que exista PRI/PMI y aclarar en el tooltip cuándo no se aplica porque se mantiene la nota original.
 - [P1][x] Notas calculadas: Para la nota Final ajustada, que inicialmente autocacule haciendo redondeo normal.
+- [P1][x] Notas calculadas: Calificaciones y situaciones especiales
 
 
 ## Phase 5 - Evaluation Engine

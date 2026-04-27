@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ADJUSTED_GRADE_OPTIONS } from "./grade-values";
 
 // ─── Evaluation Context ─────────────────────────────────────────────────────
 
@@ -65,9 +66,8 @@ export const upsertTrimesterAdjustedOverrideSchema = z.object({
   context_id: z.string().uuid(),
   student_id: z.string().uuid(),
   trimester_key: z.enum(["T1", "T2", "T3"]),
-  // -1 es el valor especial "NE" (No evaluad@)
-  adjusted_grade: z.coerce.number().refine(v => v === -1 || (v >= 0 && v <= 10), {
-    message: "La nota debe estar entre 0 y 10, o ser -1 (NE)",
+  adjusted_grade: z.coerce.number().int().refine(v => ADJUSTED_GRADE_OPTIONS.some(option => option.value === v), {
+    message: "Selecciona una calificación válida.",
   }),
 });
 
@@ -81,5 +81,7 @@ export const upsertRAManualOverrideSchema = z.object({
 export const upsertFinalManualOverrideSchema = z.object({
   context_id: z.string().uuid(),
   student_id: z.string().uuid(),
-  improved_final_grade: z.coerce.number().min(0).max(10),
+  improved_final_grade: z.coerce.number().int().refine(v => ADJUSTED_GRADE_OPTIONS.some(option => option.value === v), {
+    message: "Selecciona una calificación válida.",
+  }),
 });

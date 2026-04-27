@@ -329,6 +329,23 @@ sequenceDiagram
 5. If teacher manually edits RA improved or final improved value, that value becomes persistent override and stops auto-recompute.
 6. Trimester auto columns ignore PRI/PMI; trimester auto lock freezes only auto column recomputation.
 
+### 6.5 Special adjusted-grade states
+
+- `trimester_adjusted_grade` and `final_improved_final_grade` are stored as numeric sentinels so the schema stays compact.
+- The UI exposes them through a dropdown with:
+  - numeric values `1..10`
+  - `NE` (`0`)
+  - `MH` (`-1`)
+  - `NM` (`-2`)
+  - `SCA` (`-3`)
+  - `PCO` (`-4`)
+  - `EX` (`-5`)
+  - `RC` (`-6`)
+  - `CV` (`-7`)
+  - `PFEOE` (`-8`)
+- `NE` is the neutral "No Evaluado" state and supersedes the previous `-1` sentinel.
+- Export and legend text must show the abbreviation, not the raw stored sentinel.
+
 ## 7. Versioning and Immutability
 
 - Template unique key: `organization_id + region_code + module_code + academic_year + version`.

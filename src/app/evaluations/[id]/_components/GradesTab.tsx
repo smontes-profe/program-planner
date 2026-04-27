@@ -17,9 +17,27 @@ import {
   upsertTrimesterAdjustedOverride,
 } from "@/domain/evaluation/actions";
 import { cn } from "@/lib/utils";
-import { parseGrade, parseGradeInteger, formatInputValue } from "@/domain/evaluation/grade-ui-helpers";
+import { parseGrade, formatInputValue } from "@/domain/evaluation/grade-ui-helpers";
+import {
+  ADJUSTED_GRADE_OPTIONS,
+  adjustedGradeValueToSelectValue,
+  formatAdjustedGradeSelectLabel,
+  formatAdjustedGradeValue,
+  isSpecialAdjustedGradeValue,
+  parseAdjustedGradeValue,
+} from "@/domain/evaluation/grade-values";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertTriangle, Circle, Loader2, Lock, PencilLine } from "lucide-react";
 
@@ -117,28 +135,19 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
     });
   };
 
-  const saveTrimesterAdjusted = (studentId: string, trimester: TrimesterKey) => {
+  const saveTrimesterAdjusted = (studentId: string, trimester: TrimesterKey, rawSelection?: string) => {
     const key = `tri:${studentId}:${trimester}`;
     const student = studentGrades.find(s => s.studentId === studentId);
     const tri = student?.trimesterGrades.find(t => t.key === trimester);
     if (!student || !tri) return;
 
-    const rawValue = trimesterInputs[key] ?? formatInputValue(tri.adjustedGrade);
-
-    // Acepta "NE" directamente, o un número entero (con truncado silencioso si viene decimal)
-    let intValue: number;
-    const neCheck = rawValue.trim().toUpperCase();
-    if (neCheck === "NE") {
-      intValue = -1;
-    } else {
-      const parsed = parseGrade(rawValue);
-      if (!parsed.ok) {
-        setErrors(prev => ({ ...prev, [key]: parsed.error }));
-        return;
-      }
-      // Truncar silenciosamente a entero
-      intValue = Math.floor(parsed.value);
+    const rawValue = rawSelection ?? trimesterInputs[key] ?? adjustedGradeValueToSelectValue(tri.adjustedGrade);
+    const parsed = parseAdjustedGradeValue(rawValue);
+    if (!parsed.ok) {
+      setErrors(prev => ({ ...prev, [key]: parsed.error }));
+      return;
     }
+    const intValue = parsed.value;
 
     setPendingKey(key);
     startTransition(() => {
@@ -155,7 +164,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
             return;
           }
           setErrors(prev => { const next = { ...prev }; delete next[key]; return next; });
-          setTrimesterInputs(prev => ({ ...prev, [key]: formatInputValue(intValue) }));
+          setTrimesterInputs(prev => ({ ...prev, [key]: adjustedGradeValueToSelectValue(intValue) }));
           setStudentGrades(prev =>
             prev.map(item =>
               item.studentId === studentId
@@ -240,11 +249,11 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
     });
   };
 
-  const saveFinalImproved = (studentId: string) => {
+  const saveFinalImproved = (studentId: string, rawSelection?: string) => {
     const key = `final:${studentId}`;
     const student = studentGrades.find(s => s.studentId === studentId);
     if (!student) return;
-    const parsed = parseGrade(finalInputs[key] ?? formatInputValue(student.finalImprovedGrade));
+    const parsed = parseAdjustedGradeValue(rawSelection ?? finalInputs[key] ?? adjustedGradeValueToSelectValue(student.finalImprovedGrade));
     if (!parsed.ok) {
       setErrors(prev => ({ ...prev, [key]: parsed.error }));
       return;
@@ -268,7 +277,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
             delete next[key];
             return next;
           });
-          setFinalInputs(prev => ({ ...prev, [key]: formatInputValue(parsed.value) }));
+          setFinalInputs(prev => ({ ...prev, [key]: adjustedGradeValueToSelectValue(parsed.value) }));
           setStudentGrades(prev =>
             prev.map(item =>
               item.studentId === studentId
@@ -304,7 +313,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
           if (!result.ok) { setErrors(prev => ({ ...prev, [key]: result.error })); return; }
           setErrors(prev => { const next = { ...prev }; delete next[key]; return next; });
           const newAdjusted = tri.autoGrade === null ? null : Math.floor(tri.autoGrade);
-          setTrimesterInputs(prev => ({ ...prev, [key]: formatInputValue(newAdjusted) }));
+          setTrimesterInputs(prev => ({ ...prev, [key]: adjustedGradeValueToSelectValue(newAdjusted) }));
           setStudentGrades(prev => prev.map(item => item.studentId !== studentId ? item : {
             ...item,
             trimesterGrades: item.trimesterGrades.map(t => t.key !== trimester ? t : { ...t, adjustedGrade: newAdjusted, adjustedIsManual: false }),
@@ -354,7 +363,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
           if (!result.ok) { setErrors(prev => ({ ...prev, [key]: result.error })); return; }
           setErrors(prev => { const next = { ...prev }; delete next[key]; return next; });
           const autoGrade = student.finalImprovedAutoGrade ?? null;
-          setFinalInputs(prev => ({ ...prev, [key]: formatInputValue(autoGrade) }));
+          setFinalInputs(prev => ({ ...prev, [key]: adjustedGradeValueToSelectValue(autoGrade) }));
           setStudentGrades(prev => prev.map(item => item.studentId !== studentId ? item : {
             ...item,
             finalImprovedGrade: autoGrade,
@@ -393,8 +402,9 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
         </div>
 
         {/* Leyenda — tabla de trimestres */}
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 rounded-lg border border-zinc-200 bg-zinc-50/60 px-3 py-2 text-[11px] text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-400">
-          <span className="font-semibold text-zinc-600 dark:text-zinc-300">Leyenda:</span>
+        <div className="rounded-lg border border-zinc-200 bg-zinc-50/60 px-3 py-2 text-[11px] text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-400">
+          <p className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
+            <span className="font-semibold text-zinc-600 dark:text-zinc-300">Leyenda:</span>
           <span className="inline-flex items-center gap-1">
             <span className="font-mono font-semibold text-emerald-600">8.50</span>
             <span>Aprobado (≥ 5)</span>
@@ -415,10 +425,16 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
             <PencilLine className="h-3.5 w-3.5 text-blue-500" />
             <span>Ajuste manual</span>
           </span>
-          <span className="inline-flex items-center gap-1">
-            <span className="font-mono font-semibold text-zinc-500/80 dark:text-zinc-400/80">NE</span>
-            <span>No Evaluado</span>
-          </span>
+          </p>
+          <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+            <span className="font-semibold text-zinc-600 dark:text-zinc-300">Situaciones especiales:</span>
+            {ADJUSTED_GRADE_OPTIONS.filter(option => option.value <= 0).map(option => (
+              <span key={option.value} className="inline-flex items-center gap-1">
+                <span className="font-mono font-semibold text-zinc-500/80 dark:text-zinc-400/80">{option.code}</span>
+                <span>{option.description}</span>
+              </span>
+            ))}
+          </p>
         </div>
 
         <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
@@ -451,7 +467,8 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
                       return <Fragment key={`${student.studentId}-${trimester}`}><td className="px-1 py-2 text-center">-</td><td className="px-1 py-2 text-center">-</td></Fragment>;
                     }
                     const key = `tri:${student.studentId}:${trimester}`;
-                    const value = trimesterInputs[key] ?? formatInputValue(tri.adjustedGrade);
+                    const value = trimesterInputs[key] ?? adjustedGradeValueToSelectValue(tri.adjustedGrade);
+                    const numericValue = value === "" ? tri.adjustedGrade : Number(value);
                     return (
                       <Fragment key={`${student.studentId}-${trimester}`}>
                         <td className="px-1 py-2 text-center">
@@ -461,31 +478,50 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
                         </td>
                         <td className={cn("px-1 py-2 text-center", GROUP_SEPARATOR_CLASS)}>
                           <div className="inline-flex items-center gap-0.5">
-                            {(() => {
-                              const isNE = value.trim().toUpperCase() === "NE" || tri.adjustedGrade === -1;
-                              const numericGrade = isNE ? -1 : tri.adjustedGrade;
-                              return (
-                                <Input
-                                  className={cn(
-                                    "h-7 w-[62px] text-center text-xs",
-                                    errors[key]
-                                      ? "border-rose-400"
-                                      : isNE
-                                        ? "border-zinc-400 text-zinc-500 dark:border-zinc-600 dark:text-zinc-400"
-                                        : numericGrade !== null && numericGrade >= 5
-                                          ? "border-emerald-400 dark:border-emerald-600"
-                                          : numericGrade !== null
-                                            ? "border-rose-300 dark:border-rose-600"
-                                            : "",
-                                  )}
-                                  type="text"
-                                  inputMode="text"
-                                  value={value}
-                                  onChange={e => setTrimesterInputs(prev => ({ ...prev, [key]: e.target.value }))}
-                                  onBlur={() => saveTrimesterAdjusted(student.studentId, trimester)}
-                                />
-                              );
-                            })()}
+                            <Select
+                              value={value}
+                              onValueChange={nextValue => {
+                                const selectedValue = nextValue ?? "";
+                                setTrimesterInputs(prev => ({ ...prev, [key]: selectedValue }));
+                                saveTrimesterAdjusted(student.studentId, trimester, selectedValue);
+                              }}
+                            >
+                              <SelectTrigger
+                                className={cn(
+                                  "h-7 w-[88px] text-xs",
+                                  errors[key]
+                                    ? "border-rose-400"
+                                    : isSpecialAdjustedGradeValue(numericValue)
+                                      ? "border-zinc-400 text-zinc-500 dark:border-zinc-600 dark:text-zinc-400"
+                                      : numericValue !== null && numericValue >= 5
+                                        ? "border-emerald-400 dark:border-emerald-600"
+                                        : numericValue !== null
+                                          ? "border-rose-300 dark:border-rose-600"
+                                          : "",
+                                )}
+                              >
+                                <SelectValue placeholder="Selecciona" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectGroup>
+                                  <SelectLabel>Calificaciones</SelectLabel>
+                                  {ADJUSTED_GRADE_OPTIONS.filter(option => option.value >= 1).map(option => (
+                                    <SelectItem key={option.value} value={String(option.value)} title={formatAdjustedGradeSelectLabel(option.value)}>
+                                      {option.code}
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
+                                <SelectSeparator />
+                                <SelectGroup>
+                                  <SelectLabel>Situaciones especiales</SelectLabel>
+                                  {ADJUSTED_GRADE_OPTIONS.filter(option => option.value <= 0).map(option => (
+                                    <SelectItem key={option.value} value={String(option.value)} title={formatAdjustedGradeSelectLabel(option.value)}>
+                                      {option.code}
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              </SelectContent>
+                            </Select>
                             {pendingKey === key && <Loader2 className="h-3 w-3 animate-spin text-emerald-500" />}
                             {tri.adjustedIsManual && (
                               <Tooltip>
@@ -516,10 +552,54 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
                   <td className="px-1 py-2 text-center">
                     {(() => {
                       const key = `final:${student.studentId}`;
-                      const value = finalInputs[key] ?? formatInputValue(student.finalImprovedGrade);
+                      const value = finalInputs[key] ?? adjustedGradeValueToSelectValue(student.finalImprovedGrade);
+                      const numericValue = value === "" ? student.finalImprovedGrade : Number(value);
                       return (
                         <div className="inline-flex items-center gap-0.5">
-                          <Input className={cn("h-7 w-[62px] text-center text-xs", errors[key] && "border-rose-400")} type="number" min={0} max={10} step={0.01} value={value} onChange={e => setFinalInputs(prev => ({ ...prev, [key]: e.target.value }))} onBlur={() => saveFinalImproved(student.studentId)} />
+                          <Select
+                            value={value}
+                            onValueChange={nextValue => {
+                              const selectedValue = nextValue ?? "";
+                              setFinalInputs(prev => ({ ...prev, [key]: selectedValue }));
+                              saveFinalImproved(student.studentId, selectedValue);
+                            }}
+                          >
+                            <SelectTrigger
+                              className={cn(
+                                "h-7 w-[88px] text-xs",
+                                errors[key]
+                                  ? "border-rose-400"
+                                  : isSpecialAdjustedGradeValue(numericValue)
+                                    ? "border-zinc-400 text-zinc-500 dark:border-zinc-600 dark:text-zinc-400"
+                                    : numericValue !== null && numericValue >= 5
+                                      ? "border-emerald-400 dark:border-emerald-600"
+                                      : numericValue !== null
+                                        ? "border-rose-300 dark:border-rose-600"
+                                        : "",
+                              )}
+                            >
+                              <SelectValue placeholder="Selecciona" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectGroup>
+                                <SelectLabel>Calificaciones</SelectLabel>
+                                {ADJUSTED_GRADE_OPTIONS.filter(option => option.value >= 1).map(option => (
+                                  <SelectItem key={option.value} value={String(option.value)} title={formatAdjustedGradeSelectLabel(option.value)}>
+                                    {option.code}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                              <SelectSeparator />
+                              <SelectGroup>
+                                <SelectLabel>Situaciones especiales</SelectLabel>
+                                {ADJUSTED_GRADE_OPTIONS.filter(option => option.value <= 0).map(option => (
+                                  <SelectItem key={option.value} value={String(option.value)} title={formatAdjustedGradeSelectLabel(option.value)}>
+                                    {option.code}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            </SelectContent>
+                          </Select>
                           {pendingKey === key && <Loader2 className="h-3 w-3 animate-spin text-emerald-500" />}
                           {student.finalImprovedIsManual && (
                             <Tooltip>
@@ -680,13 +760,13 @@ function formatStudentName(student: StudentGradeSummary): string {
 
 function formatGrade(value: number | null): string {
   if (value === null) return "-";
-  if (value === -1) return "NE";
+  if (value <= 0) return formatAdjustedGradeValue(value);
   return value.toFixed(2);
 }
 
 function gradeColorClass(value: number | null): string {
   if (value === null) return "text-zinc-400";
-  if (value === -1) return "text-zinc-500/80 dark:text-zinc-400/80";
+  if (value <= 0) return "text-zinc-500/80 dark:text-zinc-400/80";
   if (value >= 5) return "text-emerald-600 dark:text-emerald-400";
   return "text-rose-600 dark:text-rose-400";
 }
