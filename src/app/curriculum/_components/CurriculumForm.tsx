@@ -204,10 +204,9 @@ export function CurriculumForm({ regions, organizations, templateId, initialData
           <SelectTrigger id="visibility_scope" className="w-full h-10 border-zinc-200 dark:border-zinc-800">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="private">Privado (Solo tú y gestores)</SelectItem>
+        <SelectContent>
+            <SelectItem value="private">Privada (solo creador)</SelectItem>
             <SelectItem value="organization">Organización (Mismo centro)</SelectItem>
-            <SelectItem value="company">Compañía (Plataforma completa)</SelectItem>
           </SelectContent>
         </Select>
       </div>

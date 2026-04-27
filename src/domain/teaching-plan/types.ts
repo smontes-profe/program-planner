@@ -1,5 +1,5 @@
 export type PlanStatus = 'draft' | 'published';
-export type VisibilityScope = 'private' | 'organization' | 'company';
+export type VisibilityScope = 'private' | 'organization';
 
 export interface TeachingPlan {
   id: string;

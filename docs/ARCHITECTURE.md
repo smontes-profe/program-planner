@@ -130,7 +130,7 @@ erDiagram
         string region_code
         string module_code
         string academic_year
-        string visibility_scope "private|organization|company"
+        string visibility_scope "private|organization"
         string status "draft|published"
         timestamptz imported_at
         timestamptz created_at
@@ -257,9 +257,8 @@ Access model:
 
 Visibility rules:
 
-- `private`: owner, org managers in same organization, platform admins.
+- `private`: creator only.
 - `organization`: any active membership in same organization.
-- `company`: any authenticated active member in any organization.
 
 Admin provisioning rules:
 

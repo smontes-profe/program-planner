@@ -6,12 +6,12 @@ export const createPlanSchema = z.object({
   title: z.string().min(1, "El tÃ­tulo es obligatorio").max(255),
   source_template_id: z.string().uuid("Debes seleccionar un currÃ­culo base"),
   academic_year: z.string().regex(academicYearRegex, "Formato esperado: YYYY/YYYY"),
-  visibility_scope: z.enum(["private", "organization", "company"]).default("private"),
+  visibility_scope: z.enum(["private", "organization"]).default("private"),
 });
 
 export const updatePlanSchema = z.object({
   title: z.string().min(1).max(255).optional(),
-  visibility_scope: z.enum(["private", "organization", "company"]).optional(),
+  visibility_scope: z.enum(["private", "organization"]).optional(),
   status: z.enum(["draft", "published"]).optional(),
   hours_total: z.coerce.number().min(1).optional(),
 });

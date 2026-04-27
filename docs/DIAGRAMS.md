@@ -131,7 +131,6 @@ flowchart TD
     IsAdmin{platform_admin?}
     SameOrg{Same organization?}
     Scope{visibility_scope}
-    AnyMember{Active membership in any organization?}
     Allow[Allow]
     Deny[Deny]
 
@@ -139,14 +138,14 @@ flowchart TD
     IsAdmin -- Yes --> Allow
     IsAdmin -- No --> Scope
 
-    Scope -- private --> SameOrg
-    SameOrg -- Yes --> Allow
-    SameOrg -- No --> Deny
+    Scope -- private --> CreatorOnly
+    CreatorOnly{Creator?}
+    CreatorOnly -- Yes --> Allow
+    CreatorOnly -- No --> Deny
 
     Scope -- organization --> SameOrg
-    Scope -- company --> AnyMember
-    AnyMember -- Yes --> Allow
-    AnyMember -- No --> Deny
+    SameOrg -- Yes --> Allow
+    SameOrg -- No --> Deny
 ```
 
 ## 4. Teaching Plan State Diagram

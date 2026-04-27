@@ -11,7 +11,7 @@ export type CurriculumSourceType = 'manual' | 'pdf_assisted';
 /**
  * Visibility scopes for templates and plans
  */
-export type VisibilityScope = 'private' | 'organization' | 'company';
+export type VisibilityScope = 'private' | 'organization';
 
 /**
  * Base Curriculum Template

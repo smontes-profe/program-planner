@@ -19,7 +19,7 @@ export const curriculumTemplateSchema = z.object({
   version: z.string().min(1).max(20),
   status: z.enum(["draft", "published", "deprecated"]).default("draft"),
   source_type: z.enum(["manual", "pdf_assisted"]).default("manual"),
-  visibility_scope: z.enum(["private", "organization", "company"]).default("organization"),
+  visibility_scope: z.enum(["private", "organization"]).default("organization"),
   hours_total: z.coerce.number().min(0).default(0),
 });
 

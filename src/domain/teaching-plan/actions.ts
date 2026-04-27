@@ -116,7 +116,7 @@ export async function createPlanFromTemplate(payload: {
   title: string;
   source_template_id: string;
   academic_year: string;
-  visibility_scope: "private" | "organization" | "company";
+  visibility_scope: "private" | "organization";
 }): Promise<ActionResponse<TeachingPlan>> {
   const validated = createPlanSchema.safeParse(payload);
   if (!validated.success) {
@@ -228,7 +228,7 @@ export async function createPlanFromTemplate(payload: {
 
 export async function updatePlan(planId: string, payload: {
   title?: string;
-  visibility_scope?: "private" | "organization" | "company";
+  visibility_scope?: "private" | "organization";
   status?: "draft" | "published";
   hours_total?: number;
 }): Promise<ActionResponse<TeachingPlan>> {

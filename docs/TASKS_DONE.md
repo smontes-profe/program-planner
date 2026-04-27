@@ -268,6 +268,37 @@ Nuevo módulo de Evaluaciones al mismo nivel que Plantillas de Currículo y Prog
 - [x] Exportación de notas: Después de "Notas por RAs" añadir un bloque nuevo de "Notas por instrumentos" que permita exportar las notas de los alumnos por instrumentos. Añadir un check de "incluir PRI/PMI" para que se muestren o no.
 - [x] Exportación de notas: Eliminar la parte de "Listado de alumnos" por "Acta de evaluacion": documento resumen con notas finales por alumno y estadisticas del grupo.
 
+## Phase 4 - Ongoing feedback and improvements
+
+- [P0][x] Corregir error en detalle de programación: `PlanTabs` falla al montar tooltips por uso de `TooltipTrigger asChild` incompatible con Base UI.
+- [P1][x] Better responsiveness for different desktop resolutions (specially big ones).
+- [P1][x] Currículos: El panel de edición de RAs y CEs es demasiado grande. Hay que dejarlo a la mitad.
+- [P1][x] Currículos: El panel de "añadir módulo completo", sin embargo, se queda muy estrecho. Que se quede al mismo ancho que el de edición de RAs y CEs (una vez ajustados estos).
+- [P1][x] Matriz de Notas: Botón de "borrar todo" para borrar todas las notas.
+- [P2][x] Notas calculadas: En la parte de las trimestrales, posibilidad de poder meter, además de números entre el 1 y el 10, "NE" (No evaluad@). 
+- [P1][x] Editar instrumento: Al marcar un RA, además del campo donde se introduce el pocentaje de cobertura, incluir otro en la izquierda (de lectura) donde indique el porciento que queda por cubrir de ese RA. 
+- [P1][x] Bloque Mis programaciones: Añadir una sección RAs vs Instrumentos. En esa sección mostraremos una matriz donde veamos la lista de RAs (solo código, y un tooltip para ver la descripción), qué porcentaje de cada RA está cubierto (rojo si falta, verde si está al 100%, azul si se ha superado el 100%),  los instrumentos que afectan a ese RA, y en qué porcentaje. 
+- [P1][x] Bloque Mis programaciones, sección RAs vs Instrumentos: que los valores de porcentajes se puedan modificar directamente aquí. 
+- [P0][x] Editar instrumento: el cálculo de porcentaje restante de un RA parece que se hace bien cuando aun queda porcentaje por cubrir, pero mal cuando ya está cubierto por encima del 100% (por ejemplo, veo que en PROG_SEV_2526_DAW_2_MAÑANA_DESCLI_061, el RA4 está al 140% y sin embargo no lo registra así si intento editar algún instrumento y asignar porcentaje  en ese RA).
+- [P1][x] Bloque Mis programaciones: Marcar de un color identtificativo los instrumentos que afectan al RA (los que no estén al 0%)
+- [P1][x] Alumnado: corregir warning de React por `key` duplicada en `StudentsTab` al renderizar listas de estudiantes.
+- [P2][x] Alumnado: Añadir un campo de texto grande "Observaciones" donde los profesores puedan poner observaciones sobre las notas. 
+- [P3][x] Mis programaciones: los nombres de las programaciones suelen ser muy largos y en la lista de Mis programaciones, se suele cortar. Reducir el tamaño de los nombres de las programaciones.
+- [P3][x] RAs vs Instrumentos: Usar códigos de colores para los valores: los que no aporten (tengan 0) que aparezcacn en gris con un alfa al 50. 
+- [P2][x] Notas calculadas: en la parte de Notas por RAS, cambiar el color de PRI de verda a morado, y las notas modificadas por PRis que usen ese color. Además hay un pequeño bug: Cuando la nota original es superior que la que viene del PRI, debe mantener la nota original. Eso lo hace bien, pero aun así, lo marca como modificado por PRI.
+- [P0][x] BUG al importar notas.
+- [P2][x] Notas calculadas: Los valores de "NE" se ven en rojo, no en gris. Además, añadir a la leyenda que "NE" es "No Evaluado".
+- [P3][x] Notas calculadas: en la matriz de notas trimestrales, añadir un separador visual claro entre cada bloque de trimestre y final.
+- [P2][x] Notas calculadas: labels erróneos. Para la nota final, al lado de "Auto" aparece "Mejorada". Debería poner "ajustada". Lo mismo pasa con todos los RAs. Junto a la original, lo que debe aparecer es "ajustada", no "mejorada".  
+- [P3][x] Notas calculadas: Añadir separadores similares a los que tenemos entre las notas de trimestres para las columnas de RAs y alumnos. 
+- [P3][x] Notas calculadas: modificar el separador que hay entre columnas en las dos tablas para que sea un punto más fino y con un gris un poco más claro.
+- [P3][x] añadir mismo separador entre columnas que tenemos en las tablas de notas calculadas a las tablas de: Matriz de notas, RAs vs instrumentos, Instrumentos de evaluación.
+- [P3][x] RAs vs instrumentos: ahora mismo, para el scroll horizontal, se bloquea la columna de RAs. Debería bloquerase también la de Cobertura. Hacer que las columnas de los instrumentos tengan un 70% del ancho que tienen ahora. 
+- [P2][x] Notas calculadas: en Notas por RAS, mostrar el badge de PRI siempre que exista PRI/PMI y aclarar en el tooltip cuándo no se aplica porque se mantiene la nota original.
+- [P1][x] Notas calculadas: Para la nota Final ajustada, que inicialmente autocacule haciendo redondeo normal.
+- [P1][x] Notas calculadas: Calificaciones y situaciones especiales
+- [P1][x] Instrumentos: permitir desactivar la automatización de CE por instrumento y validar que sumen 100% al guardar.
+
 ## Phase 8 - CI/CD and Release
 
 - [x] GitHub Actions: lint + typecheck + test on PR (via quality-gates.yml).

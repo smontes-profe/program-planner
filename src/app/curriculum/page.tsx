@@ -4,7 +4,7 @@ import { buttonVariants } from "@/components/ui/button-variants";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { Plus, FileText, Globe, Lock, Shield, AlertCircle } from "lucide-react";
+import { Plus, FileText, Globe, Lock, AlertCircle } from "lucide-react";
 
 export const metadata = {
   title: "Currículos - Program Planner",
@@ -105,7 +105,6 @@ export default async function CurriculumPage() {
                       variant={badgeVariant}
                     />
                     <div className="flex gap-2 text-zinc-400">
-                      {template.visibility_scope === 'company' && <Shield className="h-4 w-4" aria-label="Ámbito: Compañía" />}
                       {template.visibility_scope === 'organization' && <Globe className="h-4 w-4" aria-label="Ámbito: Organización" />}
                       {template.visibility_scope === 'private' && <Lock className="h-4 w-4" aria-label="Ámbito: Privado" />}
                     </div>

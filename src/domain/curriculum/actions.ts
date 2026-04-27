@@ -20,6 +20,23 @@ async function authorizeAction(supabase: any, action: 'read' | 'write', organiza
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { authorized: false, error: "Usuario no autenticado", user: null };
 
+  let templateVisibility: { visibility_scope?: string; created_by_profile_id?: string } | null = null;
+  if (templateId) {
+    const { data: template } = await supabase
+      .from("curriculum_templates")
+      .select("visibility_scope, created_by_profile_id")
+      .eq("id", templateId)
+      .single();
+
+    templateVisibility = template ?? null;
+    if (templateVisibility?.visibility_scope === "private") {
+      if (templateVisibility.created_by_profile_id !== user.id) {
+        return { authorized: false, error: "Acceso denegado: este currículo privado solo lo puede usar su creador.", user };
+      }
+      return { authorized: true, user };
+    }
+  }
+
   // Check organization membership
   const { data: membership } = await supabase
     .from("organization_memberships")
@@ -40,15 +57,11 @@ async function authorizeAction(supabase: any, action: 'read' | 'write', organiza
     return { authorized: false, error: "No tienes permisos en esta organización", user };
   }
 
-  // If write and teacher, check ownership
-  if (action === 'write' && membership.role_in_org === 'teacher' && templateId) {
-    const { data: template } = await supabase
-      .from("curriculum_templates")
-      .select("created_by_profile_id")
-      .eq("id", templateId)
-      .single();
-
-    if (template?.created_by_profile_id !== user.id) return { authorized: false, error: "Acceso denegado: No eres el creador de este currículo.", user };
+  // If write and teacher, check ownership for shared templates
+  if (action === 'write' && membership.role_in_org === 'teacher' && templateId && templateVisibility?.visibility_scope !== "private") {
+    if (templateVisibility?.created_by_profile_id !== user.id) {
+      return { authorized: false, error: "Acceso denegado: No eres el creador de este currículo.", user };
+    }
   }
 
   return { authorized: true, user };

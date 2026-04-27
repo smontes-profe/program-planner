@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { BookCopy, AlertCircle, Lock, Globe, Shield } from "lucide-react";
+import { BookCopy, AlertCircle, Lock, Globe } from "lucide-react";
 import { CreatePlanButton } from "./_components/CreatePlanButton";
 
 const PLAN_TITLE_MAX_LENGTH = 35;
@@ -97,7 +97,6 @@ export default async function PlansPage() {
                       {statusLabel}
                     </span>
                     <div className="text-zinc-400">
-                      {plan.visibility_scope === "company" && <Shield className="h-4 w-4" aria-label="Compañía" />}
                       {plan.visibility_scope === "organization" && <Globe className="h-4 w-4" aria-label="Organización" />}
                       {plan.visibility_scope === "private" && <Lock className="h-4 w-4" aria-label="Privado" />}
                     </div>
