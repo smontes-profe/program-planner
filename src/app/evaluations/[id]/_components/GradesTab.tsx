@@ -29,7 +29,7 @@ interface GradesTabProps {
 }
 
 const TRIMESTERS: TrimesterKey[] = ["T1", "T2", "T3"];
-const GROUP_SEPARATOR_CLASS = "border-r-2 border-zinc-300 dark:border-zinc-700";
+const GROUP_SEPARATOR_CLASS = "border-r border-zinc-200 dark:border-zinc-800";
 
 export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
   const [studentGrades, setStudentGrades] = useState<StudentGradeSummary[]>(gradesResult?.studentGrades ?? []);
@@ -566,21 +566,21 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
           <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-zinc-50 text-xs font-semibold text-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-400">
               <tr>
-                <th className="px-3 py-2 text-left">Alumno</th>
-                {raColumns.map(ra => <th key={ra.raId} colSpan={2} className="px-1 py-2 text-center">RA {ra.raCode}</th>)}
+                <th className={cn("px-3 py-2 text-left", GROUP_SEPARATOR_CLASS)}>Alumno</th>
+                {raColumns.map(ra => <th key={ra.raId} colSpan={2} className={cn("px-1 py-2 text-center", GROUP_SEPARATOR_CLASS)}>RA {ra.raCode}</th>)}
               </tr>
               <tr>
-                <th className="px-3 py-1.5 text-left">&nbsp;</th>
-                {raColumns.map(ra => <Fragment key={`${ra.raId}-labels`}><th className="px-1 py-1.5 text-center">Original</th><th className="px-1 py-1.5 text-center">Ajustada</th></Fragment>)}
+                <th className={cn("px-3 py-1.5 text-left", GROUP_SEPARATOR_CLASS)}>&nbsp;</th>
+                {raColumns.map(ra => <Fragment key={`${ra.raId}-labels`}><th className="px-1 py-1.5 text-center">Original</th><th className={cn("px-1 py-1.5 text-center", GROUP_SEPARATOR_CLASS)}>Ajustada</th></Fragment>)}
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {sortedStudents.map(student => (
                 <tr key={`ra-${student.studentId}`} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30">
-                  <td className="px-3 py-2 text-xs font-semibold">{formatStudentName(student)}</td>
+                  <td className={cn("px-3 py-2 text-xs font-semibold", GROUP_SEPARATOR_CLASS)}>{formatStudentName(student)}</td>
                   {raColumns.map(column => {
                     const ra = student.raGrades.find(item => item.raId === column.raId);
-                    if (!ra) return <Fragment key={`${student.studentId}-${column.raId}`}><td className="px-1 py-2 text-center">-</td><td className="px-1 py-2 text-center">-</td></Fragment>;
+                    if (!ra) return <Fragment key={`${student.studentId}-${column.raId}`}><td className="px-1 py-2 text-center">-</td><td className={cn("px-1 py-2 text-center", GROUP_SEPARATOR_CLASS)}>-</td></Fragment>;
                     const key = `ra:${student.studentId}:${column.raId}`;
                     const value = raInputs[key] ?? formatInputValue(ra.improvedGrade);
                     const isPriApplied = ra.improvedAutoGrade !== null && !ra.improvedIsManual;
@@ -599,7 +599,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
                             )}
                           </div>
                         </td>
-                        <td className="px-1 py-2 text-center">
+                        <td className={cn("px-1 py-2 text-center", GROUP_SEPARATOR_CLASS)}>
                           <div className="inline-flex items-center gap-0.5">
                             <Input
                               className={cn(
@@ -632,7 +632,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
                             {isPriApplied && (
                               <Tooltip>
                                 <TooltipTrigger>
-                                <span className="rounded px-1 py-0.5 text-[10px] font-semibold text-violet-600 cursor-help">PRI</span>
+                                  <span className="rounded px-1 py-0.5 text-[10px] font-semibold text-violet-600 cursor-help">PRI</span>
                                 </TooltipTrigger>
                                 <TooltipContent className="max-w-[280px] text-xs">
                                   {ra.priPmiImpacts.map(impact => (
