@@ -27,6 +27,10 @@ function formatCoverageValue(value: number): string {
   return value % 1 === 0 ? String(value) : value.toFixed(2);
 }
 
+function isZeroCoverageValue(value: string): boolean {
+  return Number.parseFloat(value.replace(",", ".")) === 0;
+}
+
 function CoverageCellEditor({
   planId,
   instrumentId,
@@ -97,6 +101,7 @@ function CoverageCellEditor({
         aria-invalid={Boolean(error)}
         className={cn(
           "h-7 w-[72px] text-right text-xs font-mono",
+          !error && isZeroCoverageValue(value) && "text-zinc-400/50 dark:text-zinc-500/60",
           error && "border-rose-400 text-rose-700 dark:border-rose-500"
         )}
         onChange={(event) => {
@@ -242,6 +247,7 @@ export function RaInstrumentMatrixTab({ plan }: RaInstrumentMatrixTabProps) {
                       <span
                         className={cn(
                           "inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-bold tabular-nums",
+                          totalCoverage === 0 && "bg-zinc-100 text-zinc-500/50 dark:bg-zinc-800 dark:text-zinc-400/50",
                           isComplete
                             ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
                             : isOver
