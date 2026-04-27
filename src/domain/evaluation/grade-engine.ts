@@ -573,6 +573,8 @@ function normalizeNumber(value: number): number {
 
 function normalizeNullableNumber(value: number | null | undefined): number | null {
   if (value === null || value === undefined || Number.isNaN(value)) return null;
+  // -1 es el valor especial "NE" (No evaluad@): se trata como null en cálculos
+  if (value === -1) return null;
   return normalizeNumber(value);
 }
 

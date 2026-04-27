@@ -26,6 +26,7 @@ export const createStudentSchema = z.object({
   last_name: z.string().max(255).nullable().optional(),
   student_code: z.string().max(50).nullable().optional(),
   student_email: z.string().email().nullable().optional(),
+  notes: z.string().nullable().optional(),
 });
 
 export const updateStudentSchema = createStudentSchema.extend({
@@ -64,7 +65,10 @@ export const upsertTrimesterAdjustedOverrideSchema = z.object({
   context_id: z.string().uuid(),
   student_id: z.string().uuid(),
   trimester_key: z.enum(["T1", "T2", "T3"]),
-  adjusted_grade: z.coerce.number().min(0).max(10),
+  // -1 es el valor especial "NE" (No evaluad@)
+  adjusted_grade: z.coerce.number().refine(v => v === -1 || (v >= 0 && v <= 10), {
+    message: "La nota debe estar entre 0 y 10, o ser -1 (NE)",
+  }),
 });
 
 export const upsertRAManualOverrideSchema = z.object({

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { type EvaluationContextFull, type InstrumentScore } from "@/domain/evaluation/types";
 import type { TeachingPlanFull } from "@/domain/teaching-plan/types";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { createInstrumentHeaderMaps, resolveInstrumentHeader } from "@/domain/evaluation/csv-import-utils";
 
 interface GradeMatrixCsvImportProps {
   contextId: string;
@@ -48,10 +49,7 @@ export function GradeMatrixCsvImport({ contextId, students, plans }: GradeMatrix
   const [preview, setPreview] = useState<ImportPreview | null>(null);
 
   const instrumentMap = useMemo(() => {
-    const all = plans.flatMap(p => p.instruments || []).filter(i => !i.is_pri_pmi);
-    const byCode = new Map(all.filter(i => i.code).map(i => [i.code!.trim(), i]));
-    const byId = new Map(all.map(i => [i.id, i]));
-    return { byCode, byId };
+    return createInstrumentHeaderMaps(plans);
   }, [plans]);
 
   const studentMap = useMemo(() => {
@@ -135,29 +133,13 @@ export function GradeMatrixCsvImport({ contextId, students, plans }: GradeMatrix
           const raw = header[i].trim();
           if (!raw) continue;
 
-          let instId: string | undefined;
-          let instCode: string | undefined;
-
-          const idMatch = raw.match(/\|([A-Za-z0-9-]+)$/);
-          if (idMatch && instrumentMap.byId.has(idMatch[1])) {
-            instId = idMatch[1];
-            instCode = instrumentMap.byId.get(instId)?.code;
-          } else {
-            const codeMatch = raw.match(/^([0-9]+(?:\.[0-9]+)*)/);
-            if (codeMatch && instrumentMap.byCode.has(codeMatch[1])) {
-              const inst = instrumentMap.byCode.get(codeMatch[1])!;
-              instId = inst.id;
-              instCode = inst.code;
-            }
-          }
-
-          if (instId) {
-            const maxMatch = raw.match(/Puntos totales:\s*([0-9]+(?:[.,][0-9]+)?)/i);
+          const resolved = resolveInstrumentHeader(raw, instrumentMap);
+          if (resolved) {
             instrumentsFound.push({
-              id: instId,
-              code: instCode || "??",
-              label: raw.split("|")[0].trim(),
-              maxPoints: maxMatch ? Number(maxMatch[1].replace(",", ".")) : null,
+              id: resolved.instrumentId,
+              code: resolved.code,
+              label: resolved.label,
+              maxPoints: resolved.maxPoints,
             });
           }
         }

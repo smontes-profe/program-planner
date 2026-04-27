@@ -6,6 +6,16 @@ import Link from "next/link";
 import { BookCopy, AlertCircle, Lock, Globe, Shield } from "lucide-react";
 import { CreatePlanButton } from "./_components/CreatePlanButton";
 
+const PLAN_TITLE_MAX_LENGTH = 35;
+
+function truncatePlanTitle(title: string): string {
+  if (title.length <= PLAN_TITLE_MAX_LENGTH) {
+    return title;
+  }
+
+  return `${title.slice(0, PLAN_TITLE_MAX_LENGTH).trimEnd()}…`;
+}
+
 export const metadata = {
   title: "Programaciones - Program Planner",
   description: "Gestiona tus programaciones didácticas por módulo y curso académico.",
@@ -92,8 +102,11 @@ export default async function PlansPage() {
                       {plan.visibility_scope === "private" && <Lock className="h-4 w-4" aria-label="Privado" />}
                     </div>
                   </div>
-                  <CardTitle className="mt-2 text-xl tracking-tight text-zinc-900 dark:text-zinc-50">
-                    {plan.title}
+                  <CardTitle
+                    className="mt-2 text-base font-semibold tracking-tight leading-snug text-zinc-900 dark:text-zinc-50 md:text-lg break-words"
+                    title={plan.title}
+                  >
+                    {truncatePlanTitle(plan.title)}
                   </CardTitle>
                   <CardDescription className="font-mono text-zinc-500 dark:text-zinc-400">
                     {plan.module_code} • {plan.academic_year}

@@ -127,6 +127,7 @@ function makeContext(studentIds: string[]): EvaluationContextFull {
       student_name: `Alumno${i + 1}`,
       student_email: null,
       active: true,
+      notes: null,
       created_at: "2024-01-01T00:00:00Z",
     })),
   };

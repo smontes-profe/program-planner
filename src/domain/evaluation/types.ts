@@ -38,6 +38,7 @@ export interface EvaluationStudent {
   student_name: string;
   student_email: string | null;
   active: boolean;
+  notes: string | null;
   created_at: string;
 }
 
