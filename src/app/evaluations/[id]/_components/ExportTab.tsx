@@ -97,7 +97,7 @@ export function ExportTab({ context, gradesResult, plans, scores }: ExportTabPro
 
       allRAs.forEach(ra => {
         const raGrade = sg.raGrades.find(rg => rg.raId === ra.id);
-        row.push(esc(raGrade?.improvedGrade?.toFixed(2)));
+        row.push(esc(formatAdjustedGradeValue(raGrade?.improvedGrade)));
         
         // Para los CEs, el motor no los devuelve calculados. 
         // En una implementación real ideal estarían en el motor.
