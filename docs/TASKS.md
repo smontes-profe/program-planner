@@ -33,7 +33,7 @@ Status legend:
 - [P2][x] Notas calculadas: en la parte de Notas por RAS, cambiar el color de PRI de verda a morado, y las notas modificadas por PRis que usen ese color. Además hay un pequeño bug: Cuando la nota original es superior que la que viene del PRI, debe mantener la nota original. Eso lo hace bien, pero aun así, lo marca como modificado por PRI.
 - [P0][x] BUG al importar notas.
 - [P2][x] Notas calculadas: Los valores de "NE" se ven en rojo, no en gris. Además, añadir a la leyenda que "NE" es "No Evaluado".
-- [P3][ ] Notas calculadas: en la matriz de notas trimestrales, añadir un separador visual claro entre cada bloque de trimestre y final.
+- [P3][x] Notas calculadas: en la matriz de notas trimestrales, añadir un separador visual claro entre cada bloque de trimestre y final.
 
 
 

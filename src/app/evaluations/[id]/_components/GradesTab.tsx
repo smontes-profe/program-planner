@@ -29,6 +29,7 @@ interface GradesTabProps {
 }
 
 const TRIMESTERS: TrimesterKey[] = ["T1", "T2", "T3"];
+const GROUP_SEPARATOR_CLASS = "border-r-2 border-zinc-300 dark:border-zinc-700";
 
 export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
   const [studentGrades, setStudentGrades] = useState<StudentGradeSummary[]>(gradesResult?.studentGrades ?? []);
@@ -424,16 +425,16 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
           <table className="w-full min-w-[820px] text-sm">
             <thead className="bg-zinc-50 text-xs font-semibold text-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-400">
               <tr>
-                <th className="px-3 py-2 text-left">Alumno</th>
-                {TRIMESTERS.map(trimester => <th key={trimester} colSpan={2} className="px-1 py-2 text-center">{trimester}</th>)}
+                <th className={cn("px-3 py-2 text-left", GROUP_SEPARATOR_CLASS)}>Alumno</th>
+                {TRIMESTERS.map(trimester => <th key={trimester} colSpan={2} className={cn("px-1 py-2 text-center", GROUP_SEPARATOR_CLASS)}>{trimester}</th>)}
                 <th colSpan={2} className="px-1 py-2 text-center">Final</th>
               </tr>
               <tr>
-                <th className="px-3 py-1.5 text-left">&nbsp;</th>
+                <th className={cn("px-3 py-1.5 text-left", GROUP_SEPARATOR_CLASS)}>&nbsp;</th>
                 {TRIMESTERS.map(trimester => (
                   <Fragment key={`${trimester}-sub`}>
                     <th className="px-1 py-1.5 text-center">Auto</th>
-                    <th className="px-1 py-1.5 text-center">Ajustada</th>
+                    <th className={cn("px-1 py-1.5 text-center", GROUP_SEPARATOR_CLASS)}>Ajustada</th>
                   </Fragment>
                 ))}
                 <th className="px-1 py-1.5 text-center">Auto</th>
@@ -443,7 +444,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
               {sortedStudents.map(student => (
                 <tr key={student.studentId} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30">
-                  <td className="px-3 py-2 text-xs font-semibold">{formatStudentName(student)}</td>
+                  <td className={cn("px-3 py-2 text-xs font-semibold", GROUP_SEPARATOR_CLASS)}>{formatStudentName(student)}</td>
                   {TRIMESTERS.map(trimester => {
                     const tri = student.trimesterGrades.find(t => t.key === trimester);
                     if (!tri) {
@@ -458,7 +459,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
                           {tri.autoHasMissingData && <AlertTriangle className="ml-1 inline h-3 w-3 text-amber-500" />}
                           {tri.autoIsLocked && <Lock className="ml-1 inline h-3 w-3 text-zinc-400" />}
                         </td>
-                        <td className="px-1 py-2 text-center">
+                        <td className={cn("px-1 py-2 text-center", GROUP_SEPARATOR_CLASS)}>
                           <div className="inline-flex items-center gap-0.5">
                             {(() => {
                               const isNE = value.trim().toUpperCase() === "NE" || tri.adjustedGrade === -1;
