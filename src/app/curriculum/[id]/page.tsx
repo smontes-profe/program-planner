@@ -104,6 +104,23 @@ export default async function TemplateDetailsPage({ params }: TemplatePageProps)
 
         <div className="flex flex-col md:flex-row justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-6 text-zinc-900 dark:text-zinc-50">
           <div className="space-y-1">
+            {template.program_title && (
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <span className="text-sm font-semibold text-zinc-500 uppercase tracking-wider">
+                  {template.program_title} {template.program_code ? `(${template.program_code})` : ''}
+                </span>
+                {template.program_level && (
+                  <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-bold uppercase tracking-tight bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700">
+                    {template.program_level}
+                  </Badge>
+                )}
+                {template.program_course && template.program_course !== 'NA' && (
+                  <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-bold uppercase tracking-tight border-zinc-300 dark:border-zinc-600">
+                    {template.program_course}
+                  </Badge>
+                )}
+              </div>
+            )}
             <h1 className="text-3xl font-bold tracking-tight">
               {template.module_name}
             </h1>

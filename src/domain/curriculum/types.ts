@@ -29,6 +29,10 @@ export interface CurriculumTemplate {
   source_type: CurriculumSourceType;
   visibility_scope: VisibilityScope;
   hours_total: number;
+  program_title?: string | null;
+  program_code?: string | null;
+  program_level?: 'FP Básica' | 'Grado Medio' | 'Grado Superior' | 'Máster' | null;
+  program_course?: 'Primero' | 'Segundo' | 'NA' | null;
   created_at: string;
   creator_name?: string | null;
   is_owner?: boolean;

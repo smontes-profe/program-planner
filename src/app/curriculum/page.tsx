@@ -171,6 +171,8 @@ export default async function CurriculumPage({ searchParams }: CurriculumPagePro
                     {truncateCurriculumTitle(template.module_name)}
                   </CardTitle>
                   <CardDescription className="font-mono text-zinc-500 dark:text-zinc-400">
+                    {template.program_code ? `${template.program_code} • ` : ''}
+                    {template.program_course && template.program_course !== 'NA' ? `${template.program_course} • ` : ''}
                     {template.module_code} • {template.academic_year}
                   </CardDescription>
                 </CardHeader>

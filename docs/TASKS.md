@@ -18,6 +18,8 @@ Status legend:
 - [P0][x] Cambios en visibilidad de Programaciones y currículos: dejar solo opciones: "Privada" y "Organización". Los acurrículos y programaciones privados solo son visibles y utilizables por sus creadores.
 - [P0][x] Los currículos y programaciones que tengan visibilidad "organización", y estén en estado de "Borrador" solo deben ser visibles y usables por sus dueños.
 - [P0][x] BUG: Currículos: Visibilidad: el desplegable aun muestra "private"/"organization" (en inglés) al seleccionarse
+- [P0][x] Currículos: Añadir los siguientes campos: -Título (por ej. "Técnico Superior en Desarrollo de Aplicaciones Web") -ID (por ej. "DAW") -Nivel (desplegable con las opciones "FP Básica", "Grado Medio", "Grado Superior", "Máster"), -Curso (Desplegable con "Primero", "Segundo", "NA").
+- [P0][x] Currículos: En la "pastilla" de cada currículo, donde ahora mismo aparece ID_título - Código_Módulo - Fecha, que aparezca: ID_título - Curso (salvo si es NA, entonces no aparece curso) - Código_módulo - Fecha.
 
 ## Phase 6 - Collaboration and Visibility
 
@@ -31,6 +33,7 @@ Status legend:
 - [P1][x] Programaciones: Añadir un filtro para poder filtrar por nombre, dueño, currículo usado.
 - [P2][x] Currículos: los bloques de cada currículo son muy grandes. Reducir tamaño, reducir también el tamaño del texto del nombre
 - [P2][x] Currículos y programaciones: Cambiar la etiqueta de visibilidad "organización" o "Mi organización" por "Público".
+- [P0][ ] Evaluaciones: Mismas reglas de visiblidad que para currículos y programaciones: hacer que una evaluaación pueda ser privada o pública. Que las privadas solo las pueda ver su propio usuario, que las públcias no propias se puedan ver y clonar. No editar..
 
 ### Phase 9 - Futuro: Congelación de notas por trimestre (Opción B)
 

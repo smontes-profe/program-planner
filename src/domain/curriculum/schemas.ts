@@ -21,6 +21,10 @@ export const curriculumTemplateSchema = z.object({
   source_type: z.enum(["manual", "pdf_assisted"]).default("manual"),
   visibility_scope: z.enum(["private", "organization"]).default("organization"),
   hours_total: z.coerce.number().min(0).default(0),
+  program_title: z.string().max(255).optional().nullable(),
+  program_code: z.string().max(50).optional().nullable(),
+  program_level: z.enum(["FP Básica", "Grado Medio", "Grado Superior", "Máster"]).optional().nullable(),
+  program_course: z.enum(["Primero", "Segundo", "NA"]).optional().nullable(),
 });
 
 /**
@@ -53,4 +57,3 @@ export const fullTemplateSchema = curriculumTemplateSchema.extend({
     })
   ).optional(),
 });
-
