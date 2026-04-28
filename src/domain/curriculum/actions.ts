@@ -20,18 +20,20 @@ async function authorizeAction(supabase: any, action: 'read' | 'write', organiza
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { authorized: false, error: "Usuario no autenticado", user: null };
 
-  let templateVisibility: { visibility_scope?: string; created_by_profile_id?: string } | null = null;
+  let templateVisibility: { visibility_scope?: string; created_by_profile_id?: string; status?: string } | null = null;
   if (templateId) {
     const { data: template } = await supabase
       .from("curriculum_templates")
-      .select("visibility_scope, created_by_profile_id")
+      .select("visibility_scope, created_by_profile_id, status")
       .eq("id", templateId)
       .single();
 
     templateVisibility = template ?? null;
-    if (templateVisibility?.visibility_scope === "private") {
-      if (templateVisibility.created_by_profile_id !== user.id) {
-        return { authorized: false, error: "Acceso denegado: este currículo privado solo lo puede usar su creador.", user };
+    const isPrivate = templateVisibility?.visibility_scope === "private";
+    const isOrgDraft = templateVisibility?.visibility_scope === "organization" && templateVisibility?.status === "draft";
+    if (isPrivate || isOrgDraft) {
+      if (templateVisibility?.created_by_profile_id !== user.id) {
+        return { authorized: false, error: "Acceso denegado: este contenido solo lo puede usar su creador.", user };
       }
       return { authorized: true, user };
     }

@@ -14,7 +14,7 @@ export type ActionResponse<T = any> =
 // ─────────────────────────────────────────────
 
 /**
- * List all teaching plans owned by the current user
+ * List all teaching plans visible to the current user.
  */
 export async function listPlans(): Promise<ActionResponse<TeachingPlan[]>> {
   const supabase = await createClient();
@@ -24,7 +24,6 @@ export async function listPlans(): Promise<ActionResponse<TeachingPlan[]>> {
   const { data, error } = await supabase
     .from("teaching_plans")
     .select("*")
-    .eq("owner_profile_id", user.id)
     .order("created_at", { ascending: false });
 
   if (error) return { ok: false, error: error.message };
@@ -228,6 +227,7 @@ export async function createPlanFromTemplate(payload: {
 
 export async function updatePlan(planId: string, payload: {
   title?: string;
+  academic_year?: string;
   visibility_scope?: "private" | "organization";
   status?: "draft" | "published";
   hours_total?: number;

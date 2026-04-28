@@ -7,6 +7,7 @@ import { PlanTabs } from "./_components/PlanTabs";
 import { PlanHoursEditor } from "./_components/PlanHoursEditor";
 import { PlanStatusControls } from "./_components/PlanStatusControls";
 import { PlanWarnings } from "./_components/PlanWarnings";
+import { PlanSettingsEditor } from "./_components/PlanSettingsEditor";
 
 interface PlanDetailPageProps {
   readonly params: Promise<{ id: string }>;
@@ -42,6 +43,7 @@ export default async function PlanDetailPage({ params }: PlanDetailPageProps) {
             Mis Programaciones
           </Link>
           <div className="flex items-center gap-3">
+            <PlanSettingsEditor plan={plan} />
             <Badge variant={badgeVariant}>{badgeLabel}</Badge>
           </div>
         </div>

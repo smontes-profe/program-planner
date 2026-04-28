@@ -299,6 +299,18 @@ Nuevo módulo de Evaluaciones al mismo nivel que Plantillas de Currículo y Prog
 - [P1][x] Notas calculadas: Calificaciones y situaciones especiales
 - [P1][x] Instrumentos: permitir desactivar la automatización de CE por instrumento y validar que sumen 100% al guardar.
 
+
+## Phase 5 - Evaluation Engine
+
+- [P1] [x] Add unit tests for formulas and edge cases.
+
+## Phase 6 - Collaboration and Visibility
+
+- [x] Implement deep import/fork from template.
+- [x] Ensure no automatic source sync after import.
+
+
+
 ## Phase 8 - CI/CD and Release
 
 - [x] GitHub Actions: lint + typecheck + test on PR (via quality-gates.yml).

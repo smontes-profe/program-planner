@@ -11,6 +11,7 @@ export const createPlanSchema = z.object({
 
 export const updatePlanSchema = z.object({
   title: z.string().min(1).max(255).optional(),
+  academic_year: z.string().regex(academicYearRegex, "Formato esperado: YYYY/YYYY").optional(),
   visibility_scope: z.enum(["private", "organization"]).optional(),
   status: z.enum(["draft", "published"]).optional(),
   hours_total: z.coerce.number().min(1).optional(),

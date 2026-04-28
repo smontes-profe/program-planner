@@ -258,7 +258,7 @@ Access model:
 Visibility rules:
 
 - `private`: creator only.
-- `organization`: any active membership in same organization.
+- `organization`: same org members can read/import when published; drafts stay creator-only.
 
 Admin provisioning rules:
 

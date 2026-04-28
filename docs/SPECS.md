@@ -347,7 +347,7 @@ Business rule:
 Visibility scopes:
 
 - `private`: only the creator.
-- `organization`: any member in the same organization can read/import.
+- `organization`: same-organization members can read/import when published; drafts are creator-only.
 
 Import/fork behavior:
 

@@ -15,32 +15,22 @@ Status legend:
 
 ## Phase 4 - Ongoing feedback and improvements
 
-- [P0][x] Cambios en visibilidad de Programaciones y currículos: dejar solo opciones: "Privada" y  "Organización". Los acurrículos y programaciones privados solo son visibles y utilizables por sus creadores.
-
-- [P0][ ] Los currículos y programaciones que tengan visibilidad "organización", y estén en estado de "Borrador" solo deben ser visibles y usables por sus dueños.
-
-- [P0][ ] Los currículos y programaciones que tengan visibilidad "Organización", solo son accesibles en modo "lectura" (como consulta) por aquellos que no sean sus creadores. Los currículos que no sean propios y estén visibles a nivel de organización se podrán usar de base para crear una programación nueva propia.
-
-- [P1][ ] Añadir una opción para "clonar" una programación de visibilidad "organización" para usarla como propia.
-
-- [P1][ ] 
-
-
-
-
-
-
-## Phase 5 - Evaluation Engine
-
-- [P1] [x] Add unit tests for formulas and edge cases.
+- [P0][x] Cambios en visibilidad de Programaciones y currículos: dejar solo opciones: "Privada" y "Organización". Los acurrículos y programaciones privados solo son visibles y utilizables por sus creadores.
+- [P0][x] Los currículos y programaciones que tengan visibilidad "organización", y estén en estado de "Borrador" solo deben ser visibles y usables por sus dueños.
+- [P0][x] BUG: Currículos: Visibilidad: el desplegable aun muestra "private"/"organization" (en inglés) al seleccionarse
 
 ## Phase 6 - Collaboration and Visibility
 
-- [x] Implement deep import/fork from template.
-- [P2][ ] Implement deep import/fork from published plan (including UTs and instruments).
-- [x] Persist lineage (`source_*`, `imported_at`).
-- [P2][ ] Implement visibility-based exploration and import UI (search/browse other teachers' plans).
-- [x] Ensure no automatic source sync after import.
+- [P0][x] Programación: Que se pueda editar la visibilidad, el año académico, y el título.
+- [P0][x] BUG: Los currículos y programaciones que tengan visibilidad "Organización" no aparecen para otros usuarios.
+- [P0][ ] Los currículos y programaciones que tengan visibilidad "Organización", solo son accesibles en modo "lectura" (como consulta) por aquellos que no sean sus creadores. Los currículos que no sean propios y estén visibles a nivel de organización se podrán usar de base para crear una programación nueva propia.
+- [P1][ ] Añadir una opción para "clonar" una programación de visibilidad "organización" para usarla como propia.
+- [P1][ ] Currículos: Que aparezca el nombre del usuario que creó el currículo.
+- [P1][ ] Currículos: Añadir un filtro para poder filtrar por nombre o dueño.
+- [P1][ ] Programaciones: Que aparezca el nombre del usuario que creó la programación y el currículo usado.
+- [P1][ ] Programaciones: Añadir un filtro para poder filtrar por nombre, dueño, currículo usado.
+- [P2][ ] Currículos: los bloques de cada currículo son muy grandes. Reducir tamaño, reducir también el tamaño del texto del nombre
+- [P2][ ] Currículos y programaciones: Cambiar la etiqueta de visibilidad "organización" o "Mi organización" por "Público".
 
 ### Phase 9 - Futuro: Congelación de notas por trimestre (Opción B)
 

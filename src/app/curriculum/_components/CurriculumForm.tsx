@@ -22,6 +22,11 @@ interface CurriculumFormProps {
   readonly initialData?: any;
 }
 
+const visibilityLabels: Record<"private" | "organization", string> = {
+  private: "Privada (solo creador)",
+  organization: "Organización (mismo centro)",
+};
+
 export function CurriculumForm({ regions, organizations, templateId, initialData }: CurriculumFormProps) {
   const router = useRouter();
   
@@ -196,17 +201,22 @@ export function CurriculumForm({ regions, organizations, templateId, initialData
 
       <div className="space-y-2">
         <Label htmlFor="visibility_scope">Visibilidad</Label>
+        <input type="hidden" name="visibility_scope" value={formData.visibility_scope} />
         <Select 
-          name="visibility_scope" 
           value={formData.visibility_scope} 
-          onValueChange={(val) => setFormData(prev => ({ ...prev, visibility_scope: val || "organization" }))}
+          onValueChange={(val) =>
+            setFormData((prev) => ({
+              ...prev,
+              visibility_scope: (val as "private" | "organization" | null) || "organization",
+            }))
+          }
         >
           <SelectTrigger id="visibility_scope" className="w-full h-10 border-zinc-200 dark:border-zinc-800">
-            <SelectValue />
+            <SelectValue>{visibilityLabels[formData.visibility_scope as "private" | "organization"]}</SelectValue>
           </SelectTrigger>
         <SelectContent>
             <SelectItem value="private">Privada (solo creador)</SelectItem>
-            <SelectItem value="organization">Organización (Mismo centro)</SelectItem>
+            <SelectItem value="organization">Organización (mismo centro)</SelectItem>
           </SelectContent>
         </Select>
       </div>
