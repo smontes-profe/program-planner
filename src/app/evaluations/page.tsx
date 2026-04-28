@@ -3,17 +3,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { BookOpen, AlertCircle, Users, CalendarDays, Trash2, Plus } from "lucide-react";
+import { BookOpen, AlertCircle, Users, CalendarDays, Trash2, Plus, Search } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { DeleteContextButton } from "./_components/DeleteContextButton";
+import { createAdminClient } from "@/lib/supabase";
 
 export const metadata = {
   title: "Evaluaciones - Program Planner",
   description: "Gestiona las evaluaciones de tus módulos y alumnos.",
 };
 
-export default async function EvaluationsPage({ searchParams }: { searchParams?: Promise<{ error?: string }> }) {
+export default async function EvaluationsPage({ 
+  searchParams 
+}: { 
+  searchParams?: Promise<{ 
+    error?: string
+    q?: string
+    year?: string
+    status?: string
+    module?: string
+    owner?: string
+  }> 
+}) {
   const params = await searchParams;
   const [contextsResult, plansResult] = await Promise.all([
     listEvaluationContexts(),
@@ -39,6 +51,50 @@ export default async function EvaluationsPage({ searchParams }: { searchParams?:
   const contexts = contextsResult.data;
   const publishedPlans = plansResult.ok ? plansResult.data : [];
 
+  // Enrich contexts with creator names and module information
+  const adminClient = createAdminClient();
+  const creatorIds = Array.from(new Set(contexts.map(c => c.created_by_profile_id).filter(Boolean)));
+  const { data: creators } = creatorIds.length > 0
+    ? await adminClient.from("profiles").select("id, full_name").in("id", creatorIds)
+    : { data: [] as { id: string; full_name: string | null }[] };
+
+  const creatorNameById = new Map((creators ?? []).map(creator => [creator.id, creator.full_name]));
+
+  const enrichedContexts = contexts.map(ctx => ({
+    ...ctx,
+    creator_name: creatorNameById.get(ctx.created_by_profile_id) ?? null,
+  }));
+
+  // Extract filter options and apply filters
+  const query = params?.q?.trim().toLowerCase() ?? "";
+  const yearFilter = params?.year?.trim() ?? "";
+  const statusFilter = params?.status?.trim() ?? "";
+  const moduleFilter = params?.module?.trim() ?? "";
+  const ownerFilter = params?.owner?.trim().toLowerCase() ?? "";
+
+  const yearOptions = Array.from(new Set(enrichedContexts.map(c => c.academic_year).filter(Boolean))) as string[];
+  const statusOptions = ["draft", "active", "closed"];
+  const moduleOptions = Array.from(new Set(
+    enrichedContexts
+      .flatMap(c => c.plan_ids || [])
+      .map(planId => publishedPlans.find(p => p.id === planId)?.module_code)
+      .filter(Boolean)
+  )) as string[];
+  const ownerOptions = Array.from(new Set(enrichedContexts.map(c => c.creator_name).filter(Boolean))) as string[];
+
+  const filteredContexts = enrichedContexts.filter(ctx => {
+    const matchesQuery = !query || [ctx.title, ctx.creator_name].some(value =>
+      value?.toLowerCase().includes(query)
+    );
+    const matchesYear = !yearFilter || ctx.academic_year === yearFilter;
+    const matchesStatus = !statusFilter || ctx.status === statusFilter;
+    const matchesModule = !moduleFilter || (ctx.plan_ids || []).some(
+      planId => publishedPlans.find(p => p.id === planId)?.module_code === moduleFilter
+    );
+    const matchesOwner = !ownerFilter || (ctx.creator_name ?? "").toLowerCase() === ownerFilter;
+    return matchesQuery && matchesYear && matchesStatus && matchesModule && matchesOwner;
+  });
+
   return (
     <div className="app-content">
       <div className="flex justify-between items-center mb-8">
@@ -63,24 +119,87 @@ export default async function EvaluationsPage({ searchParams }: { searchParams?:
         </Card>
       )}
 
-      {contexts.length === 0 ? (
+      <form className="mb-6 grid gap-3 rounded-xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/40 md:grid-cols-[minmax(0,2fr)_repeat(auto-fit,minmax(120px,1fr))_auto] lg:grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))_auto]">
+        <label className="relative block">
+          <span className="sr-only">Buscar evaluaciones</span>
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <input
+            type="text"
+            name="q"
+            defaultValue={params?.q ?? ""}
+            placeholder="Buscar por título o creador"
+            className="flex h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+          />
+        </label>
+        <select
+          name="year"
+          defaultValue={params?.year ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los años</option>
+          {yearOptions.sort().reverse().map((year) => (
+            <option key={year} value={year}>{year}</option>
+          ))}
+        </select>
+        <select
+          name="status"
+          defaultValue={params?.status ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los estados</option>
+          <option value="draft">Borrador</option>
+          <option value="active">Activo</option>
+          <option value="closed">Cerrado</option>
+        </select>
+        <select
+          name="module"
+          defaultValue={params?.module ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los módulos</option>
+          {moduleOptions.map((module) => (
+            <option key={module} value={module}>{module}</option>
+          ))}
+        </select>
+        <select
+          name="owner"
+          defaultValue={params?.owner ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los creadores</option>
+          {ownerOptions.map((owner) => (
+            <option key={owner} value={owner}>{owner}</option>
+          ))}
+        </select>
+        <button className={buttonVariants({ variant: "outline" })} type="submit">
+          Filtrar
+        </button>
+      </form>
+
+      {filteredContexts.length === 0 ? (
         <Card className="bg-zinc-50/50 border-dashed border-2 dark:bg-zinc-900/20 border-zinc-200 dark:border-zinc-800">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <div className="bg-zinc-100 dark:bg-zinc-800 p-5 rounded-full mb-5">
               <BookOpen className="h-12 w-12 text-zinc-400" />
             </div>
             <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
-              Aún no tienes contextos de evaluación
+              {contexts.length === 0 
+                ? "Aún no tienes contextos de evaluación"
+                : "No hay contextos que coincidan con los filtros"
+              }
             </h3>
             <p className="text-zinc-500 dark:text-zinc-400 text-center max-w-sm mb-6 text-sm">
-              Crea tu primer contexto de evaluación para empezar a registrar notas de tus alumnos.
+              {contexts.length === 0
+                ? "Crea tu primer contexto de evaluación para empezar a registrar notas de tus alumnos."
+                : "Intenta cambiar los filtros para ver más resultados."
+              }
             </p>
-            <CreateContextButton publishedPlans={publishedPlans} />
+            {contexts.length === 0 && <CreateContextButton publishedPlans={publishedPlans} />}
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {contexts.map((ctx) => {
+          {filteredContexts.map((ctx) => {
             const statusColors = {
               draft: "bg-zinc-300 dark:bg-zinc-700",
               active: "bg-emerald-500",

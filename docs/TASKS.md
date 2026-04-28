@@ -22,7 +22,7 @@ Status legend:
 - [P0][x] Currículos: En la "pastilla" de cada currículo, donde ahora mismo aparece ID_título - Código_Módulo - Fecha, que aparezca: ID_título - Curso (salvo si es NA, entonces no aparece curso) - Código_módulo - Fecha.
 - [P0][x] Programaciones: En la "pastilla" de cada programación, donde ahora mismo aparece Código_Módulo - Fecha, que aparezca: ID_título - Curso (salvo si es NA, entonces no aparece curso) - Código_módulo - Fecha (del currículo asociado a la programación).
 - [P0][x] Currículos y programaciones: El filtro, tanto en currículos como en programaciones, que pueda filtrar por año, por título, por ID, por curso (desplegable), por nivel de estudios (desplegable).
-- [P0] [ ] Evaluaciones: Añadir un filtro similar al de currículos y programaciones.
+- [P0][x] Evaluaciones: Añadir un filtro similar al de currículos y programaciones.
 
 
 ### Phase 9 - Futuro: Congelación de notas por trimestre (Opción B)
