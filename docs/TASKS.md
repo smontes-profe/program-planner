@@ -20,6 +20,7 @@ Status legend:
 - [P0][x] BUG: Currículos: Visibilidad: el desplegable aun muestra "private"/"organization" (en inglés) al seleccionarse
 - [P0][x] Currículos: Añadir los siguientes campos: -Título (por ej. "Técnico Superior en Desarrollo de Aplicaciones Web") -ID (por ej. "DAW") -Nivel (desplegable con las opciones "FP Básica", "Grado Medio", "Grado Superior", "Máster"), -Curso (Desplegable con "Primero", "Segundo", "NA").
 - [P0][x] Currículos: En la "pastilla" de cada currículo, donde ahora mismo aparece ID_título - Código_Módulo - Fecha, que aparezca: ID_título - Curso (salvo si es NA, entonces no aparece curso) - Código_módulo - Fecha.
+- [P0][x] Programaciones: En la "pastilla" de cada programación, donde ahora mismo aparece Código_Módulo - Fecha, que aparezca: ID_título - Curso (salvo si es NA, entonces no aparece curso) - Código_módulo - Fecha (del currículo asociado a la programación).
 
 ## Phase 6 - Collaboration and Visibility
 

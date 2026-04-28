@@ -174,6 +174,8 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
                     {truncatePlanTitle(plan.title)}
                   </CardTitle>
                   <CardDescription className="font-mono text-zinc-500 dark:text-zinc-400">
+                    {plan.program_code ? `${plan.program_code} • ` : ''}
+                    {plan.program_course && plan.program_course !== 'NA' ? `${plan.program_course} • ` : ''}
                     {plan.module_code} • {plan.academic_year}
                   </CardDescription>
                 </CardHeader>

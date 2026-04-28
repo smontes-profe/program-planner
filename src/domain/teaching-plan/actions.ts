@@ -39,19 +39,23 @@ async function enrichPlansMetadata<T extends { owner_profile_id: string; source_
       ? adminClient.from("profiles").select("id, full_name").in("id", ownerIds)
       : Promise.resolve({ data: [] as { id: string; full_name: string | null }[] }),
     templateIds.length > 0
-      ? adminClient.from("curriculum_templates").select("id, module_name").in("id", templateIds)
-      : Promise.resolve({ data: [] as { id: string; module_name: string | null }[] }),
+      ? adminClient.from("curriculum_templates").select("id, module_name, program_title, program_code, program_level, program_course").in("id", templateIds)
+      : Promise.resolve({ data: [] as any[] }),
   ]);
 
   const ownerNameById = new Map((owners ?? []).map((owner) => [owner.id, owner.full_name]));
-  const templateNameById = new Map((templates ?? []).map((template) => [template.id, template.module_name]));
+  const templateMetadataById = new Map((templates ?? []).map((t) => [t.id, t]));
 
   return plans.map((plan) => {
     const isOwner = plan.owner_profile_id === currentUserId;
     return {
       ...plan,
       owner_name: ownerNameById.get(plan.owner_profile_id) ?? null,
-      source_template_name: plan.source_template_id ? templateNameById.get(plan.source_template_id) ?? null : null,
+      source_template_name: plan.source_template_id ? templateMetadataById.get(plan.source_template_id)?.module_name ?? null : null,
+      program_title: plan.source_template_id ? templateMetadataById.get(plan.source_template_id)?.program_title ?? null : null,
+      program_code: plan.source_template_id ? templateMetadataById.get(plan.source_template_id)?.program_code ?? null : null,
+      program_level: plan.source_template_id ? templateMetadataById.get(plan.source_template_id)?.program_level ?? null : null,
+      program_course: plan.source_template_id ? templateMetadataById.get(plan.source_template_id)?.program_course ?? null : null,
       is_owner: isOwner,
       can_edit: isOwner,
     };
@@ -148,7 +152,7 @@ export async function getPlan(planId: string): Promise<ActionResponse<TeachingPl
   const [{ data: owner }, { data: sourceTemplate }] = await Promise.all([
     adminClient.from("profiles").select("full_name").eq("id", data.owner_profile_id).maybeSingle(),
     data.source_template_id
-      ? adminClient.from("curriculum_templates").select("module_name").eq("id", data.source_template_id).maybeSingle()
+      ? adminClient.from("curriculum_templates").select("module_name, program_title, program_code, program_level, program_course").eq("id", data.source_template_id).maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
 
@@ -162,6 +166,10 @@ export async function getPlan(planId: string): Promise<ActionResponse<TeachingPl
     sourceTemplateHours: data.hours_total ?? 0,
     owner_name: owner?.full_name ?? null,
     source_template_name: sourceTemplate?.module_name ?? null,
+    program_title: sourceTemplate?.program_title ?? null,
+    program_code: sourceTemplate?.program_code ?? null,
+    program_level: sourceTemplate?.program_level ?? null,
+    program_course: sourceTemplate?.program_course ?? null,
     is_owner: isOwner,
     can_edit: isOwner,
   };

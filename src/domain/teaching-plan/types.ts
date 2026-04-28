@@ -20,6 +20,10 @@ export interface TeachingPlan {
   created_at: string;
   owner_name?: string | null;
   source_template_name?: string | null;
+  program_title?: string | null;
+  program_code?: string | null;
+  program_level?: string | null;
+  program_course?: string | null;
   is_owner?: boolean;
   can_edit?: boolean;
 }
