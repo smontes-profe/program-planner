@@ -3,8 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { BookCopy, AlertCircle, Lock, Globe, Shield } from "lucide-react";
+import { BookCopy, AlertCircle, Lock, Globe, Search } from "lucide-react";
 import { CreatePlanButton } from "./_components/CreatePlanButton";
+import { ClonePlanButton } from "./_components/ClonePlanButton";
 
 const PLAN_TITLE_MAX_LENGTH = 35;
 
@@ -21,7 +22,16 @@ export const metadata = {
   description: "Gestiona tus programaciones didácticas por módulo y curso académico.",
 };
 
-export default async function PlansPage() {
+interface PlansPageProps {
+  readonly searchParams?: Promise<{
+    q?: string;
+    owner?: string;
+    template?: string;
+  }>;
+}
+
+export default async function PlansPage({ searchParams }: PlansPageProps) {
+  const filters = (await searchParams) ?? {};
   const [plansResult, templatesResult] = await Promise.all([
     listPlans(),
     listPublishedTemplates(),
@@ -44,21 +54,71 @@ export default async function PlansPage() {
   }
 
   const plans = plansResult.data;
+  const query = filters.q?.trim().toLowerCase() ?? "";
+  const ownerFilter = filters.owner?.trim().toLowerCase() ?? "";
+  const templateFilter = filters.template?.trim().toLowerCase() ?? "";
   const publishedTemplates = templatesResult.ok ? templatesResult.data : [];
+  const ownerOptions = Array.from(new Set(plans.map((plan) => plan.owner_name).filter(Boolean))) as string[];
+  const templateOptions = Array.from(new Set(plans.map((plan) => plan.source_template_name).filter(Boolean))) as string[];
+  const filteredPlans = plans.filter((plan) => {
+    const matchesQuery = !query || [plan.title, plan.owner_name, plan.source_template_name].some((value) =>
+      value?.toLowerCase().includes(query)
+    );
+    const matchesOwner = !ownerFilter || (plan.owner_name ?? "").toLowerCase() === ownerFilter;
+    const matchesTemplate = !templateFilter || (plan.source_template_name ?? "").toLowerCase() === templateFilter;
+    return matchesQuery && matchesOwner && matchesTemplate;
+  });
 
   return (
     <div className="app-content">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Mis Programaciones
+            Programaciones
           </h1>
           <p className="text-zinc-500 dark:text-zinc-400 mt-1">
-            Programaciones didácticas basadas en las plantillas de currículo publicadas.
+            Programaciones propias y compartidas de tu organización.
           </p>
         </div>
         <CreatePlanButton publishedTemplates={publishedTemplates} />
       </div>
+
+      <form className="mb-6 grid gap-3 rounded-xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/40 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+        <label className="relative block">
+          <span className="sr-only">Buscar programaciones</span>
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <input
+            type="text"
+            name="q"
+            defaultValue={filters.q ?? ""}
+            placeholder="Buscar por nombre, dueño o currículo"
+            className="flex h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+          />
+        </label>
+        <select
+          name="owner"
+          defaultValue={filters.owner ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los dueños</option>
+          {ownerOptions.map((owner) => (
+            <option key={owner} value={owner}>{owner}</option>
+          ))}
+        </select>
+        <select
+          name="template"
+          defaultValue={filters.template ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los currículos</option>
+          {templateOptions.map((template) => (
+            <option key={template} value={template}>{template}</option>
+          ))}
+        </select>
+        <button className={buttonVariants({ variant: "outline" })} type="submit">
+          Filtrar
+        </button>
+      </form>
 
       {plans.length === 0 ? (
         <Card className="bg-zinc-50/50 border-dashed border-2 dark:bg-zinc-900/20 border-zinc-200 dark:border-zinc-800">
@@ -75,9 +135,15 @@ export default async function PlansPage() {
             <CreatePlanButton publishedTemplates={publishedTemplates} />
           </CardContent>
         </Card>
+      ) : filteredPlans.length === 0 ? (
+        <Card className="bg-zinc-50/50 border-dashed dark:bg-zinc-900/20 border-zinc-200 dark:border-zinc-800">
+          <CardContent className="py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">
+            No hay programaciones que coincidan con los filtros actuales.
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {plans.map((plan) => {
+          {filteredPlans.map((plan) => {
             const isPublished = plan.status === "published";
             const statusColor = isPublished ? "bg-emerald-500" : "bg-zinc-300 dark:bg-zinc-700";
             const statusLabel = isPublished ? "Publicada" : "Borrador";
@@ -97,13 +163,12 @@ export default async function PlansPage() {
                       {statusLabel}
                     </span>
                     <div className="text-zinc-400">
-                      {plan.visibility_scope === "company" && <Shield className="h-4 w-4" aria-label="Compañía" />}
-                      {plan.visibility_scope === "organization" && <Globe className="h-4 w-4" aria-label="Organización" />}
+                      {plan.visibility_scope === "organization" && <Globe className="h-4 w-4" aria-label="Público" />}
                       {plan.visibility_scope === "private" && <Lock className="h-4 w-4" aria-label="Privado" />}
                     </div>
                   </div>
                   <CardTitle
-                    className="mt-2 text-base font-semibold tracking-tight leading-snug text-zinc-900 dark:text-zinc-50 md:text-lg break-words"
+                    className="mt-2 text-base font-semibold tracking-tight leading-snug text-zinc-900 dark:text-zinc-50 md:text-lg wrap-break-word"
                     title={plan.title}
                   >
                     {truncatePlanTitle(plan.title)}
@@ -113,14 +178,31 @@ export default async function PlansPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex justify-between items-center text-sm pt-2">
-                    <span className="text-zinc-400 text-xs">{plan.region_code}</span>
-                    <Link
-                      href={`/plans/${plan.id}`}
-                      className={buttonVariants({ variant: "ghost", size: "sm" })}
-                    >
-                      Abrir
-                    </Link>
+                  <div className="space-y-3 pt-2">
+                    <div className="space-y-1 text-xs text-zinc-500 dark:text-zinc-400">
+                      <p>Creada por: <span className="font-medium text-zinc-700 dark:text-zinc-300">{plan.owner_name || "Desconocido"}</span></p>
+                      <p>Currículo usado: <span className="font-medium text-zinc-700 dark:text-zinc-300">{plan.source_template_name || "No disponible"}</span></p>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 text-sm">
+                      <span className="text-zinc-400 text-xs">{plan.region_code}</span>
+                      <div className="flex items-center gap-2">
+                        {!plan.is_owner ? (
+                          <ClonePlanButton
+                            sourcePlanId={plan.id}
+                            sourcePlanTitle={plan.title}
+                            academicYear={plan.academic_year}
+                            variant="ghost"
+                            size="sm"
+                          />
+                        ) : null}
+                        <Link
+                          href={`/plans/${plan.id}`}
+                          className={buttonVariants({ variant: "ghost", size: "sm" })}
+                        >
+                          Abrir
+                        </Link>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

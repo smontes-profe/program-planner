@@ -19,7 +19,7 @@ These decisions are mandatory for implementation unless explicitly replaced in a
 
 - `D1`: single PostgreSQL database with `organizations` and `organization_memberships`.
 - `D2`: every teaching plan belongs to both `organization_id` and `owner_profile_id`.
-- `D3`: visibility model is `private | organization | company` (no public internet in MVP).
+- `D3`: visibility model is `private | organization` (no public internet in MVP).
 - `D4`: role model is `platform_admin | org_manager | teacher`.
 - `D5`: curriculum template versioning key is `region_code + module_code + academic_year + version`; published versions are immutable.
 - `D6`: import/fork is deep copy with lineage metadata and no automatic sync with source.
@@ -179,7 +179,7 @@ Core fields:
 
 - `organization_id`
 - `owner_profile_id`
-- `visibility_scope` (`private`, `organization`, `company`)
+- `visibility_scope` (`private`, `organization`)
 - `status` (`draft`, `published`)
 - optional lineage (`source_template_id`, `source_plan_id`, `source_version`)
 
@@ -187,6 +187,8 @@ Business rules:
 
 - Plan mutation only affects the current plan copy.
 - Import/fork creates a fully independent graph of entities.
+- A published teaching plan with visibility `organization` is readable by same-organization members, but remains editable only by its creator.
+- A published curriculum template with visibility `organization` is readable by same-organization members, but remains editable only by its creator.
 - `draft`: plan is being edited. Not visible from the Evaluations module.
 - `published`: plan is available as a base for Evaluations. Can still be edited without reverting to `draft`.
 - Status transitions: `draft ↔ published` (bidirectional, no intermediate states).
@@ -346,13 +348,14 @@ Business rule:
 
 Visibility scopes:
 
-- `private`: only owner, org managers of same organization, and platform admins.
-- `organization`: any member in the same organization can read/import.
-- `company`: any authenticated member of any organization can read/import.
+- `private`: only the creator.
+- `organization`: same-organization members can read/import when published; drafts are creator-only.
+- Shared published curricula and teaching plans open in full detail for other organization members, but always in read-only mode.
 
 Import/fork behavior:
 
 - Deep copy related entities (`RA`, `CE`, `UT`, mappings, instruments if selected).
+- Teaching plans can also be cloned from another visible teaching plan, creating a new independent draft owned by the cloning teacher.
 - Persist lineage metadata:
   - `source_plan_id`
   - `source_template_id`

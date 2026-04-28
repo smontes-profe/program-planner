@@ -45,17 +45,17 @@ export function ChangePasswordForm() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="current_password">Contrasena actual</Label>
+            <Label htmlFor="current_password">Contraseña actual</Label>
             <Input id="current_password" name="current_password" type="password" required placeholder="********" />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="new_password">Nueva contrasena</Label>
+            <Label htmlFor="new_password">Nueva contraseña</Label>
             <Input id="new_password" name="new_password" type="password" required placeholder="********" />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirm_password">Confirmar nueva contrasena</Label>
+            <Label htmlFor="confirm_password">Confirmar nueva contraseña</Label>
             <Input id="confirm_password" name="confirm_password" type="password" required placeholder="********" />
           </div>
         </CardContent>

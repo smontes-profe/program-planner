@@ -11,7 +11,7 @@ export type CurriculumSourceType = 'manual' | 'pdf_assisted';
 /**
  * Visibility scopes for templates and plans
  */
-export type VisibilityScope = 'private' | 'organization' | 'company';
+export type VisibilityScope = 'private' | 'organization';
 
 /**
  * Base Curriculum Template
@@ -30,6 +30,9 @@ export interface CurriculumTemplate {
   visibility_scope: VisibilityScope;
   hours_total: number;
   created_at: string;
+  creator_name?: string | null;
+  is_owner?: boolean;
+  can_edit?: boolean;
 }
 
 /**

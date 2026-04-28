@@ -35,7 +35,7 @@ export function AuthForm({ initialError }: AuthFormProps) {
         </div>
         <CardTitle className="text-2xl font-bold text-center tracking-tight text-zinc-900 dark:text-zinc-50">Inicia sesion</CardTitle>
         <CardDescription className="text-center text-zinc-500 dark:text-zinc-400 font-medium">
-          Accede a tus curriculos y programaciones.
+          Accede a tus currículos y programaciones.
         </CardDescription>
       </CardHeader>
 
@@ -51,7 +51,7 @@ export function AuthForm({ initialError }: AuthFormProps) {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-zinc-700 dark:text-zinc-300">
-                Correo electronico
+                Correo electrónico
               </Label>
               <Input
                 id="email"
@@ -67,10 +67,10 @@ export function AuthForm({ initialError }: AuthFormProps) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password" className="text-zinc-700 dark:text-zinc-300">
-                  Contrasena
+                  Contraseña
                 </Label>
                 <Link href="/auth/forgot-password" className="text-xs font-semibold text-zinc-500 hover:text-emerald-600 transition-colors">
-                  Olvide mi contrasena
+                  Olvidé mi contraseña
                 </Link>
               </div>
               <Input

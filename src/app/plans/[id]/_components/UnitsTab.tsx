@@ -45,6 +45,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 interface UnitsTabProps {
   readonly plan: TeachingPlanFull;
+  readonly readOnly?: boolean;
 }
 
 function calculateTotalHours(units: PlanTeachingUnit[] | undefined) {
@@ -53,11 +54,12 @@ function calculateTotalHours(units: PlanTeachingUnit[] | undefined) {
 }
 
 // ─── Sortable UT Row ──────────────────────────────────────
-function SortableUTRow({ unit, plan, index, sortedUnits }: { 
+function SortableUTRow({ unit, plan, index, sortedUnits, readOnly = false }: { 
   unit: PlanTeachingUnit; 
   plan: TeachingPlanFull;
   index: number;
   sortedUnits: PlanTeachingUnit[];
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -79,6 +81,7 @@ function SortableUTRow({ unit, plan, index, sortedUnits }: {
   };
 
   function handleHoursChange(newHours: number) {
+    if (readOnly) return;
     if (newHours === unit.hours) return;
     startTransition(async () => {
       const res = await updatePlanUnit(plan.id, unit.id, { hours: newHours });
@@ -88,6 +91,7 @@ function SortableUTRow({ unit, plan, index, sortedUnits }: {
   }
 
   function toggleTrimester(t: 1 | 2 | 3) {
+    if (readOnly) return;
     const key = `active_t${t}` as "active_t1" | "active_t2" | "active_t3";
     const newValue = !unit[key];
     
@@ -127,9 +131,11 @@ function SortableUTRow({ unit, plan, index, sortedUnits }: {
       )}
     >
       <TableCell className="w-[40px]">
-        <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors text-zinc-300 hover:text-zinc-500">
-          <GripVertical className="h-4 w-4" />
-        </div>
+        {!readOnly ? (
+          <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors text-zinc-300 hover:text-zinc-500">
+            <GripVertical className="h-4 w-4" />
+          </div>
+        ) : null}
       </TableCell>
       <TableCell className="font-medium min-w-[200px]">
         <div className="flex flex-col">
@@ -151,6 +157,7 @@ function SortableUTRow({ unit, plan, index, sortedUnits }: {
               }
             }}
             disabled={isPending}
+            readOnly={readOnly}
             className={cn(
               "w-12 h-8 text-center text-sm font-mono font-bold rounded-md border border-transparent",
               "bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:bg-white dark:focus:bg-zinc-900 focus:border-zinc-200 dark:focus:border-zinc-700",
@@ -170,7 +177,7 @@ function SortableUTRow({ unit, plan, index, sortedUnits }: {
               <button
                 key={t}
                 onClick={() => toggleTrimester(t as 1 | 2 | 3)}
-                disabled={isPending}
+                disabled={isPending || readOnly}
                 className={cn(
                   "w-7 h-7 rounded-md text-[10px] font-bold transition-all border",
                   active 
@@ -193,7 +200,7 @@ function SortableUTRow({ unit, plan, index, sortedUnits }: {
                   RA{ra!.code}
                 </div>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs z-[9999] shadow-xl border border-zinc-200 dark:border-zinc-800">
+              <TooltipContent side="top" className="max-w-xs z-9999 shadow-xl border border-zinc-200 dark:border-zinc-800">
                 <p className="text-xs">{ra!.description}</p>
               </TooltipContent>
             </Tooltip>
@@ -202,7 +209,7 @@ function SortableUTRow({ unit, plan, index, sortedUnits }: {
         </div>
       </TableCell>
       <TableCell className="text-right text-zinc-400">
-        <UTItemActions plan={plan} unit={unit} />
+        <UTItemActions plan={plan} unit={unit} readOnly={readOnly} />
       </TableCell>
     </TableRow>
   );
@@ -380,7 +387,7 @@ function AddUTButton({ plan }: { readonly plan: TeachingPlanFull }) {
   );
 }
 
-function UTItemActions({ plan, unit }: { readonly plan: TeachingPlanFull; readonly unit: PlanTeachingUnit }) {
+function UTItemActions({ plan, unit, readOnly = false }: { readonly plan: TeachingPlanFull; readonly unit: PlanTeachingUnit; readonly readOnly?: boolean }) {
   const router = useRouter();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -403,7 +410,7 @@ function UTItemActions({ plan, unit }: { readonly plan: TeachingPlanFull; readon
   }
 
   return (
-    <div className="flex justify-end gap-1">
+    readOnly ? null : <div className="flex justify-end gap-1">
       <Sheet open={isEditOpen} onOpenChange={(v) => { setIsEditOpen(v); setError(""); }}>
         <SheetTrigger className="h-8 w-8 flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-900 border-none transition-colors cursor-pointer">
           <Edit2 className="h-4 w-4" />
@@ -431,7 +438,7 @@ function UTItemActions({ plan, unit }: { readonly plan: TeachingPlanFull; readon
   );
 }
 
-export function UnitsTab({ plan }: { readonly plan: TeachingPlanFull }) {
+export function UnitsTab({ plan, readOnly = false }: { readonly plan: TeachingPlanFull; readonly readOnly?: boolean }) {
   const [units, setUnits] = useState(plan.units || []);
   const [isPending, startTransition] = useTransition();
   const [isMounted, setIsMounted] = useState(false);
@@ -447,6 +454,7 @@ export function UnitsTab({ plan }: { readonly plan: TeachingPlanFull }) {
   );
 
   async function handleDragEnd(event: DragEndEvent) {
+    if (readOnly) return;
     const { active, over } = event;
     if (over && active.id !== over.id) {
       const oldIndex = units.findIndex((i: any) => i.id === active.id);
@@ -477,7 +485,7 @@ export function UnitsTab({ plan }: { readonly plan: TeachingPlanFull }) {
               Planificación temporal y contenidos del módulo.
             </p>
           </div>
-          <AddUTButton plan={plan} />
+          {!readOnly ? <AddUTButton plan={plan} /> : null}
         </div>
 
         {!isMounted ? (
@@ -526,6 +534,7 @@ export function UnitsTab({ plan }: { readonly plan: TeachingPlanFull }) {
                           plan={plan} 
                           index={index} 
                           sortedUnits={units} 
+                          readOnly={readOnly}
                         />
                       ))}
                     </SortableContext>
@@ -551,7 +560,7 @@ export function UnitsTab({ plan }: { readonly plan: TeachingPlanFull }) {
                 {totalHoursUsed}
               </span>
               <span className="text-zinc-300 dark:text-zinc-600 text-xl font-light">/</span>
-              <PlanHoursEditor planId={plan.id} initialHours={targetHours} />
+              <PlanHoursEditor planId={plan.id} initialHours={targetHours} readOnly={readOnly} />
             </div>
           </div>
 

@@ -9,9 +9,10 @@ import { Loader2, CheckCircle2, Archive, AlertCircle } from "lucide-react";
 interface PlanStatusControlsProps {
   readonly planId: string;
   readonly initialStatus: PlanStatus;
+  readonly readOnly?: boolean;
 }
 
-export function PlanStatusControls({ planId, initialStatus }: PlanStatusControlsProps) {
+export function PlanStatusControls({ planId, initialStatus, readOnly = false }: PlanStatusControlsProps) {
   const [status, setStatus] = useState<PlanStatus>(initialStatus);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -50,37 +51,43 @@ export function PlanStatusControls({ planId, initialStatus }: PlanStatusControls
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-3">
-        {status === "draft" ? (
-          <Button
-            onClick={handlePublish}
-            disabled={pending}
-            size="sm"
-            className="bg-emerald-600 hover:bg-emerald-700 text-white"
-          >
-            {pending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-            )}
-            Publicar programación
-          </Button>
-        ) : (
-          <Button
-            onClick={handleUnpublish}
-            disabled={pending}
-            variant="outline"
-            size="sm"
-          >
-            {pending ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Archive className="mr-2 h-4 w-4" />
-            )}
-            Despublicar (volver a borrador)
-          </Button>
-        )}
-      </div>
+      {readOnly ? (
+        <div className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-300">
+          Esta programación compartida está en modo solo lectura. Solo su creador puede cambiar el estado.
+        </div>
+      ) : (
+        <div className="flex items-center gap-3">
+          {status === "draft" ? (
+            <Button
+              onClick={handlePublish}
+              disabled={pending}
+              size="sm"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              {pending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+              )}
+              Publicar programación
+            </Button>
+          ) : (
+            <Button
+              onClick={handleUnpublish}
+              disabled={pending}
+              variant="outline"
+              size="sm"
+            >
+              {pending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Archive className="mr-2 h-4 w-4" />
+              )}
+              Despublicar (volver a borrador)
+            </Button>
+          )}
+        </div>
+      )}
 
       {message && (
         <div

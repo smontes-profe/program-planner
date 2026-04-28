@@ -30,7 +30,7 @@ export default function RootLayout({
         <Navbar />
         <main className="flex-1">{children}</main>
         <footer className="border-t border-zinc-200 py-8 text-center text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950/50">
-           &copy; {new Date().getFullYear()} Program Planner. Diseñado para docentes de FP.
+           {new Date().getFullYear()} Program Planner. Diseñado para docentes de FP de Ilerna.
         </footer>
       </body>
     </html>

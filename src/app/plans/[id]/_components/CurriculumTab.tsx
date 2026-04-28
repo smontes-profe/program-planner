@@ -45,10 +45,11 @@ import { CSS } from "@dnd-kit/utilities";
 const textareaClass = "flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800";
 
 // ─── Plan RA Sortable Item ──────────────────────────────────
-function SortablePlanRA({ ra, planId, isAnyDragging }: { 
+function SortablePlanRA({ ra, planId, isAnyDragging, readOnly = false }: { 
   ra: PlanRA; 
   planId: string;
   isAnyDragging: boolean;
+  readOnly?: boolean;
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const {
@@ -78,9 +79,11 @@ function SortablePlanRA({ ra, planId, isAnyDragging }: {
       )}>
         <div className="bg-zinc-50 px-4 py-2.5 flex justify-between items-center border-b border-zinc-100 dark:bg-zinc-900/50 dark:border-zinc-800">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1.5 -ml-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors">
-              <GripVertical className="h-4 w-4 text-zinc-400" />
-            </div>
+            {!readOnly ? (
+              <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1.5 -ml-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors">
+                <GripVertical className="h-4 w-4 text-zinc-400" />
+              </div>
+            ) : null}
             <span className="text-sm font-bold font-mono text-zinc-400 shrink-0">RA {ra.code}</span>
             <p className="text-zinc-800 dark:text-zinc-200 text-sm truncate font-medium flex-1">
               {ra.description}
@@ -96,8 +99,8 @@ function SortablePlanRA({ ra, planId, isAnyDragging }: {
             >
                {effectiveCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
-            <EditRAButton planId={planId} ra={ra} />
-            <DeleteRAButton planId={planId} raId={ra.id} />
+            {!readOnly ? <EditRAButton planId={planId} ra={ra} /> : null}
+            {!readOnly ? <DeleteRAButton planId={planId} raId={ra.id} /> : null}
           </div>
         </div>
 
@@ -106,11 +109,11 @@ function SortablePlanRA({ ra, planId, isAnyDragging }: {
              <div className="space-y-3">
                 <div className="flex items-center justify-between">
                     <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Criterios de Evaluación</h4>
-                    <AddCEButton planId={planId} raId={ra.id} />
+                    {!readOnly ? <AddCEButton planId={planId} raId={ra.id} /> : null}
                 </div>
                 
                 {ra.ces && ra.ces.length > 0 ? (
-                   <SortablePlanCEList planId={planId} raId={ra.id} ces={ra.ces} />
+                   <SortablePlanCEList planId={planId} raId={ra.id} ces={ra.ces} readOnly={readOnly} />
                 ) : (
                   <p className="text-xs text-zinc-400 italic">No hay criterios definidos.</p>
                 )}
@@ -123,7 +126,7 @@ function SortablePlanRA({ ra, planId, isAnyDragging }: {
 }
 
 // ─── Plan CE Sortable Item ──────────────────────────────────
-function SortablePlanCE({ ce, planId }: { ce: any; planId: string }) {
+function SortablePlanCE({ ce, planId, readOnly = false }: { ce: any; planId: string; readOnly?: boolean }) {
   const {
     attributes,
     listeners,
@@ -145,9 +148,11 @@ function SortablePlanCE({ ce, planId }: { ce: any; planId: string }) {
       "group p-3 bg-white border border-zinc-100 rounded-lg flex gap-4 dark:bg-zinc-950 dark:border-zinc-900 hover:border-zinc-200 dark:hover:border-zinc-800 transition-all",
       isDragging && "border-primary/50 shadow-lg ring-1 ring-primary/10"
     )}>
-      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 -ml-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded transition-colors self-start">
-        <GripVertical className="h-4 w-4 text-zinc-300" />
-      </div>
+      {!readOnly ? (
+        <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 -ml-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded transition-colors self-start">
+          <GripVertical className="h-4 w-4 text-zinc-300" />
+        </div>
+      ) : null}
       <div className="font-mono text-zinc-400 text-xs font-bold pt-0.5">{ce.code}</div>
       <div className="flex-1">
         <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed font-medium">
@@ -155,15 +160,15 @@ function SortablePlanCE({ ce, planId }: { ce: any; planId: string }) {
         </p>
       </div>
       <div className="flex items-start gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0">
-        <EditCEButton planId={planId} ce={ce} />
-        <DeleteCEButton planId={planId} ceId={ce.id} />
+        {!readOnly ? <EditCEButton planId={planId} ce={ce} /> : null}
+        {!readOnly ? <DeleteCEButton planId={planId} ceId={ce.id} /> : null}
       </div>
     </div>
   );
 }
 
 // ─── Plan CE List Container ─────────────────────────────────
-function SortablePlanCEList({ planId, raId, ces }: { planId: string; raId: string; ces: any[] }) {
+function SortablePlanCEList({ planId, raId, ces, readOnly = false }: { planId: string; raId: string; ces: any[]; readOnly?: boolean }) {
   const [items, setItems] = useState(ces);
   const [isPending, startTransition] = useTransition();
 
@@ -173,6 +178,7 @@ function SortablePlanCEList({ planId, raId, ces }: { planId: string; raId: strin
   );
 
   async function handleDragEnd(event: DragEndEvent) {
+    if (readOnly) return;
     const { active, over } = event;
     if (over && active.id !== over.id) {
       const oldIndex = items.findIndex((i: any) => i.id === active.id);
@@ -197,7 +203,7 @@ function SortablePlanCEList({ planId, raId, ces }: { planId: string; raId: strin
         <SortableContext items={items.map((i: any) => i.id)} strategy={verticalListSortingStrategy}>
           <div className="grid gap-2">
             {items.map((ce: any) => (
-              <SortablePlanCE key={ce.id} ce={ce} planId={planId} />
+              <SortablePlanCE key={ce.id} ce={ce} planId={planId} readOnly={readOnly} />
             ))}
           </div>
         </SortableContext>
@@ -446,7 +452,7 @@ function DeleteCEButton({ planId, ceId }: { readonly planId: string; readonly ce
 
 // ─── Main Tab Component ─────────────────────────────────────
 
-export function CurriculumTab({ plan }: { readonly plan: TeachingPlanFull }) {
+export function CurriculumTab({ plan, readOnly = false }: { readonly plan: TeachingPlanFull; readonly readOnly?: boolean }) {
   const [ras, setRas] = useState(plan.ras || []);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -467,6 +473,7 @@ export function CurriculumTab({ plan }: { readonly plan: TeachingPlanFull }) {
   }
 
   async function handleDragEnd(event: DragEndEvent) {
+    if (readOnly) return;
     setActiveId(null);
     const { active, over } = event;
     if (over && active.id !== over.id) {
@@ -492,7 +499,7 @@ export function CurriculumTab({ plan }: { readonly plan: TeachingPlanFull }) {
             Clon editable del currículo base. Los cambios solo afectan a esta programación.
           </p>
         </div>
-        <AddRAButton planId={plan.id} />
+        {!readOnly ? <AddRAButton planId={plan.id} /> : null}
       </div>
 
       {isPending && (
@@ -521,6 +528,7 @@ export function CurriculumTab({ plan }: { readonly plan: TeachingPlanFull }) {
                   ra={ra} 
                   planId={plan.id} 
                   isAnyDragging={!!activeId} 
+                  readOnly={readOnly}
                 />
               ))}
             </div>
@@ -530,7 +538,7 @@ export function CurriculumTab({ plan }: { readonly plan: TeachingPlanFull }) {
         <Card className="bg-zinc-50/50 border-dashed border-2 dark:bg-zinc-900/20 py-12 flex flex-col items-center justify-center border-zinc-200 dark:border-zinc-800">
           <BookOpen className="h-10 w-10 text-zinc-300 mb-3" />
           <p className="text-zinc-500 mb-4 font-medium text-sm">No hay RAs en esta programación.</p>
-          <AddRAButton planId={plan.id} />
+          {!readOnly ? <AddRAButton planId={plan.id} /> : null}
         </Card>
       )}
     </div>

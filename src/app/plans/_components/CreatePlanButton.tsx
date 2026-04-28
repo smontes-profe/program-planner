@@ -57,7 +57,7 @@ export function CreatePlanButton({ publishedTemplates }: CreatePlanButtonProps) 
         title: formData.get("title") as string,
         source_template_id: formData.get("source_template_id") as string,
         academic_year: formData.get("academic_year") as string,
-        visibility_scope: (formData.get("visibility_scope") as "private" | "organization" | "company") ?? "private",
+        visibility_scope: (formData.get("visibility_scope") as "private" | "organization") ?? "private",
       });
 
       if (res.ok) {
@@ -147,9 +147,8 @@ export function CreatePlanButton({ publishedTemplates }: CreatePlanButtonProps) 
                 name="visibility_scope"
                 className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
               >
-                <option value="private">Privada (solo yo)</option>
-                <option value="organization">Mi organización</option>
-                <option value="company">Toda la plataforma</option>
+                <option value="private">Privada (solo creador)</option>
+                <option value="organization">Público</option>
               </select>
             </div>
 

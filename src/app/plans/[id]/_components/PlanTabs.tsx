@@ -12,6 +12,7 @@ import { BookOpen, BarChart3, LayoutList, Microscope, Grid3x3 } from "lucide-rea
 
 interface PlanTabsProps {
   readonly plan: TeachingPlanFull;
+  readonly readOnly?: boolean;
 }
 
 type TabId = "curriculum" | "weights" | "units" | "instruments" | "ra-matrix";
@@ -24,7 +25,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode; available: boolea
   { id: "ra-matrix", label: "RAs vs Instrumentos", icon: <Grid3x3 className="h-4 w-4" />, available: true },
 ];
 
-export function PlanTabs({ plan }: PlanTabsProps) {
+export function PlanTabs({ plan, readOnly = false }: PlanTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>("curriculum");
 
   return (
@@ -58,11 +59,11 @@ export function PlanTabs({ plan }: PlanTabsProps) {
 
       {/* Tab content */}
       <div className="pt-6">
-        {activeTab === "curriculum" && <CurriculumTab plan={plan} />}
-        {activeTab === "weights" && <WeightsTab plan={plan} />}
-        {activeTab === "units" && <UnitsTab plan={plan} />}
-        {activeTab === "instruments" && <InstrumentsTab plan={plan} />}
-        {activeTab === "ra-matrix" && <RaInstrumentMatrixTab plan={plan} />}
+        {activeTab === "curriculum" && <CurriculumTab plan={plan} readOnly={readOnly} />}
+        {activeTab === "weights" && <WeightsTab plan={plan} readOnly={readOnly} />}
+        {activeTab === "units" && <UnitsTab plan={plan} readOnly={readOnly} />}
+        {activeTab === "instruments" && <InstrumentsTab plan={plan} readOnly={readOnly} />}
+        {activeTab === "ra-matrix" && <RaInstrumentMatrixTab plan={plan} readOnly={readOnly} />}
       </div>
     </div>
   );

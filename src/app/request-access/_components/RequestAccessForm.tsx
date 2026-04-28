@@ -57,7 +57,7 @@ export function RequestAccessForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Correo electronico</Label>
+            <Label htmlFor="email">Correo electrónico</Label>
             <Input
               id="email"
               name="email"
@@ -68,7 +68,7 @@ export function RequestAccessForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Contrasena solicitada</Label>
+            <Label htmlFor="password">Contraseña solicitada</Label>
             <Input id="password" name="password" type="password" required placeholder="********" />
             <p className="text-[11px] text-zinc-500">
               El administrador puede asignarte una clave diferente al aprobar el acceso.

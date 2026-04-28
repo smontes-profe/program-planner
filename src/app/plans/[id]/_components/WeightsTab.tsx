@@ -10,6 +10,7 @@ import { ComputedWeightsPanel } from "./ComputedWeightsPanel";
 
 interface WeightsTabProps {
   readonly plan: TeachingPlanFull;
+  readonly readOnly?: boolean;
 }
 
 type Trimester = "t1" | "t2" | "t3";
@@ -36,14 +37,16 @@ function computeTrimesterWeight(ras: PlanRA[], raId: string, trimester: Trimeste
 interface GlobalWeightInputProps {
   readonly planId: string;
   readonly ra: PlanRA;
+  readonly readOnly?: boolean;
 }
 
-function GlobalWeightInput({ planId, ra }: GlobalWeightInputProps) {
+function GlobalWeightInput({ planId, ra, readOnly = false }: GlobalWeightInputProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [localValue, setLocalValue] = useState(String(Number(ra.weight_global) || 0));
 
   function handleBlur() {
+    if (readOnly) return;
     const num = Number.parseFloat(localValue);
     if (Number.isNaN(num) || num === Number(ra.weight_global)) return;
     const clamped = Math.min(100, Math.max(0, num));
@@ -68,6 +71,7 @@ function GlobalWeightInput({ planId, ra }: GlobalWeightInputProps) {
         max={100}
         step={1}
         value={localValue}
+        disabled={readOnly}
         onChange={(e) => setLocalValue(e.target.value)}
         onBlur={handleBlur}
         className={cn(
@@ -87,15 +91,17 @@ interface TrimesterCellProps {
   readonly ra: PlanRA;
   readonly trimester: Trimester;
   readonly computedWeight: number | null;
+  readonly readOnly?: boolean;
 }
 
-function TrimesterCell({ planId, ra, trimester, computedWeight }: TrimesterCellProps) {
+function TrimesterCell({ planId, ra, trimester, computedWeight, readOnly = false }: TrimesterCellProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const activeKey = `active_${trimester}` as "active_t1" | "active_t2" | "active_t3";
   const isActive = ra[activeKey];
 
   function handleChange(checked: boolean) {
+    if (readOnly) return;
     startTransition(async () => {
       await updatePlanRAConfig(planId, ra.id, {
         weight_global: Number(ra.weight_global) || 0,
@@ -113,6 +119,7 @@ function TrimesterCell({ planId, ra, trimester, computedWeight }: TrimesterCellP
         <input
           type="checkbox"
           checked={isActive}
+          disabled={readOnly}
           onChange={(e) => handleChange(e.target.checked)}
           className="h-4 w-4 rounded border-zinc-300 text-emerald-600 accent-emerald-600 cursor-pointer"
         />
@@ -147,10 +154,11 @@ function GlobalTotal({ total }: { readonly total: number }) {
 }
 
 // ─── CE Weight editor for automation ─────────────────────────────────────────
-function CeWeightRow({ planId, ra, autoEnabled }: {
+function CeWeightRow({ planId, ra, autoEnabled, readOnly = false }: {
   readonly planId: string;
   readonly ra: PlanRA;
   readonly autoEnabled: boolean;
+  readonly readOnly?: boolean;
 }) {
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
@@ -171,6 +179,7 @@ function CeWeightRow({ planId, ra, autoEnabled }: {
   const isValid = Math.abs(totalCeWeight - 100) < 0.1;
 
   async function handleSave() {
+    if (readOnly) return;
     setIsPending(true);
     setError("");
     const ceWeights = ces.map(ce => ({
@@ -219,6 +228,7 @@ function CeWeightRow({ planId, ra, autoEnabled }: {
                       max={100}
                       step={1}
                       value={localWeights[ce.id] || ""}
+                      disabled={readOnly}
                       onChange={(e) => setLocalWeights(prev => ({ ...prev, [ce.id]: e.target.value }))}
                       className={cn(
                         "w-16 h-7 rounded border px-2 text-right text-xs font-mono",
@@ -244,7 +254,7 @@ function CeWeightRow({ planId, ra, autoEnabled }: {
                 <button
                   type="button"
                   onClick={handleSave}
-                  disabled={isPending || !isValid}
+                  disabled={isPending || !isValid || readOnly}
                   className={cn(
                     "text-xs px-3 py-1 rounded-md font-medium transition-colors",
                     isValid
@@ -265,11 +275,12 @@ function CeWeightRow({ planId, ra, autoEnabled }: {
 }
 
 // ─── Automation Toggle ───────────────────────────────────────────────────────
-function AutomationToggle({ planId, enabled }: { readonly planId: string; readonly enabled: boolean }) {
+function AutomationToggle({ planId, enabled, readOnly = false }: { readonly planId: string; readonly enabled: boolean; readonly readOnly?: boolean }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   function handleToggle() {
+    if (readOnly) return;
     startTransition(async () => {
       await toggleCeWeightAuto(planId, !enabled);
       router.refresh();
@@ -310,7 +321,7 @@ function AutomationToggle({ planId, enabled }: { readonly planId: string; readon
       <button
         type="button"
         onClick={handleToggle}
-        disabled={isPending}
+        disabled={isPending || readOnly}
         role="switch"
         aria-checked={enabled}
         aria-label="Automatizar pesos de CEs"
@@ -333,7 +344,7 @@ function AutomationToggle({ planId, enabled }: { readonly planId: string; readon
 }
 
 // ─── Main Component ──────────────────────────────────────────────────────────
-export function WeightsTab({ plan }: WeightsTabProps) {
+export function WeightsTab({ plan, readOnly = false }: WeightsTabProps) {
   const ras = plan.ras ?? [];
 
   if (ras.length === 0) {
@@ -357,7 +368,7 @@ export function WeightsTab({ plan }: WeightsTabProps) {
       </div>
 
       {/* Automation toggle */}
-      <AutomationToggle planId={plan.id} enabled={plan.ce_weight_auto} />
+      <AutomationToggle planId={plan.id} enabled={plan.ce_weight_auto} readOnly={readOnly} />
 
       <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
         <table className="w-full text-sm">
@@ -392,7 +403,7 @@ export function WeightsTab({ plan }: WeightsTabProps) {
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <GlobalWeightInput planId={plan.id} ra={ra} />
+                    <GlobalWeightInput planId={plan.id} ra={ra} readOnly={readOnly} />
                   </td>
                   {TRIMESTERS.map((t) => (
                     <td key={t.key} className="px-4 py-3 text-center">
@@ -401,6 +412,7 @@ export function WeightsTab({ plan }: WeightsTabProps) {
                         ra={ra}
                         trimester={t.key}
                         computedWeight={computeTrimesterWeight(ras, ra.id, t.key)}
+                        readOnly={readOnly}
                       />
                     </td>
                   ))}
@@ -410,6 +422,7 @@ export function WeightsTab({ plan }: WeightsTabProps) {
                   planId={plan.id}
                   ra={ra}
                   autoEnabled={plan.ce_weight_auto}
+                  readOnly={readOnly}
                 />
               </Fragment>
             ))}

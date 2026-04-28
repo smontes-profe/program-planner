@@ -150,14 +150,14 @@ export async function resetPasswordWithRecoveryAction(
   if (!parsedPassword.success) {
     return {
       ok: false,
-      error: parsedPassword.error.issues[0]?.message ?? "Contrasena no valida.",
+      error: parsedPassword.error.issues[0]?.message ?? "Contraseña no valida.",
     };
   }
 
   if (password !== confirmPassword) {
     return {
       ok: false,
-      error: "Las contrasenas no coinciden.",
+      error: "Las contraseñas no coinciden.",
     };
   }
 
@@ -167,13 +167,13 @@ export async function resetPasswordWithRecoveryAction(
   if (error) {
     return {
       ok: false,
-      error: "No se pudo actualizar la contrasena. Solicita de nuevo el enlace de recuperacion.",
+      error: "No se pudo actualizar la contraseña. Solicita de nuevo el enlace de recuperacion.",
     };
   }
 
   return {
     ok: true,
-    message: "Contrasena actualizada. Ya puedes iniciar sesion con la nueva contrasena.",
+    message: "Contraseña actualizada. Ya puedes iniciar sesion con la nueva contrasena.",
   };
 }
 
@@ -189,19 +189,19 @@ export async function updateOwnPasswordAction(
   const confirmPassword = getStringField(formData, "confirm_password");
 
   if (!currentPassword) {
-    return { ok: false, error: "Debes indicar tu contrasena actual." };
+    return { ok: false, error: "Debes indicar tu contraseña actual." };
   }
 
   const parsedNewPassword = passwordSchema.safeParse(newPassword);
   if (!parsedNewPassword.success) {
     return {
       ok: false,
-      error: parsedNewPassword.error.issues[0]?.message ?? "Contrasena no valida.",
+      error: parsedNewPassword.error.issues[0]?.message ?? "Contraseña no valida.",
     };
   }
 
   if (newPassword !== confirmPassword) {
-    return { ok: false, error: "Las contrasenas nuevas no coinciden." };
+    return { ok: false, error: "Las contraseñas nuevas no coinciden." };
   }
 
   const supabase = await createClient();
@@ -219,15 +219,15 @@ export async function updateOwnPasswordAction(
     password: currentPassword,
   });
   if (signInError) {
-    return { ok: false, error: "La contrasena actual no es correcta." };
+    return { ok: false, error: "La contraseña actual no es correcta." };
   }
 
   const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
   if (updateError) {
-    return { ok: false, error: "No se pudo actualizar la contrasena." };
+    return { ok: false, error: "No se pudo actualizar la contraseña." };
   }
 
-  return { ok: true, message: "Contrasena actualizada correctamente." };
+  return { ok: true, message: "Contraseña actualizada correctamente." };
 }
 
 /**

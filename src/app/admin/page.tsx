@@ -68,7 +68,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="direct-password">Contrasena inicial</Label>
+              <Label htmlFor="direct-password">Contraseña inicial</Label>
               <Input id="direct-password" name="assigned_password" type="text" minLength={8} required />
             </div>
 
@@ -78,6 +78,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                 id="direct-account-type"
                 name="account_type"
                 defaultValue="user"
+                aria-label="Tipo de cuenta"
                 className="h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-zinc-700 dark:bg-zinc-950"
               >
                 <option value="user">Usuario normal</option>
@@ -91,6 +92,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                 id="direct-organization"
                 name="organization_id"
                 required
+                aria-label="Organizacion"
                 className="h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-zinc-700 dark:bg-zinc-950"
               >
                 {data.organizations.map((org) => (
@@ -144,6 +146,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                         id={`account-type-${request.id}`}
                         name="account_type"
                         defaultValue="user"
+                        aria-label="Tipo de cuenta"
                         className="h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-zinc-700 dark:bg-zinc-950"
                       >
                         <option value="user">Usuario normal</option>
@@ -157,6 +160,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                         id={`organization-${request.id}`}
                         name="organization_id"
                         required
+                        aria-label="Organizacion"
                         className="h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-zinc-700 dark:bg-zinc-950"
                       >
                         {data.organizations.map((org) => (

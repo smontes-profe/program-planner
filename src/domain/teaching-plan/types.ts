@@ -1,5 +1,5 @@
 export type PlanStatus = 'draft' | 'published';
-export type VisibilityScope = 'private' | 'organization' | 'company';
+export type VisibilityScope = 'private' | 'organization';
 
 export interface TeachingPlan {
   id: string;
@@ -18,6 +18,10 @@ export interface TeachingPlan {
   ce_weight_auto: boolean;
   imported_at: string | null;
   created_at: string;
+  owner_name?: string | null;
+  source_template_name?: string | null;
+  is_owner?: boolean;
+  can_edit?: boolean;
 }
 
 export interface PlanRA {

@@ -38,7 +38,7 @@ Treat these as fixed unless the user explicitly revises them:
 
 - Single database with organizations and memberships.
 - Teaching plan ownership requires both organization and owner profile.
-- Visibility scopes are only `private | organization | company` for MVP.
+- Visibility scopes are only `private | organization` for MVP. Private content is creator-only, and `organization` drafts are also creator-only.
 - Roles are `platform_admin | org_manager | teacher`.
 - Published curriculum templates are immutable and versioned.
 - Import/fork is deep copy without post-import sync.

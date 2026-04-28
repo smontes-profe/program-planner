@@ -6,7 +6,7 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 interface EditCurriculumPageProps {
   readonly params: Promise<{ id: string }>;
@@ -22,6 +22,7 @@ export async function generateMetadata({ params }: EditCurriculumPageProps) {
 export default async function EditCurriculumPage({ params }: EditCurriculumPageProps) {
   const { id } = await params;
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
   // Fetch initial data
   const { data: template, error } = await supabase
@@ -32,6 +33,10 @@ export default async function EditCurriculumPage({ params }: EditCurriculumPageP
 
   if (error || !template) {
     return notFound();
+  }
+
+  if (!user || template.created_by_profile_id !== user.id) {
+    redirect(`/curriculum/${id}`);
   }
 
   const [regionsResult, orgsResult] = await Promise.all([

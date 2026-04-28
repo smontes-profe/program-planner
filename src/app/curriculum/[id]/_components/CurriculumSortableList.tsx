@@ -39,7 +39,7 @@ function truncateText(text: string | undefined) {
   return text.length > MAX_DESCRIPTION_LENGTH ? `${text.slice(0, MAX_DESCRIPTION_LENGTH)}...` : text;
 }
 
-function SortableRA({ ra, templateId, isDraft, isAnyDragging }: any) {
+function SortableRA({ ra, templateId, isDraft, isAnyDragging, canEdit = true }: any) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const {
     attributes,
@@ -68,9 +68,11 @@ function SortableRA({ ra, templateId, isDraft, isAnyDragging }: any) {
       )}>
         <div className="bg-zinc-50 px-4 py-2.5 flex justify-between items-center border-b border-zinc-100 dark:bg-zinc-900/50 dark:border-zinc-800">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1.5 -ml-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors">
-              <GripVertical className="h-4 w-4 text-zinc-400" />
-            </div>
+            {canEdit ? (
+              <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1.5 -ml-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded transition-colors">
+                <GripVertical className="h-4 w-4 text-zinc-400" />
+              </div>
+            ) : null}
             <span className="text-sm font-bold font-mono text-zinc-400 shrink-0">RA {ra.code}</span>
             <p
               className="text-zinc-800 dark:text-zinc-200 text-sm truncate font-medium flex-1"
@@ -89,8 +91,8 @@ function SortableRA({ ra, templateId, isDraft, isAnyDragging }: any) {
             >
                {effectiveCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
-            <EditRAButton templateId={templateId} ra={ra} />
-            <DeleteRAButton templateId={templateId} raId={ra.id} />
+            {canEdit ? <EditRAButton templateId={templateId} ra={ra} /> : null}
+            {canEdit ? <DeleteRAButton templateId={templateId} raId={ra.id} /> : null}
           </div>
         </div>
 
@@ -100,13 +102,13 @@ function SortableRA({ ra, templateId, isDraft, isAnyDragging }: any) {
                 <div className="flex items-center justify-between">
                     <h4 className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Criterios de Evaluación</h4>
                     <div className="flex items-center gap-1">
-                      <AddCEButton templateId={templateId} raId={ra.id} />
-                      <BulkAddCEButton templateId={templateId} raId={ra.id} />
+                      {canEdit ? <AddCEButton templateId={templateId} raId={ra.id} /> : null}
+                      {canEdit ? <BulkAddCEButton templateId={templateId} raId={ra.id} /> : null}
                     </div>
                 </div>
                 
                 {ra.ces && ra.ces.length > 0 ? (
-                   <SortableCEList templateId={templateId} raId={ra.id} ces={ra.ces} isDraft={isDraft} />
+                   <SortableCEList templateId={templateId} raId={ra.id} ces={ra.ces} isDraft={isDraft} canEdit={canEdit} />
                 ) : (
                   <p className="text-xs text-zinc-400 italic">No hay criterios definidos.</p>
                 )}
@@ -119,7 +121,7 @@ function SortableRA({ ra, templateId, isDraft, isAnyDragging }: any) {
 }
 
 // ─── Sortable CE Item ───────────────────────────────────────
-function SortableCE({ ce, templateId, raId, isDraft }: any) {
+function SortableCE({ ce, templateId, raId, isDraft, canEdit = true }: any) {
   const {
     attributes,
     listeners,
@@ -141,9 +143,11 @@ function SortableCE({ ce, templateId, raId, isDraft }: any) {
       "group p-3 bg-white border border-zinc-100 rounded-lg flex gap-4 dark:bg-zinc-950 dark:border-zinc-900 hover:border-zinc-200 dark:hover:border-zinc-800 transition-all",
       isDragging && "border-primary/50 shadow-lg ring-1 ring-primary/10"
     )}>
-      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 -ml-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded transition-colors self-start">
-        <GripVertical className="h-4 w-4 text-zinc-300" />
-      </div>
+      {canEdit ? (
+        <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 -ml-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded transition-colors self-start">
+          <GripVertical className="h-4 w-4 text-zinc-300" />
+        </div>
+      ) : null}
       <div className="font-mono text-zinc-400 text-xs font-bold pt-0.5">{ce.code}</div>
         <div className="flex-1">
           <p
@@ -154,15 +158,15 @@ function SortableCE({ ce, templateId, raId, isDraft }: any) {
           </p>
         </div>
       <div className="flex items-start gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0">
-        <EditCEButton templateId={templateId} ce={ce} />
-        <DeleteCEButton templateId={templateId} ceId={ce.id} />
+        {canEdit ? <EditCEButton templateId={templateId} ce={ce} /> : null}
+        {canEdit ? <DeleteCEButton templateId={templateId} ceId={ce.id} /> : null}
       </div>
     </div>
   );
 }
 
 // ─── CE List Container ──────────────────────────────────────
-function SortableCEList({ templateId, raId, ces, isDraft }: any) {
+function SortableCEList({ templateId, raId, ces, isDraft, canEdit = true }: any) {
   const [items, setItems] = useState(ces);
   const [isPending, startTransition] = useTransition();
 
@@ -176,6 +180,7 @@ function SortableCEList({ templateId, raId, ces, isDraft }: any) {
   );
 
   async function handleDragEnd(event: DragEndEvent) {
+    if (!canEdit) return;
     const { active, over } = event;
     if (over && active.id !== over.id) {
       const oldIndex = items.findIndex((i: any) => i.id === active.id);
@@ -200,7 +205,7 @@ function SortableCEList({ templateId, raId, ces, isDraft }: any) {
         <SortableContext items={items.map((i: any) => i.id)} strategy={verticalListSortingStrategy}>
           <div className="grid gap-2">
             {items.map((ce: any) => (
-              <SortableCE key={ce.id} ce={ce} templateId={templateId} raId={raId} isDraft={isDraft} />
+              <SortableCE key={ce.id} ce={ce} templateId={templateId} raId={raId} isDraft={isDraft} canEdit={canEdit} />
             ))}
           </div>
         </SortableContext>
@@ -210,7 +215,7 @@ function SortableCEList({ templateId, raId, ces, isDraft }: any) {
 }
 
 // ─── Main Content Wrapper ───────────────────────────────────
-export function CurriculumSortableList({ template, isDraft }: any) {
+export function CurriculumSortableList({ template, isDraft, canEdit = true }: any) {
   const [ras, setRas] = useState(template.ras || []);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -229,6 +234,7 @@ export function CurriculumSortableList({ template, isDraft }: any) {
   }
 
   async function handleDragEnd(event: DragEndEvent) {
+    if (!canEdit) return;
     setActiveId(null);
     const { active, over } = event;
     if (over && active.id !== over.id) {
@@ -267,6 +273,7 @@ export function CurriculumSortableList({ template, isDraft }: any) {
                 templateId={template.id} 
                 isDraft={isDraft} 
                 isAnyDragging={!!activeId} 
+                canEdit={canEdit}
               />
             ))}
           </div>

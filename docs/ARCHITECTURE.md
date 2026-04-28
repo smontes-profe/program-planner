@@ -130,7 +130,7 @@ erDiagram
         string region_code
         string module_code
         string academic_year
-        string visibility_scope "private|organization|company"
+        string visibility_scope "private|organization"
         string status "draft|published"
         timestamptz imported_at
         timestamptz created_at
@@ -257,9 +257,8 @@ Access model:
 
 Visibility rules:
 
-- `private`: owner, org managers in same organization, platform admins.
-- `organization`: any active membership in same organization.
-- `company`: any authenticated active member in any organization.
+- `private`: creator only.
+- `organization`: same org members can read/import when published; drafts stay creator-only.
 
 Admin provisioning rules:
 
@@ -307,6 +306,25 @@ sequenceDiagram
     SA->>GE: recomputePlanAggregates(planId)
     GE-->>SA: ce/ra/final and completion metrics
     SA-->>UI: Updated metrics
+```
+
+### 6.2b Clone shared teaching plan
+
+```mermaid
+sequenceDiagram
+    actor U as Teacher
+    participant UI as WebUI
+    participant SA as ServerAction
+    participant DB as PostgreSQL
+
+    U->>UI: Clone shared plan
+    UI->>SA: createPlanFromPlan(sourcePlanId)
+    SA->>DB: Validate read access to source plan
+    SA->>DB: Create new teaching_plan draft owned by current user
+    SA->>DB: Deep copy RA/CE, UT links, instruments and weights
+    SA->>DB: Save lineage metadata (source_plan_id, source_template_id, source_version)
+    DB-->>SA: New plan id
+    SA-->>UI: Redirect to cloned workspace
 ```
 
 ### 6.3 Configure CE weight automation and instrument coverage
@@ -374,6 +392,7 @@ sequenceDiagram
   - desktop: full editing workspace
   - tablet: stacked or two-column adaptive layouts
   - mobile: simplified layout with prioritized actions
+- Shared published curricula and teaching plans reuse the same detail routes as editable items, but switch to a read-only presentation with editing controls hidden.
 
 ## 10. Critical Non-Functional Requirements
 
