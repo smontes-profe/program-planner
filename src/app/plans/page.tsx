@@ -27,6 +27,11 @@ interface PlansPageProps {
     q?: string;
     owner?: string;
     template?: string;
+    year?: string;
+    title?: string;
+    code?: string;
+    level?: string;
+    course?: string;
   }>;
 }
 
@@ -57,16 +62,33 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
   const query = filters.q?.trim().toLowerCase() ?? "";
   const ownerFilter = filters.owner?.trim().toLowerCase() ?? "";
   const templateFilter = filters.template?.trim().toLowerCase() ?? "";
+  const yearFilter = filters.year?.trim() ?? "";
+  const titleFilter = filters.title?.trim() ?? "";
+  const codeFilter = filters.code?.trim() ?? "";
+  const levelFilter = filters.level?.trim() ?? "";
+  const courseFilter = filters.course?.trim() ?? "";
   const publishedTemplates = templatesResult.ok ? templatesResult.data : [];
+  
   const ownerOptions = Array.from(new Set(plans.map((plan) => plan.owner_name).filter(Boolean))) as string[];
   const templateOptions = Array.from(new Set(plans.map((plan) => plan.source_template_name).filter(Boolean))) as string[];
+  const yearOptions = Array.from(new Set(plans.map((plan) => plan.academic_year).filter(Boolean))) as string[];
+  const titleOptions = Array.from(new Set(plans.map((plan) => plan.program_title).filter(Boolean))) as string[];
+  const codeOptions = Array.from(new Set(plans.map((plan) => plan.program_code).filter(Boolean))) as string[];
+  const levelOptions = Array.from(new Set(plans.map((plan) => plan.program_level).filter(Boolean))) as string[];
+  const courseOptions = Array.from(new Set(plans.map((plan) => plan.program_course).filter(Boolean))) as string[];
+  
   const filteredPlans = plans.filter((plan) => {
     const matchesQuery = !query || [plan.title, plan.owner_name, plan.source_template_name].some((value) =>
       value?.toLowerCase().includes(query)
     );
     const matchesOwner = !ownerFilter || (plan.owner_name ?? "").toLowerCase() === ownerFilter;
     const matchesTemplate = !templateFilter || (plan.source_template_name ?? "").toLowerCase() === templateFilter;
-    return matchesQuery && matchesOwner && matchesTemplate;
+    const matchesYear = !yearFilter || (plan.academic_year ?? "") === yearFilter;
+    const matchesTitle = !titleFilter || (plan.program_title ?? "") === titleFilter;
+    const matchesCode = !codeFilter || (plan.program_code ?? "") === codeFilter;
+    const matchesLevel = !levelFilter || (plan.program_level ?? "") === levelFilter;
+    const matchesCourse = !courseFilter || (plan.program_course ?? "") === courseFilter;
+    return matchesQuery && matchesOwner && matchesTemplate && matchesYear && matchesTitle && matchesCode && matchesLevel && matchesCourse;
   });
 
   return (
@@ -83,7 +105,7 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
         <CreatePlanButton publishedTemplates={publishedTemplates} />
       </div>
 
-      <form className="mb-6 grid gap-3 rounded-xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/40 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+      <form className="mb-6 grid gap-3 rounded-xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/40 md:grid-cols-[minmax(0,2fr)_repeat(auto-fit,minmax(120px,1fr))_auto] lg:grid-cols-[minmax(0,2fr)_repeat(6,minmax(0,1fr))_auto]">
         <label className="relative block">
           <span className="sr-only">Buscar programaciones</span>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
@@ -96,13 +118,53 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
           />
         </label>
         <select
-          name="owner"
-          defaultValue={filters.owner ?? ""}
+          name="year"
+          defaultValue={filters.year ?? ""}
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
         >
-          <option value="">Todos los dueños</option>
-          {ownerOptions.map((owner) => (
-            <option key={owner} value={owner}>{owner}</option>
+          <option value="">Todos los años</option>
+          {yearOptions.sort().map((year) => (
+            <option key={year} value={year}>{year}</option>
+          ))}
+        </select>
+        <select
+          name="title"
+          defaultValue={filters.title ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los títulos</option>
+          {titleOptions.map((title) => (
+            <option key={title} value={title}>{title}</option>
+          ))}
+        </select>
+        <select
+          name="code"
+          defaultValue={filters.code ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los IDs</option>
+          {codeOptions.map((code) => (
+            <option key={code} value={code}>{code}</option>
+          ))}
+        </select>
+        <select
+          name="level"
+          defaultValue={filters.level ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los niveles</option>
+          {levelOptions.map((level) => (
+            <option key={level} value={level}>{level}</option>
+          ))}
+        </select>
+        <select
+          name="course"
+          defaultValue={filters.course ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los cursos</option>
+          {courseOptions.map((course) => (
+            <option key={course} value={course}>{course}</option>
           ))}
         </select>
         <select
@@ -113,6 +175,16 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
           <option value="">Todos los currículos</option>
           {templateOptions.map((template) => (
             <option key={template} value={template}>{template}</option>
+          ))}
+        </select>
+        <select
+          name="owner"
+          defaultValue={filters.owner ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los dueños</option>
+          {ownerOptions.map((owner) => (
+            <option key={owner} value={owner}>{owner}</option>
           ))}
         </select>
         <button className={buttonVariants({ variant: "outline" })} type="submit">

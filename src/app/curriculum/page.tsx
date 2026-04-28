@@ -22,6 +22,11 @@ interface CurriculumPageProps {
   readonly searchParams?: Promise<{
     q?: string;
     owner?: string;
+    year?: string;
+    title?: string;
+    code?: string;
+    level?: string;
+    course?: string;
   }>;
 }
 
@@ -56,13 +61,30 @@ export default async function CurriculumPage({ searchParams }: CurriculumPagePro
   const templates = result.data;
   const query = filters.q?.trim().toLowerCase() ?? "";
   const ownerFilter = filters.owner?.trim().toLowerCase() ?? "";
+  const yearFilter = filters.year?.trim() ?? "";
+  const titleFilter = filters.title?.trim() ?? "";
+  const codeFilter = filters.code?.trim() ?? "";
+  const levelFilter = filters.level?.trim() ?? "";
+  const courseFilter = filters.course?.trim() ?? "";
+  
   const ownerOptions = Array.from(new Set(templates.map((template) => template.creator_name).filter(Boolean))) as string[];
+  const yearOptions = Array.from(new Set(templates.map((template) => template.academic_year).filter(Boolean))) as string[];
+  const titleOptions = Array.from(new Set(templates.map((template) => template.program_title).filter(Boolean))) as string[];
+  const codeOptions = Array.from(new Set(templates.map((template) => template.program_code).filter(Boolean))) as string[];
+  const levelOptions = Array.from(new Set(templates.map((template) => template.program_level).filter(Boolean))) as string[];
+  const courseOptions = Array.from(new Set(templates.map((template) => template.program_course).filter(Boolean))) as string[];
+  
   const filteredTemplates = templates.filter((template) => {
     const matchesQuery = !query || [template.module_name, template.creator_name].some((value) =>
       value?.toLowerCase().includes(query)
     );
     const matchesOwner = !ownerFilter || (template.creator_name ?? "").toLowerCase() === ownerFilter;
-    return matchesQuery && matchesOwner;
+    const matchesYear = !yearFilter || (template.academic_year ?? "") === yearFilter;
+    const matchesTitle = !titleFilter || (template.program_title ?? "") === titleFilter;
+    const matchesCode = !codeFilter || (template.program_code ?? "") === codeFilter;
+    const matchesLevel = !levelFilter || (template.program_level ?? "") === levelFilter;
+    const matchesCourse = !courseFilter || (template.program_course ?? "") === courseFilter;
+    return matchesQuery && matchesOwner && matchesYear && matchesTitle && matchesCode && matchesLevel && matchesCourse;
   });
 
   return (
@@ -82,7 +104,7 @@ export default async function CurriculumPage({ searchParams }: CurriculumPagePro
         </Link>
       </div>
 
-      <form className="mb-6 grid gap-3 rounded-xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/40 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto]">
+      <form className="mb-6 grid gap-3 rounded-xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/40 md:grid-cols-[minmax(0,2fr)_repeat(auto-fit,minmax(120px,1fr))_auto] lg:grid-cols-[minmax(0,2fr)_repeat(5,minmax(0,1fr))_auto]">
         <label className="relative block">
           <span className="sr-only">Buscar currículos</span>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
@@ -94,6 +116,56 @@ export default async function CurriculumPage({ searchParams }: CurriculumPagePro
             className="flex h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
           />
         </label>
+        <select
+          name="year"
+          defaultValue={filters.year ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los años</option>
+          {yearOptions.sort().map((year) => (
+            <option key={year} value={year}>{year}</option>
+          ))}
+        </select>
+        <select
+          name="title"
+          defaultValue={filters.title ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los títulos</option>
+          {titleOptions.map((title) => (
+            <option key={title} value={title}>{title}</option>
+          ))}
+        </select>
+        <select
+          name="code"
+          defaultValue={filters.code ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los IDs</option>
+          {codeOptions.map((code) => (
+            <option key={code} value={code}>{code}</option>
+          ))}
+        </select>
+        <select
+          name="level"
+          defaultValue={filters.level ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los niveles</option>
+          {levelOptions.map((level) => (
+            <option key={level} value={level}>{level}</option>
+          ))}
+        </select>
+        <select
+          name="course"
+          defaultValue={filters.course ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los cursos</option>
+          {courseOptions.map((course) => (
+            <option key={course} value={course}>{course}</option>
+          ))}
+        </select>
         <select
           name="owner"
           defaultValue={filters.owner ?? ""}

@@ -308,6 +308,17 @@ Nuevo módulo de Evaluaciones al mismo nivel que Plantillas de Currículo y Prog
 
 - [x] Implement deep import/fork from template.
 - [x] Ensure no automatic source sync after import.
+- [P0][x] Programación: Que se pueda editar la visibilidad, el año académico, y el título.
+- [P0][x] BUG: Los currículos y programaciones que tengan visibilidad "Organización" no aparecen para otros usuarios.
+- [P0][x] Los currículos y programaciones que tengan visibilidad "Organización", solo son accesibles en modo "lectura" (como consulta) por aquellos que no sean sus creadores. Los currículos que no sean propios y estén visibles a nivel de organización se podrán usar de base para crear una programación nueva propia.
+- [P1][x] Añadir una opción para "clonar" una programación de visibilidad "organización" para usarla como propia.
+- [P1][x] Currículos: Que aparezca el nombre del usuario que creó el currículo.
+- [P1][x] Currículos: Añadir un filtro para poder filtrar por nombre o dueño.
+- [P1][x] Programaciones: Que aparezca el nombre del usuario que creó la programación y el currículo usado.
+- [P1][x] Programaciones: Añadir un filtro para poder filtrar por nombre, dueño, currículo usado.
+- [P2][x] Currículos: los bloques de cada currículo son muy grandes. Reducir tamaño, reducir también el tamaño del texto del nombre
+- [P2][x] Currículos y programaciones: Cambiar la etiqueta de visibilidad "organización" o "Mi organización" por "Público".
+- [P0][ ] Evaluaciones: Mismas reglas de visiblidad que para currículos y programaciones: hacer que una evaluaación pueda ser privada o pública. Que las privadas solo las pueda ver su propio usuario, que las públcias no propias se puedan ver y clonar. No editar..
 
 
 
