@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase";
+import { createAdminClient, createClient } from "@/lib/supabase";
 import { curriculumTemplateSchema } from "./schemas";
 import { type CurriculumTemplate, type CurriculumStatus } from "./types";
 import { z } from "zod";
@@ -12,6 +12,36 @@ import { z } from "zod";
 export type ActionResponse<T = any> = 
   | { ok: true; data: T } 
   | { ok: false; error: string; details?: any; fields?: any };
+
+async function getCurrentUserId(supabase: Awaited<ReturnType<typeof createClient>>): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id ?? null;
+}
+
+async function enrichTemplateMetadata<T extends { created_by_profile_id: string }>(
+  templates: T[],
+  currentUserId: string
+): Promise<(T & { creator_name?: string | null; is_owner: boolean; can_edit: boolean })[]> {
+  if (templates.length === 0) return [];
+
+  const adminClient = createAdminClient();
+  const ownerIds = Array.from(new Set(templates.map((template) => template.created_by_profile_id).filter(Boolean)));
+  const { data: owners } = ownerIds.length > 0
+    ? await adminClient.from("profiles").select("id, full_name").in("id", ownerIds)
+    : { data: [] as { id: string; full_name: string | null }[] };
+
+  const ownerNameById = new Map((owners ?? []).map((owner) => [owner.id, owner.full_name]));
+
+  return templates.map((template) => {
+    const isOwner = template.created_by_profile_id === currentUserId;
+    return {
+      ...template,
+      creator_name: ownerNameById.get(template.created_by_profile_id) ?? null,
+      is_owner: isOwner,
+      can_edit: isOwner,
+    };
+  });
+}
 
 /**
  * Ensures the authenticated user can perform an action on a template
@@ -59,10 +89,9 @@ async function authorizeAction(supabase: any, action: 'read' | 'write', organiza
     return { authorized: false, error: "No tienes permisos en esta organización", user };
   }
 
-  // If write and teacher, check ownership for shared templates
-  if (action === 'write' && membership.role_in_org === 'teacher' && templateId && templateVisibility?.visibility_scope !== "private") {
+  if (action === 'write' && templateId) {
     if (templateVisibility?.created_by_profile_id !== user.id) {
-      return { authorized: false, error: "Acceso denegado: No eres el creador de este currículo.", user };
+      return { authorized: false, error: "Acceso denegado: este currículo solo lo puede editar su creador.", user };
     }
   }
 
@@ -370,8 +399,8 @@ export async function deleteTemplate(id: string): Promise<ActionResponse> {
  */
 export async function listTemplates(): Promise<ActionResponse<CurriculumTemplate[]>> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Usuario no autenticado" };
+  const userId = await getCurrentUserId(supabase);
+  if (!userId) return { ok: false, error: "Usuario no autenticado" };
 
   // Use the database RLS via the standard query
   const { data, error } = await supabase
@@ -380,7 +409,8 @@ export async function listTemplates(): Promise<ActionResponse<CurriculumTemplate
     .order("created_at", { ascending: false });
 
   if (error) return { ok: false, error: error.message };
-  return { ok: true, data: data as CurriculumTemplate[] };
+  const enriched = await enrichTemplateMetadata((data ?? []) as CurriculumTemplate[], userId);
+  return { ok: true, data: enriched as CurriculumTemplate[] };
 }
 
 /**

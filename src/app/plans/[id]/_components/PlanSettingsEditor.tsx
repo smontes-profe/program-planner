@@ -63,10 +63,10 @@ export function PlanSettingsEditor({ plan }: PlanSettingsEditorProps) {
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+      <SheetTrigger render={
+        <Button variant="outline" size="sm" className="gap-2" />
+      }>
           <Settings2 className="h-4 w-4" /> Configuración
-        </Button>
       </SheetTrigger>
       <SheetContent side="right" className="bg-white dark:bg-zinc-950 sm:max-w-lg">
         <SheetHeader>
@@ -110,10 +110,10 @@ export function PlanSettingsEditor({ plan }: PlanSettingsEditorProps) {
               className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
             >
               <option value="private">Privada (solo creador)</option>
-              <option value="organization">Mi organización</option>
+              <option value="organization">Público</option>
             </select>
             <p className="text-[11px] text-zinc-400">
-              Las programaciones compartidas con la organización solo son editables por su creador.
+              Las programaciones públicas de la organización solo son editables por su creador.
             </p>
           </div>
 

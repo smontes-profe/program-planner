@@ -148,7 +148,7 @@ export function CreatePlanButton({ publishedTemplates }: CreatePlanButtonProps) 
                 className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
               >
                 <option value="private">Privada (solo creador)</option>
-                <option value="organization">Mi organización</option>
+                <option value="organization">Público</option>
               </select>
             </div>
 

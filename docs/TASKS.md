@@ -23,14 +23,14 @@ Status legend:
 
 - [P0][x] Programación: Que se pueda editar la visibilidad, el año académico, y el título.
 - [P0][x] BUG: Los currículos y programaciones que tengan visibilidad "Organización" no aparecen para otros usuarios.
-- [P0][ ] Los currículos y programaciones que tengan visibilidad "Organización", solo son accesibles en modo "lectura" (como consulta) por aquellos que no sean sus creadores. Los currículos que no sean propios y estén visibles a nivel de organización se podrán usar de base para crear una programación nueva propia.
-- [P1][ ] Añadir una opción para "clonar" una programación de visibilidad "organización" para usarla como propia.
-- [P1][ ] Currículos: Que aparezca el nombre del usuario que creó el currículo.
-- [P1][ ] Currículos: Añadir un filtro para poder filtrar por nombre o dueño.
-- [P1][ ] Programaciones: Que aparezca el nombre del usuario que creó la programación y el currículo usado.
-- [P1][ ] Programaciones: Añadir un filtro para poder filtrar por nombre, dueño, currículo usado.
-- [P2][ ] Currículos: los bloques de cada currículo son muy grandes. Reducir tamaño, reducir también el tamaño del texto del nombre
-- [P2][ ] Currículos y programaciones: Cambiar la etiqueta de visibilidad "organización" o "Mi organización" por "Público".
+- [P0][x] Los currículos y programaciones que tengan visibilidad "Organización", solo son accesibles en modo "lectura" (como consulta) por aquellos que no sean sus creadores. Los currículos que no sean propios y estén visibles a nivel de organización se podrán usar de base para crear una programación nueva propia.
+- [P1][x] Añadir una opción para "clonar" una programación de visibilidad "organización" para usarla como propia.
+- [P1][x] Currículos: Que aparezca el nombre del usuario que creó el currículo.
+- [P1][x] Currículos: Añadir un filtro para poder filtrar por nombre o dueño.
+- [P1][x] Programaciones: Que aparezca el nombre del usuario que creó la programación y el currículo usado.
+- [P1][x] Programaciones: Añadir un filtro para poder filtrar por nombre, dueño, currículo usado.
+- [P2][x] Currículos: los bloques de cada currículo son muy grandes. Reducir tamaño, reducir también el tamaño del texto del nombre
+- [P2][x] Currículos y programaciones: Cambiar la etiqueta de visibilidad "organización" o "Mi organización" por "Público".
 
 ### Phase 9 - Futuro: Congelación de notas por trimestre (Opción B)
 

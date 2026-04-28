@@ -10,9 +10,10 @@ import { useRouter } from "next/navigation";
 interface PlanHoursEditorProps {
   readonly planId: string;
   readonly initialHours: number;
+  readonly readOnly?: boolean;
 }
 
-export function PlanHoursEditor({ planId, initialHours }: PlanHoursEditorProps) {
+export function PlanHoursEditor({ planId, initialHours, readOnly = false }: PlanHoursEditorProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [hours, setHours] = useState(initialHours);
@@ -61,15 +62,23 @@ export function PlanHoursEditor({ planId, initialHours }: PlanHoursEditorProps) 
   }
 
   return (
-    <button 
-      type="button"
-      className="flex items-center gap-2 group cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 px-2 py-1 rounded transition-colors" 
-      onClick={() => setIsEditing(true)}
-    >
-      <span className="text-xl font-bold text-zinc-900 dark:text-zinc-50 leading-none">
-        {initialHours}
+    readOnly ? (
+      <span className="flex items-center gap-2 px-2 py-1">
+        <span className="text-xl font-bold text-zinc-900 dark:text-zinc-50 leading-none">
+          {initialHours}
+        </span>
       </span>
-      <Edit2 className="h-3 w-3 text-zinc-400 opacity-0 group-hover:opacity-100 transition-all transform group-hover:scale-110" />
-    </button>
+    ) : (
+      <button 
+        type="button"
+        className="flex items-center gap-2 group cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 px-2 py-1 rounded transition-colors" 
+        onClick={() => setIsEditing(true)}
+      >
+        <span className="text-xl font-bold text-zinc-900 dark:text-zinc-50 leading-none">
+          {initialHours}
+        </span>
+        <Edit2 className="h-3 w-3 text-zinc-400 opacity-0 group-hover:opacity-100 transition-all transform group-hover:scale-110" />
+      </button>
+    )
   );
 }

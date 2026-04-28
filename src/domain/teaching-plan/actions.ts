@@ -1,13 +1,62 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase";
+import { createAdminClient, createClient } from "@/lib/supabase";
 import { createPlanSchema, updatePlanSchema, updatePlanRAConfigSchema, planRASchema, planCESchema, planTeachingUnitSchema, planInstrumentSchema } from "./schemas";
 import { type TeachingPlan, type TeachingPlanFull, type PlanRA, type PlanCE } from "./types";
+import { z } from "zod";
 
 export type ActionResponse<T = any> =
   | { ok: true; data: T }
   | { ok: false; error: string; details?: any };
+
+async function getCurrentUserId(supabase: Awaited<ReturnType<typeof createClient>>): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id ?? null;
+}
+
+async function canCurrentUserEditPlan(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  plan: { owner_profile_id: string }
+): Promise<boolean> {
+  const userId = await getCurrentUserId(supabase);
+  if (!userId) return false;
+  return plan.owner_profile_id === userId;
+}
+
+async function enrichPlansMetadata<T extends { owner_profile_id: string; source_template_id?: string | null }>(
+  plans: T[],
+  currentUserId: string
+): Promise<(T & { owner_name?: string | null; source_template_name?: string | null; is_owner: boolean; can_edit: boolean })[]> {
+  if (plans.length === 0) return [];
+
+  const adminClient = createAdminClient();
+  const ownerIds = Array.from(new Set(plans.map((plan) => plan.owner_profile_id).filter(Boolean)));
+  const templateIds = Array.from(new Set(plans.map((plan) => plan.source_template_id).filter(Boolean))) as string[];
+
+  const [{ data: owners }, { data: templates }] = await Promise.all([
+    ownerIds.length > 0
+      ? adminClient.from("profiles").select("id, full_name").in("id", ownerIds)
+      : Promise.resolve({ data: [] as { id: string; full_name: string | null }[] }),
+    templateIds.length > 0
+      ? adminClient.from("curriculum_templates").select("id, module_name").in("id", templateIds)
+      : Promise.resolve({ data: [] as { id: string; module_name: string | null }[] }),
+  ]);
+
+  const ownerNameById = new Map((owners ?? []).map((owner) => [owner.id, owner.full_name]));
+  const templateNameById = new Map((templates ?? []).map((template) => [template.id, template.module_name]));
+
+  return plans.map((plan) => {
+    const isOwner = plan.owner_profile_id === currentUserId;
+    return {
+      ...plan,
+      owner_name: ownerNameById.get(plan.owner_profile_id) ?? null,
+      source_template_name: plan.source_template_id ? templateNameById.get(plan.source_template_id) ?? null : null,
+      is_owner: isOwner,
+      can_edit: isOwner,
+    };
+  });
+}
 
 // ─────────────────────────────────────────────
 // LIST
@@ -18,8 +67,8 @@ export type ActionResponse<T = any> =
  */
 export async function listPlans(): Promise<ActionResponse<TeachingPlan[]>> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "Usuario no autenticado" };
+  const userId = await getCurrentUserId(supabase);
+  if (!userId) return { ok: false, error: "Usuario no autenticado" };
 
   const { data, error } = await supabase
     .from("teaching_plans")
@@ -27,7 +76,8 @@ export async function listPlans(): Promise<ActionResponse<TeachingPlan[]>> {
     .order("created_at", { ascending: false });
 
   if (error) return { ok: false, error: error.message };
-  return { ok: true, data: data as TeachingPlan[] };
+  const enriched = await enrichPlansMetadata((data ?? []) as TeachingPlan[], userId);
+  return { ok: true, data: enriched as TeachingPlan[] };
 }
 
 /**
@@ -35,6 +85,7 @@ export async function listPlans(): Promise<ActionResponse<TeachingPlan[]>> {
  */
 export async function getPlan(planId: string): Promise<ActionResponse<TeachingPlanFull>> {
   const supabase = await createClient();
+  const userId = await getCurrentUserId(supabase);
 
   const { data, error } = await supabase
     .from("teaching_plans")
@@ -93,12 +144,26 @@ export async function getPlan(planId: string): Promise<ActionResponse<TeachingPl
     ce_weights: i.ce_weights || []
   }));
 
+  const adminClient = createAdminClient();
+  const [{ data: owner }, { data: sourceTemplate }] = await Promise.all([
+    adminClient.from("profiles").select("full_name").eq("id", data.owner_profile_id).maybeSingle(),
+    data.source_template_id
+      ? adminClient.from("curriculum_templates").select("module_name").eq("id", data.source_template_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  const isOwner = Boolean(userId && data.owner_profile_id === userId);
+
   const fullPlan: TeachingPlanFull = {
     ...data,
     ras: data.ras || [],
     units: mappedUnits,
     instruments: mappedInstruments,
     sourceTemplateHours: data.hours_total ?? 0,
+    owner_name: owner?.full_name ?? null,
+    source_template_name: sourceTemplate?.module_name ?? null,
+    is_owner: isOwner,
+    can_edit: isOwner,
   };
   
   return { ok: true, data: fullPlan };
@@ -221,6 +286,256 @@ export async function createPlanFromTemplate(payload: {
   return { ok: true, data: plan as TeachingPlan };
 }
 
+const clonePlanSchema = z.object({
+  source_plan_id: z.string().uuid(),
+  title: z.string().min(1, "El título es obligatorio").max(255).optional(),
+  academic_year: z.string().regex(/^\d{4}\/\d{4}$/, "Formato esperado: YYYY/YYYY").optional(),
+  visibility_scope: z.enum(["private", "organization"]).default("private"),
+});
+
+export async function createPlanFromPlan(payload: {
+  source_plan_id: string;
+  title?: string;
+  academic_year?: string;
+  visibility_scope?: "private" | "organization";
+}): Promise<ActionResponse<TeachingPlan>> {
+  const validated = clonePlanSchema.safeParse(payload);
+  if (!validated.success) {
+    return { ok: false, error: "Datos inválidos", details: validated.error.flatten().fieldErrors };
+  }
+
+  const supabase = await createClient();
+  const userId = await getCurrentUserId(supabase);
+  if (!userId) return { ok: false, error: "Usuario no autenticado" };
+
+  const { data: sourcePlan, error: sourceError } = await supabase
+    .from("teaching_plans")
+    .select(`
+      *,
+      ras:plan_ra (
+        *,
+        ces:plan_ce (*)
+      ),
+      units:plan_teaching_unit (
+        *,
+        ra_coverage:plan_unit_ra (plan_ra_id)
+      ),
+      instruments:plan_instrument (
+        *,
+        units_coverage:plan_instrument_unit (unit_id),
+        ras_coverage:plan_instrument_ra (plan_ra_id, coverage_percent),
+        ce_weights:plan_instrument_ce (*)
+      )
+    `)
+    .eq("id", validated.data.source_plan_id)
+    .single();
+
+  if (sourceError || !sourcePlan) {
+    return { ok: false, error: "No se ha encontrado la programación de origen" };
+  }
+
+  const { data: membership } = await supabase
+    .from("organization_memberships")
+    .select("organization_id")
+    .eq("profile_id", userId)
+    .eq("organization_id", sourcePlan.organization_id)
+    .eq("is_active", true)
+    .single();
+
+  if (!membership) {
+    return { ok: false, error: "No tienes acceso para clonar esta programación" };
+  }
+
+  const { data: clonedPlan, error: createError } = await supabase
+    .from("teaching_plans")
+    .insert({
+      organization_id: sourcePlan.organization_id,
+      owner_profile_id: userId,
+      source_plan_id: sourcePlan.id,
+      source_template_id: sourcePlan.source_template_id,
+      source_version: sourcePlan.source_version,
+      title: validated.data.title?.trim() || `${sourcePlan.title} (copia)`,
+      region_code: sourcePlan.region_code,
+      module_code: sourcePlan.module_code,
+      academic_year: validated.data.academic_year || sourcePlan.academic_year,
+      visibility_scope: validated.data.visibility_scope ?? "private",
+      status: "draft",
+      hours_total: sourcePlan.hours_total || 0,
+      ce_weight_auto: Boolean(sourcePlan.ce_weight_auto),
+      imported_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (createError || !clonedPlan) {
+    return { ok: false, error: `Error al clonar la programación: ${createError?.message}` };
+  }
+
+  const raIdMap = new Map<string, string>();
+  const ceIdMap = new Map<string, string>();
+  const unitIdMap = new Map<string, string>();
+
+  for (const ra of sourcePlan.ras ?? []) {
+    const { data: newRa, error: raError } = await supabase
+      .from("plan_ra")
+      .insert({
+        plan_id: clonedPlan.id,
+        code: ra.code,
+        description: ra.description,
+        weight_global: ra.weight_global,
+        active_t1: ra.active_t1,
+        active_t2: ra.active_t2,
+        active_t3: ra.active_t3,
+        order_index: ra.order_index,
+      })
+      .select()
+      .single();
+
+    if (raError || !newRa) {
+      return { ok: false, error: `Error al clonar el RA ${ra.code}: ${raError?.message}` };
+    }
+
+    raIdMap.set(ra.id, newRa.id);
+
+    for (const ce of ra.ces ?? []) {
+      const { data: newCe, error: ceError } = await supabase
+        .from("plan_ce")
+        .insert({
+          plan_ra_id: newRa.id,
+          code: ce.code,
+          description: ce.description,
+          weight_in_ra: ce.weight_in_ra,
+          order_index: ce.order_index,
+        })
+        .select()
+        .single();
+
+      if (ceError || !newCe) {
+        return { ok: false, error: `Error al clonar el CE ${ce.code}: ${ceError?.message}` };
+      }
+
+      ceIdMap.set(ce.id, newCe.id);
+    }
+  }
+
+  for (const unit of sourcePlan.units ?? []) {
+    const { data: newUnit, error: unitError } = await supabase
+      .from("plan_teaching_unit")
+      .insert({
+        plan_id: clonedPlan.id,
+        code: unit.code,
+        title: unit.title,
+        active_t1: unit.active_t1,
+        active_t2: unit.active_t2,
+        active_t3: unit.active_t3,
+        hours: unit.hours,
+        order_index: unit.order_index,
+      })
+      .select()
+      .single();
+
+    if (unitError || !newUnit) {
+      return { ok: false, error: `Error al clonar la UT ${unit.code}: ${unitError?.message}` };
+    }
+
+    unitIdMap.set(unit.id, newUnit.id);
+
+    const sourceRaLinks = unit.ra_coverage ?? [];
+    if (sourceRaLinks.length > 0) {
+      const unitRaRows = sourceRaLinks
+        .map((link: any) => {
+          const clonedRaId = raIdMap.get(link.plan_ra_id);
+          if (!clonedRaId) return null;
+          return { unit_id: newUnit.id, plan_ra_id: clonedRaId };
+        })
+        .filter(Boolean);
+
+      if (unitRaRows.length > 0) {
+        const { error: linkError } = await supabase.from("plan_unit_ra").insert(unitRaRows);
+        if (linkError) {
+          return { ok: false, error: `Error al clonar las relaciones RA/UT: ${linkError.message}` };
+        }
+      }
+    }
+  }
+
+  for (const instrument of sourcePlan.instruments ?? []) {
+    const { data: newInstrument, error: instrumentError } = await supabase
+      .from("plan_instrument")
+      .insert({
+        plan_id: clonedPlan.id,
+        code: instrument.code,
+        type: instrument.type,
+        is_pri_pmi: Boolean(instrument.is_pri_pmi),
+        ce_weight_auto: Boolean(instrument.ce_weight_auto),
+        name: instrument.name,
+        description: instrument.description,
+      })
+      .select()
+      .single();
+
+    if (instrumentError || !newInstrument) {
+      return { ok: false, error: `Error al clonar el instrumento ${instrument.code}: ${instrumentError?.message}` };
+    }
+
+    const unitRows = (instrument.units_coverage ?? [])
+      .map((unitCoverage: any) => {
+        const clonedUnitId = unitIdMap.get(unitCoverage.unit_id);
+        if (!clonedUnitId) return null;
+        return { instrument_id: newInstrument.id, unit_id: clonedUnitId };
+      })
+      .filter(Boolean);
+
+    if (unitRows.length > 0) {
+      const { error: unitCoverageError } = await supabase.from("plan_instrument_unit").insert(unitRows);
+      if (unitCoverageError) {
+        return { ok: false, error: `Error al clonar las UT del instrumento ${instrument.code}: ${unitCoverageError.message}` };
+      }
+    }
+
+    const raRows = (instrument.ras_coverage ?? [])
+      .map((raCoverage: any) => {
+        const clonedRaId = raIdMap.get(raCoverage.plan_ra_id);
+        if (!clonedRaId) return null;
+        return {
+          instrument_id: newInstrument.id,
+          plan_ra_id: clonedRaId,
+          coverage_percent: raCoverage.coverage_percent,
+        };
+      })
+      .filter(Boolean);
+
+    if (raRows.length > 0) {
+      const { error: raCoverageError } = await supabase.from("plan_instrument_ra").insert(raRows);
+      if (raCoverageError) {
+        return { ok: false, error: `Error al clonar la cobertura RA del instrumento ${instrument.code}: ${raCoverageError.message}` };
+      }
+    }
+
+    const ceRows = (instrument.ce_weights ?? [])
+      .map((ceWeight: any) => {
+        const clonedCeId = ceIdMap.get(ceWeight.plan_ce_id);
+        if (!clonedCeId) return null;
+        return {
+          instrument_id: newInstrument.id,
+          plan_ce_id: clonedCeId,
+          weight: ceWeight.weight,
+        };
+      })
+      .filter(Boolean);
+
+    if (ceRows.length > 0) {
+      const { error: ceWeightError } = await supabase.from("plan_instrument_ce").insert(ceRows);
+      if (ceWeightError) {
+        return { ok: false, error: `Error al clonar los CEs del instrumento ${instrument.code}: ${ceWeightError.message}` };
+      }
+    }
+  }
+
+  revalidatePath("/plans");
+  return { ok: true, data: clonedPlan as TeachingPlan };
+}
+
 // ─────────────────────────────────────────────
 // UPDATE
 // ─────────────────────────────────────────────
@@ -236,6 +551,17 @@ export async function updatePlan(planId: string, payload: {
   if (!validated.success) return { ok: false, error: "Datos inválidos" };
 
   const supabase = await createClient();
+  const { data: existingPlan } = await supabase
+    .from("teaching_plans")
+    .select("owner_profile_id")
+    .eq("id", planId)
+    .single();
+
+  if (!existingPlan) return { ok: false, error: "Programación no encontrada" };
+  if (!(await canCurrentUserEditPlan(supabase, existingPlan))) {
+    return { ok: false, error: "Acceso denegado: esta programación solo la puede editar su creador." };
+  }
+
   const { data, error } = await supabase
     .from("teaching_plans")
     .update(validated.data)
@@ -267,17 +593,7 @@ export async function publishPlan(planId: string): Promise<ActionResponse<Teachi
 
   if (planError || !plan) return { ok: false, error: "Plan no encontrado" };
 
-  // Check ownership or org_manager
-  const { data: membership } = await supabase
-    .from("organization_memberships")
-    .select("role_in_org, organization_id")
-    .eq("profile_id", user.id)
-    .eq("organization_id", plan.organization_id)
-    .eq("is_active", true)
-    .single();
-
-  if (!membership) return { ok: false, error: "No tienes permiso para modificar esta programación" };
-  if (plan.owner_profile_id !== user.id && membership.role_in_org !== "org_manager") {
+  if (plan.owner_profile_id !== user.id) {
     return { ok: false, error: "No tienes permiso para publicar esta programación" };
   }
 
@@ -317,17 +633,7 @@ export async function unpublishPlan(planId: string): Promise<ActionResponse<Teac
 
   if (planError || !plan) return { ok: false, error: "Plan no encontrado" };
 
-  // Check ownership or org_manager
-  const { data: membership } = await supabase
-    .from("organization_memberships")
-    .select("role_in_org, organization_id")
-    .eq("profile_id", user.id)
-    .eq("organization_id", plan.organization_id)
-    .eq("is_active", true)
-    .single();
-
-  if (!membership) return { ok: false, error: "No tienes permiso para modificar esta programación" };
-  if (plan.owner_profile_id !== user.id && membership.role_in_org !== "org_manager") {
+  if (plan.owner_profile_id !== user.id) {
     return { ok: false, error: "No tienes permiso para despublicar esta programación" };
   }
 
@@ -380,6 +686,17 @@ export async function updatePlanRAConfig(
 
 export async function deletePlan(planId: string): Promise<ActionResponse> {
   const supabase = await createClient();
+  const { data: existingPlan } = await supabase
+    .from("teaching_plans")
+    .select("owner_profile_id")
+    .eq("id", planId)
+    .single();
+
+  if (!existingPlan) return { ok: false, error: "Programación no encontrada" };
+  if (!(await canCurrentUserEditPlan(supabase, existingPlan))) {
+    return { ok: false, error: "Acceso denegado: esta programación solo la puede eliminar su creador." };
+  }
+
   const { error } = await supabase.from("teaching_plans").delete().eq("id", planId);
   if (error) return { ok: false, error: `Error al eliminar: ${error.message}` };
   revalidatePath("/plans");

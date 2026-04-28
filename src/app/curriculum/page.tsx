@@ -4,14 +4,29 @@ import { buttonVariants } from "@/components/ui/button-variants";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { Plus, FileText, Globe, Lock, AlertCircle } from "lucide-react";
+import { Plus, FileText, Globe, Lock, AlertCircle, Search } from "lucide-react";
 
 export const metadata = {
   title: "Currículos - Program Planner",
   description: "Gestiona los borradores y plantillas curriculares de tu organización.",
 };
 
-export default async function CurriculumPage() {
+const CURRICULUM_TITLE_MAX_LENGTH = 34;
+
+function truncateCurriculumTitle(title: string): string {
+  if (title.length <= CURRICULUM_TITLE_MAX_LENGTH) return title;
+  return `${title.slice(0, CURRICULUM_TITLE_MAX_LENGTH).trimEnd()}…`;
+}
+
+interface CurriculumPageProps {
+  readonly searchParams?: Promise<{
+    q?: string;
+    owner?: string;
+  }>;
+}
+
+export default async function CurriculumPage({ searchParams }: CurriculumPageProps) {
+  const filters = (await searchParams) ?? {};
   // Ensure the user has an organization to work on (auto-create if empty during Phase 1.5)
   await ensureUserHasOrganization();
   
@@ -39,6 +54,16 @@ export default async function CurriculumPage() {
   }
 
   const templates = result.data;
+  const query = filters.q?.trim().toLowerCase() ?? "";
+  const ownerFilter = filters.owner?.trim().toLowerCase() ?? "";
+  const ownerOptions = Array.from(new Set(templates.map((template) => template.creator_name).filter(Boolean))) as string[];
+  const filteredTemplates = templates.filter((template) => {
+    const matchesQuery = !query || [template.module_name, template.creator_name].some((value) =>
+      value?.toLowerCase().includes(query)
+    );
+    const matchesOwner = !ownerFilter || (template.creator_name ?? "").toLowerCase() === ownerFilter;
+    return matchesQuery && matchesOwner;
+  });
 
   return (
     <div className="app-content">
@@ -56,6 +81,33 @@ export default async function CurriculumPage() {
           <Plus className="h-4 w-4" /> Nuevo Currículo
         </Link>
       </div>
+
+      <form className="mb-6 grid gap-3 rounded-xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/40 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto]">
+        <label className="relative block">
+          <span className="sr-only">Buscar currículos</span>
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <input
+            type="text"
+            name="q"
+            defaultValue={filters.q ?? ""}
+            placeholder="Buscar por nombre o dueño"
+            className="flex h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+          />
+        </label>
+        <select
+          name="owner"
+          defaultValue={filters.owner ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los dueños</option>
+          {ownerOptions.map((owner) => (
+            <option key={owner} value={owner}>{owner}</option>
+          ))}
+        </select>
+        <button className={buttonVariants({ variant: "outline" })} type="submit">
+          Filtrar
+        </button>
+      </form>
 
       {templates.length === 0 ? (
         <Card className="bg-zinc-50/50 border-dashed dark:bg-zinc-900/20">
@@ -75,9 +127,15 @@ export default async function CurriculumPage() {
             </Link>
           </CardContent>
         </Card>
+      ) : filteredTemplates.length === 0 ? (
+        <Card className="bg-zinc-50/50 border-dashed dark:bg-zinc-900/20">
+          <CardContent className="py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">
+            No hay currículos que coincidan con los filtros actuales.
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {templates.map((template) => {
+          {filteredTemplates.map((template) => {
             const isPublished = template.status === 'published';
             const isDeprecated = template.status === 'deprecated';
             
@@ -98,33 +156,38 @@ export default async function CurriculumPage() {
             return (
               <Card key={template.id} className="hover:shadow-md transition-shadow group overflow-hidden border-zinc-200 dark:border-zinc-800">
                 <div className={cn("h-1 w-full", statusColor)} />
-                <CardHeader className="pb-2">
+                <CardHeader className="space-y-2 pb-1">
                   <div className="flex justify-between items-start">
                     <BadgeLocal 
                       label={label}
                       variant={badgeVariant}
                     />
                     <div className="flex gap-2 text-zinc-400">
-                      {template.visibility_scope === 'organization' && <Globe className="h-4 w-4" aria-label="Ámbito: Organización" />}
+                      {template.visibility_scope === 'organization' && <Globe className="h-4 w-4" aria-label="Ámbito: Público" />}
                       {template.visibility_scope === 'private' && <Lock className="h-4 w-4" aria-label="Ámbito: Privado" />}
                     </div>
                   </div>
-                  <CardTitle className="mt-2 text-xl tracking-tight text-zinc-900 dark:text-zinc-50">
-                    {template.module_name}
+                  <CardTitle className="text-base font-semibold tracking-tight leading-snug text-zinc-900 dark:text-zinc-50 md:text-lg" title={template.module_name}>
+                    {truncateCurriculumTitle(template.module_name)}
                   </CardTitle>
                   <CardDescription className="font-mono text-zinc-500 dark:text-zinc-400">
                     {template.module_code} • {template.academic_year}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex justify-between items-center text-sm pt-2">
-                    <span className="text-zinc-500 dark:text-zinc-400">Versión: <span className="font-semibold">{template.version}</span></span>
-                    <Link 
-                      href={`/curriculum/${template.id}`} 
-                      className={buttonVariants({ variant: "ghost", size: "sm" })}
-                    >
-                      Ver detalles
-                    </Link>
+                  <div className="space-y-3 text-sm pt-1">
+                    <div className="space-y-1 text-xs text-zinc-500 dark:text-zinc-400">
+                      <p>Versión: <span className="font-semibold">{template.version}</span></p>
+                      <p>Creado por: <span className="font-medium text-zinc-700 dark:text-zinc-300">{template.creator_name || "Desconocido"}</span></p>
+                    </div>
+                    <div className="flex justify-end">
+                      <Link 
+                        href={`/curriculum/${template.id}`} 
+                        className={buttonVariants({ variant: "ghost", size: "sm" })}
+                      >
+                        Ver detalles
+                      </Link>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

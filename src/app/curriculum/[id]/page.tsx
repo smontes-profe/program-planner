@@ -9,9 +9,10 @@ import { DeleteCurriculumButton } from "./_components/DeleteCurriculumButton";
 import { CurriculumSortableList } from "./_components/CurriculumSortableList";
 import { TemplateHoursEditor } from "./_components/TemplateHoursEditor";
 import Link from "next/link";
-import { MoveLeft, Edit } from "lucide-react";
+import { MoveLeft, Edit, Eye } from "lucide-react";
 import { notFound } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { createAdminClient } from "@/lib/supabase";
 
 interface TemplatePageProps {
   readonly params: Promise<{ id: string }>;
@@ -20,6 +21,8 @@ interface TemplatePageProps {
 export default async function TemplateDetailsPage({ params }: TemplatePageProps) {
   const { id } = await params;
   const supabase = await createClient();
+  const adminClient = createAdminClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
   const { data: template, error } = await supabase
     .from("curriculum_templates")
@@ -48,6 +51,13 @@ export default async function TemplateDetailsPage({ params }: TemplatePageProps)
   }
 
   const isDraft = template.status === 'draft';
+  const isOwner = Boolean(user && template.created_by_profile_id === user.id);
+  const canEdit = isOwner;
+  const { data: owner } = await adminClient
+    .from("profiles")
+    .select("full_name")
+    .eq("id", template.created_by_profile_id)
+    .maybeSingle();
 
   let badgeVariant: 'success' | 'warning' | 'neutral' = 'neutral';
   let badgeLabel = 'Borrador';
@@ -72,14 +82,23 @@ export default async function TemplateDetailsPage({ params }: TemplatePageProps)
             Volver
           </Link>
           <div className="flex gap-2">
-            <Link 
-              href={`/curriculum/${id}/edit`} 
-              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "inline-flex items-center")}
-            >
-              <Edit className="mr-2 h-4 w-4" /> Editar Datos
-            </Link>
-            {isDraft && <PublishButton templateId={id} />}
-            <DeleteCurriculumButton templateId={id} />
+            {canEdit ? (
+              <>
+                <Link 
+                  href={`/curriculum/${id}/edit`} 
+                  className={cn(buttonVariants({ variant: "outline", size: "sm" }), "inline-flex items-center")}
+                >
+                  <Edit className="mr-2 h-4 w-4" /> Editar Datos
+                </Link>
+                {isDraft && <PublishButton templateId={id} />}
+                <DeleteCurriculumButton templateId={id} />
+              </>
+            ) : (
+              <Badge variant="outline" className="gap-1">
+                <Eye className="h-3.5 w-3.5" />
+                Solo lectura
+              </Badge>
+            )}
           </div>
         </div>
 
@@ -101,7 +120,9 @@ export default async function TemplateDetailsPage({ params }: TemplatePageProps)
                 v{template.version}
               </span>
               <span>•</span>
-              <TemplateHoursEditor templateId={id} initialHours={template.hours_total || 0} />
+              {owner?.full_name ? <span>Creado por {owner.full_name}</span> : null}
+              <span>•</span>
+              <TemplateHoursEditor templateId={id} initialHours={template.hours_total || 0} readOnly={!canEdit} />
             </div>
           </div>
           <div className="flex items-center gap-3 self-end md:self-center">
@@ -115,18 +136,20 @@ export default async function TemplateDetailsPage({ params }: TemplatePageProps)
           <section className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Resultados de Aprendizaje (RA)</h2>
-              <div className="flex items-center gap-2">
-                <BulkAddRAButton templateId={id} />
-                <AddRAButton templateId={id} />
-              </div>
+              {canEdit ? (
+                <div className="flex items-center gap-2">
+                  <BulkAddRAButton templateId={id} />
+                  <AddRAButton templateId={id} />
+                </div>
+              ) : null}
             </div>
 
             {template.ras && template.ras.length > 0 ? (
-               <CurriculumSortableList template={template} isDraft={isDraft} />
+               <CurriculumSortableList template={template} isDraft={isDraft} canEdit={canEdit} />
             ) : (
                <Card className="bg-zinc-50/50 border-dashed border-2 dark:bg-zinc-900/20 py-12 flex flex-col items-center justify-center border-zinc-200 dark:border-zinc-800 text-center">
                   <p className="text-zinc-500 mb-4 font-medium">No hay RAs definidos en este currículo.</p>
-                  <AddRAButton templateId={id} />
+                  {canEdit ? <AddRAButton templateId={id} /> : null}
                </Card>
             )}
           </section>

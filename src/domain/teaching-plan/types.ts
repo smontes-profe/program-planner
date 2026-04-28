@@ -18,6 +18,10 @@ export interface TeachingPlan {
   ce_weight_auto: boolean;
   imported_at: string | null;
   created_at: string;
+  owner_name?: string | null;
+  source_template_name?: string | null;
+  is_owner?: boolean;
+  can_edit?: boolean;
 }
 
 export interface PlanRA {

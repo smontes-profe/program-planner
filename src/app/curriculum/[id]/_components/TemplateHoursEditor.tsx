@@ -10,9 +10,10 @@ import { useRouter } from "next/navigation";
 interface TemplateHoursEditorProps {
   readonly templateId: string;
   readonly initialHours: number;
+  readonly readOnly?: boolean;
 }
 
-export function TemplateHoursEditor({ templateId, initialHours }: TemplateHoursEditorProps) {
+export function TemplateHoursEditor({ templateId, initialHours, readOnly = false }: TemplateHoursEditorProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [hours, setHours] = useState(initialHours);
@@ -61,16 +62,25 @@ export function TemplateHoursEditor({ templateId, initialHours }: TemplateHoursE
   }
 
   return (
-    <button 
-      type="button"
-      className="flex items-center gap-1.5 group cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 px-2 py-0.5 rounded transition-colors" 
-      onClick={() => setIsEditing(true)}
-    >
-      <Clock className="h-3.5 w-3.5 text-zinc-400" />
-      <span className="text-zinc-600 dark:text-zinc-400 font-bold text-sm">
-        {initialHours}h
+    readOnly ? (
+      <span className="flex items-center gap-1.5 px-2 py-0.5">
+        <Clock className="h-3.5 w-3.5 text-zinc-400" />
+        <span className="text-zinc-600 dark:text-zinc-400 font-bold text-sm">
+          {initialHours}h
+        </span>
       </span>
-      <Edit2 className="h-3 w-3 text-zinc-400 opacity-0 group-hover:opacity-100 transition-all transform group-hover:scale-110" />
-    </button>
+    ) : (
+      <button 
+        type="button"
+        className="flex items-center gap-1.5 group cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800 px-2 py-0.5 rounded transition-colors" 
+        onClick={() => setIsEditing(true)}
+      >
+        <Clock className="h-3.5 w-3.5 text-zinc-400" />
+        <span className="text-zinc-600 dark:text-zinc-400 font-bold text-sm">
+          {initialHours}h
+        </span>
+        <Edit2 className="h-3 w-3 text-zinc-400 opacity-0 group-hover:opacity-100 transition-all transform group-hover:scale-110" />
+      </button>
+    )
   );
 }

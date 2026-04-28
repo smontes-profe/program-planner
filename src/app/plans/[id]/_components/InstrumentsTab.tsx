@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 
 interface InstrumentsTabProps {
   readonly plan: TeachingPlanFull;
+  readonly readOnly?: boolean;
 }
 
 const INSTRUMENT_TYPES: { value: InstrumentType; label: string }[] = ([
@@ -612,7 +613,7 @@ function InstrumentForm({ plan, initialData, onSubmit, onCancel, isPending, erro
   )
 }
 
-export function InstrumentsTab({ plan }: InstrumentsTabProps) {
+export function InstrumentsTab({ plan, readOnly = false }: InstrumentsTabProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [editingInstrument, setEditingInstrument] = useState<PlanInstrument | null>(null);
@@ -651,11 +652,13 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
   };
 
   const handleTypeChange = async (instrumentId: string, newType: string) => {
+    if (readOnly) return;
     const res = await updatePlanInstrument(plan.id, instrumentId, { type: newType as InstrumentType });
     if (res.ok) router.refresh();
   };
 
   const handleDelete = async (instrument: PlanInstrument) => {
+    if (readOnly) return;
     if (!confirm(`¿Eliminar el instrumento "${instrument.name}"?`)) return;
     setIsPending(true);
     const res = await deletePlanInstrument(plan.id, instrument.id);
@@ -678,11 +681,13 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
           </div>
           
           <Sheet open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditingInstrument(null); setError(""); } }}>
-            <SheetTrigger>
-              <div className="flex shrink-0 items-center justify-center rounded-lg border border-border bg-background h-8 gap-1.5 px-2.5 text-sm font-medium hover:bg-muted transition-colors cursor-pointer">
-                <Plus className="h-4 w-4" /> Añadir Instrumento
-              </div>
-            </SheetTrigger>
+            {!readOnly ? (
+              <SheetTrigger>
+                <div className="flex shrink-0 items-center justify-center rounded-lg border border-border bg-background h-8 gap-1.5 px-2.5 text-sm font-medium hover:bg-muted transition-colors cursor-pointer">
+                  <Plus className="h-4 w-4" /> Añadir Instrumento
+                </div>
+              </SheetTrigger>
+            ) : null}
             <SheetContent side="right" className="bg-white dark:bg-zinc-950 w-full sm:max-w-3xl">
               <SheetHeader>
                 <SheetTitle>{editingInstrument ? "Editar Instrumento" : "Nuevo Instrumento"}</SheetTitle>
@@ -787,16 +792,22 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
                         </div>
                       </TableCell>
                       <TableCell className={COLUMN_SEPARATOR_CLASS}>
-                        <Select value={inst.type} onValueChange={(v) => v && handleTypeChange(inst.id, v)}>
-                          <SelectTrigger className="h-6 w-auto min-w-[90px] border-0 bg-transparent shadow-none px-1 py-0 text-[11px] font-medium focus:ring-0 focus:outline-none">
-                            <SelectValue>{getInstrumentTypeLabel(inst.type)}</SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {INSTRUMENT_TYPES.map(t => (
-                              <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        {readOnly ? (
+                          <span className="px-1 text-[11px] font-medium text-zinc-600 dark:text-zinc-300">
+                            {getInstrumentTypeLabel(inst.type)}
+                          </span>
+                        ) : (
+                          <Select value={inst.type} onValueChange={(v) => v && handleTypeChange(inst.id, v)}>
+                            <SelectTrigger className="h-6 w-auto min-w-[90px] border-0 bg-transparent shadow-none px-1 py-0 text-[11px] font-medium focus:ring-0 focus:outline-none">
+                              <SelectValue>{getInstrumentTypeLabel(inst.type)}</SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {INSTRUMENT_TYPES.map(t => (
+                                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
                       </TableCell>
                       <TableCell className={cn("max-w-[100px] min-w-0", COLUMN_SEPARATOR_CLASS)}>
                         <div className="flex flex-wrap gap-1">
@@ -863,14 +874,16 @@ export function InstrumentsTab({ plan }: InstrumentsTabProps) {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900" onClick={() => handleEdit(inst)}>
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-red-600" onClick={() => handleDelete(inst)} disabled={isPending}>
-                            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                          </Button>
-                        </div>
+                        {!readOnly ? (
+                          <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900" onClick={() => handleEdit(inst)}>
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-red-600" onClick={() => handleDelete(inst)} disabled={isPending}>
+                              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                            </Button>
+                          </div>
+                        ) : null}
                       </TableCell>
                     </TableRow>
                   );

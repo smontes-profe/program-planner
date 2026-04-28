@@ -187,6 +187,8 @@ Business rules:
 
 - Plan mutation only affects the current plan copy.
 - Import/fork creates a fully independent graph of entities.
+- A published teaching plan with visibility `organization` is readable by same-organization members, but remains editable only by its creator.
+- A published curriculum template with visibility `organization` is readable by same-organization members, but remains editable only by its creator.
 - `draft`: plan is being edited. Not visible from the Evaluations module.
 - `published`: plan is available as a base for Evaluations. Can still be edited without reverting to `draft`.
 - Status transitions: `draft ↔ published` (bidirectional, no intermediate states).
@@ -348,10 +350,12 @@ Visibility scopes:
 
 - `private`: only the creator.
 - `organization`: same-organization members can read/import when published; drafts are creator-only.
+- Shared published curricula and teaching plans open in full detail for other organization members, but always in read-only mode.
 
 Import/fork behavior:
 
 - Deep copy related entities (`RA`, `CE`, `UT`, mappings, instruments if selected).
+- Teaching plans can also be cloned from another visible teaching plan, creating a new independent draft owned by the cloning teacher.
 - Persist lineage metadata:
   - `source_plan_id`
   - `source_template_id`

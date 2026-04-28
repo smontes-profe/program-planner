@@ -308,6 +308,25 @@ sequenceDiagram
     SA-->>UI: Updated metrics
 ```
 
+### 6.2b Clone shared teaching plan
+
+```mermaid
+sequenceDiagram
+    actor U as Teacher
+    participant UI as WebUI
+    participant SA as ServerAction
+    participant DB as PostgreSQL
+
+    U->>UI: Clone shared plan
+    UI->>SA: createPlanFromPlan(sourcePlanId)
+    SA->>DB: Validate read access to source plan
+    SA->>DB: Create new teaching_plan draft owned by current user
+    SA->>DB: Deep copy RA/CE, UT links, instruments and weights
+    SA->>DB: Save lineage metadata (source_plan_id, source_template_id, source_version)
+    DB-->>SA: New plan id
+    SA-->>UI: Redirect to cloned workspace
+```
+
 ### 6.3 Configure CE weight automation and instrument coverage
 
 1. Teacher opens the `Pesos` tab, flips the “Automatizar pesos de CEs” switch, and can expand each RA to see its CE list and enter the percentage share (validated to sum 100%). The system marks those RA → CE distributions as canonical for the plan.
@@ -373,6 +392,7 @@ sequenceDiagram
   - desktop: full editing workspace
   - tablet: stacked or two-column adaptive layouts
   - mobile: simplified layout with prioritized actions
+- Shared published curricula and teaching plans reuse the same detail routes as editable items, but switch to a read-only presentation with editing controls hidden.
 
 ## 10. Critical Non-Functional Requirements
 

@@ -24,7 +24,7 @@ interface CurriculumFormProps {
 
 const visibilityLabels: Record<"private" | "organization", string> = {
   private: "Privada (solo creador)",
-  organization: "Organización (mismo centro)",
+  organization: "Público",
 };
 
 export function CurriculumForm({ regions, organizations, templateId, initialData }: CurriculumFormProps) {
@@ -216,7 +216,7 @@ export function CurriculumForm({ regions, organizations, templateId, initialData
           </SelectTrigger>
         <SelectContent>
             <SelectItem value="private">Privada (solo creador)</SelectItem>
-            <SelectItem value="organization">Organización (mismo centro)</SelectItem>
+            <SelectItem value="organization">Público</SelectItem>
           </SelectContent>
         </Select>
       </div>

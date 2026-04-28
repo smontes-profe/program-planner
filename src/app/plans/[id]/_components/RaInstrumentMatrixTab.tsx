@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 
 interface RaInstrumentMatrixTabProps {
   readonly plan: TeachingPlanFull;
+  readonly readOnly?: boolean;
 }
 
 interface CoverageCellEditorProps {
@@ -21,6 +22,7 @@ interface CoverageCellEditorProps {
   readonly instrumentCode: string;
   readonly initialValue: number;
   readonly autoEnabled: boolean;
+  readonly readOnly?: boolean;
 }
 
 const COLUMN_SEPARATOR_CLASS = "border-r border-zinc-200 dark:border-zinc-800";
@@ -42,6 +44,7 @@ function CoverageCellEditor({
   instrumentCode,
   initialValue,
   autoEnabled,
+  readOnly = false,
 }: CoverageCellEditorProps) {
   const router = useRouter();
   const [value, setValue] = useState(formatCoverageValue(initialValue));
@@ -54,6 +57,7 @@ function CoverageCellEditor({
   }, [initialValue]);
 
   async function commitValue(nextValue: string) {
+    if (readOnly) return;
     const normalized = nextValue.replace(",", ".");
     const parsed = Number.parseFloat(normalized);
 
@@ -99,7 +103,7 @@ function CoverageCellEditor({
         step={0.01}
         inputMode="decimal"
         value={value}
-        disabled={isSaving}
+        disabled={isSaving || readOnly}
         aria-label={`Cobertura del RA ${raCode} en ${instrumentCode}`}
         aria-invalid={Boolean(error)}
         className={cn(
@@ -131,13 +135,15 @@ function CoverageCellEditor({
           {error}
         </span>
       ) : (
-        <span className="text-[9px] text-zinc-400">{isSaving ? "Guardando..." : autoEnabled ? "auto" : "manual"}</span>
+        <span className="text-[9px] text-zinc-400">
+          {isSaving ? "Guardando..." : readOnly ? "lectura" : autoEnabled ? "auto" : "manual"}
+        </span>
       )}
     </div>
   );
 }
 
-export function RaInstrumentMatrixTab({ plan }: RaInstrumentMatrixTabProps) {
+export function RaInstrumentMatrixTab({ plan, readOnly = false }: RaInstrumentMatrixTabProps) {
   const ras = plan.ras || [];
   const instruments = (plan.instruments || []).filter((i) => !i.is_pri_pmi);
 
@@ -279,6 +285,7 @@ export function RaInstrumentMatrixTab({ plan }: RaInstrumentMatrixTabProps) {
                             instrumentCode={inst.code}
                             initialValue={percent}
                             autoEnabled={Boolean(plan.ce_weight_auto) && Boolean(inst.ce_weight_auto)}
+                            readOnly={readOnly}
                           />
                         </td>
                       );
