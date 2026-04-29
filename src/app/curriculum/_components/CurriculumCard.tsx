@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Globe, Lock } from "lucide-react";
 
-const CURRICULUM_TITLE_MAX_LENGTH = 34;
+const CURRICULUM_TITLE_MAX_LENGTH = 28;
 
 function truncateCurriculumTitle(title: string): string {
   if (title.length <= CURRICULUM_TITLE_MAX_LENGTH) return title;

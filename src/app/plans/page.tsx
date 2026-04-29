@@ -6,7 +6,7 @@ import Link from "next/link";
 import { BookCopy, AlertCircle, Lock, Globe, Search } from "lucide-react";
 import { CreatePlanButton } from "./_components/CreatePlanButton";
 
-const PLAN_TITLE_MAX_LENGTH = 35;
+const PLAN_TITLE_MAX_LENGTH = 25;
 
 function truncatePlanTitle(title: string): string {
   if (title.length <= PLAN_TITLE_MAX_LENGTH) {

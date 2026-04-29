@@ -8,6 +8,15 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createAdminClient, createClient } from "@/lib/supabase";
 
+const EVALUATION_TITLE_MAX_LENGTH = 25;
+
+function truncateEvaluationTitle(title: string): string {
+  if (title.length <= EVALUATION_TITLE_MAX_LENGTH) {
+    return title;
+  }
+  return `${title.slice(0, EVALUATION_TITLE_MAX_LENGTH).trimEnd()}...`;
+}
+
 export const metadata = {
   title: "Evaluaciones - Program Planner",
   description: "Gestiona las evaluaciones de tus módulos y alumnos.",
@@ -221,8 +230,8 @@ export default async function EvaluationsPage({
                   <div className={cn("h-1 w-full", statusColors[ctx.status])} />
                   <CardHeader className="space-y-1 pb-2">
                     <div className="flex justify-between items-start">
-                      <CardTitle className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-                        {ctx.title}
+                      <CardTitle className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50" title={ctx.title}>
+                        {truncateEvaluationTitle(ctx.title)}
                       </CardTitle>
                       <div className="flex gap-2 shrink-0">
                         <span className={cn(
