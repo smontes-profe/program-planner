@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { BookCopy, AlertCircle, Lock, Globe, Search } from "lucide-react";
 import { CreatePlanButton } from "./_components/CreatePlanButton";
-import { ClonePlanButton } from "./_components/ClonePlanButton";
 
 const PLAN_TITLE_MAX_LENGTH = 35;
 
@@ -37,6 +36,7 @@ interface PlansPageProps {
 
 export default async function PlansPage({ searchParams }: PlansPageProps) {
   const filters = (await searchParams) ?? {};
+  
   const [plansResult, templatesResult] = await Promise.all([
     listPlans(),
     listPublishedTemplates(),
@@ -221,65 +221,42 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
             const statusLabel = isPublished ? "Publicada" : "Borrador";
 
             return (
-              <Card
-                key={plan.id}
-                className="hover:shadow-md transition-shadow group overflow-hidden border-zinc-200 dark:border-zinc-800"
-              >
-                <div className={cn("h-1 w-full", statusColor)} />
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <span className={cn(
-                      "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium",
-                      "bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
-                    )}>
-                      {statusLabel}
-                    </span>
-                    <div className="text-zinc-400">
-                      {plan.visibility_scope === "organization" && <Globe className="h-4 w-4" aria-label="Público" />}
-                      {plan.visibility_scope === "private" && <Lock className="h-4 w-4" aria-label="Privado" />}
-                    </div>
-                  </div>
-                  <CardTitle
-                    className="mt-2 text-base font-semibold tracking-tight leading-snug text-zinc-900 dark:text-zinc-50 md:text-lg wrap-break-word"
-                    title={plan.title}
-                  >
-                    {truncatePlanTitle(plan.title)}
-                  </CardTitle>
-                  <CardDescription className="font-mono text-zinc-500 dark:text-zinc-400">
-                    {plan.program_code ? `${plan.program_code} • ` : ''}
-                    {plan.program_course && plan.program_course !== 'NA' ? `${plan.program_course} • ` : ''}
-                    {plan.module_code} • {plan.academic_year}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 pt-2">
-                    <div className="space-y-1 text-xs text-zinc-500 dark:text-zinc-400">
-                      <p>Creada por: <span className="font-medium text-zinc-700 dark:text-zinc-300">{plan.owner_name || "Desconocido"}</span></p>
-                      <p>Currículo usado: <span className="font-medium text-zinc-700 dark:text-zinc-300">{plan.source_template_name || "No disponible"}</span></p>
-                    </div>
-                    <div className="flex items-center justify-between gap-2 text-sm">
-                      <span className="text-zinc-400 text-xs">{plan.region_code}</span>
-                      <div className="flex items-center gap-2">
-                        {!plan.is_owner ? (
-                          <ClonePlanButton
-                            sourcePlanId={plan.id}
-                            sourcePlanTitle={plan.title}
-                            academicYear={plan.academic_year}
-                            variant="ghost"
-                            size="sm"
-                          />
-                        ) : null}
-                        <Link
-                          href={`/plans/${plan.id}`}
-                          className={buttonVariants({ variant: "ghost", size: "sm" })}
-                        >
-                          Abrir
-                        </Link>
+              <Link key={plan.id} href={`/plans/${plan.id}`} className="block group">
+                <Card className="hover:shadow-md transition-shadow overflow-hidden border-zinc-200 dark:border-zinc-800 h-full">
+                  <div className={cn("h-1 w-full", statusColor)} />
+                  <CardHeader className="space-y-1 pb-2">
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="text-sm font-semibold tracking-tight leading-snug text-zinc-900 dark:text-zinc-50" title={plan.title}>
+                        {truncatePlanTitle(plan.title)}
+                      </CardTitle>
+                      <div className="flex gap-2 shrink-0">
+                        <span className={cn(
+                          "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium",
+                          "bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
+                        )}>
+                          {statusLabel}
+                        </span>
+                        {plan.visibility_scope === "organization" && <Globe className="h-4 w-4" aria-label="Público" />}
+                        {plan.visibility_scope === "private" && <Lock className="h-4 w-4" aria-label="Privado" />}
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    <CardDescription className="font-mono text-zinc-500 dark:text-zinc-400 text-xs">
+                      {plan.program_code ? `${plan.program_code} • ` : ''}
+                      {plan.program_course && plan.program_course !== 'NA' ? `${plan.program_course} • ` : ''}
+                      {plan.module_code} • {plan.academic_year}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {plan.is_owner ? (
+                        <p className="text-emerald-600 dark:text-emerald-400 font-medium">Creada por: Tú</p>
+                      ) : (
+                        <p>Creada por: <span className="font-medium text-zinc-700 dark:text-zinc-300">{plan.owner_name || "Desconocido"}</span></p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             );
           })}
         </div>

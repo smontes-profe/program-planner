@@ -1,13 +1,12 @@
-import { listEvaluationContexts, listPublishedPlans, createEvaluationContext, deleteEvaluationContext, linkTeachingPlan } from "@/domain/evaluation/actions";
+import { listEvaluationContexts, listPublishedPlans, createEvaluationContext, linkTeachingPlan } from "@/domain/evaluation/actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { BookOpen, AlertCircle, Users, CalendarDays, Trash2, Plus, Search } from "lucide-react";
+import { BookOpen, AlertCircle, CalendarDays, Plus, Search } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { DeleteContextButton } from "./_components/DeleteContextButton";
-import { createAdminClient } from "@/lib/supabase";
+import { createAdminClient, createClient } from "@/lib/supabase";
 
 export const metadata = {
   title: "Evaluaciones - Program Planner",
@@ -27,6 +26,12 @@ export default async function EvaluationsPage({
   }> 
 }) {
   const params = await searchParams;
+  
+  // Get current user info for creator highlighting
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const currentUserProfileId = user?.id;
+  
   const [contextsResult, plansResult] = await Promise.all([
     listEvaluationContexts(),
     listPublishedPlans(),
@@ -73,7 +78,6 @@ export default async function EvaluationsPage({
   const ownerFilter = params?.owner?.trim().toLowerCase() ?? "";
 
   const yearOptions = Array.from(new Set(enrichedContexts.map(c => c.academic_year).filter(Boolean))) as string[];
-  const statusOptions = ["draft", "active", "closed"];
   const moduleOptions = Array.from(new Set(
     enrichedContexts
       .flatMap(c => c.plan_ids || [])
@@ -212,59 +216,40 @@ export default async function EvaluationsPage({
             };
 
             return (
-              <Card
-                key={ctx.id}
-                className="hover:shadow-md transition-shadow group overflow-hidden border-zinc-200 dark:border-zinc-800"
-              >
-                <div className={cn("h-1 w-full", statusColors[ctx.status])} />
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <span className={cn(
-                      "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium",
-                      "bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
-                    )}>
-                      {statusLabels[ctx.status]}
-                    </span>
-                  </div>
-                  <CardTitle className="mt-2 text-xl tracking-tight text-zinc-900 dark:text-zinc-50">
-                    {ctx.title}
-                  </CardTitle>
-                  <CardDescription className="flex items-center gap-1 font-mono text-zinc-500 dark:text-zinc-400">
-                    <CalendarDays className="h-3.5 w-3.5" />
-                    {ctx.academic_year}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-4 text-sm text-zinc-400 mb-3">
-                    <span className="flex items-center gap-1">
-                      <BookOpen className="h-3.5 w-3.5" />
-                      {ctx.plan_count} módulo{ctx.plan_count !== 1 ? "s" : ""}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Users className="h-3.5 w-3.5" />
-                      {ctx.student_count} alumno{ctx.student_count !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                    <div className="flex justify-between items-center text-sm pt-2">
-                      <div className="flex gap-2">
-                        <Link
-                          href={`/evaluations/${ctx.id}`}
-                          className={cn(buttonVariants({ variant: "default", size: "sm" }), "bg-emerald-600 hover:bg-emerald-700 text-white")}
-                        >
-                          Abrir
-                        </Link>
-                        <Link
-                          href={`/evaluations/configurar/${ctx.id}`}
-                          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-zinc-900 dark:text-zinc-50")}
-                        >
-                          Configurar
-                        </Link>
+              <Link key={ctx.id} href={`/evaluations/${ctx.id}`} className="block group">
+                <Card className="hover:shadow-md transition-shadow overflow-hidden border-zinc-200 dark:border-zinc-800 h-full">
+                  <div className={cn("h-1 w-full", statusColors[ctx.status])} />
+                  <CardHeader className="space-y-1 pb-2">
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+                        {ctx.title}
+                      </CardTitle>
+                      <div className="flex gap-2 shrink-0">
+                        <span className={cn(
+                          "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium",
+                          "bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
+                        )}>
+                          {statusLabels[ctx.status]}
+                        </span>
                       </div>
-                      <DeleteContextButton contextId={ctx.id} />
+                    </div>
+                    <CardDescription className="font-mono text-zinc-500 dark:text-zinc-400 text-xs">
+                      <CalendarDays className="h-3.5 w-3.5 inline mr-1" />
+                      {ctx.academic_year}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {ctx.created_by_profile_id === currentUserProfileId ? (
+                        <p className="text-emerald-600 dark:text-emerald-400 font-medium">Creado por: Tú</p>
+                      ) : (
+                        <p>Creado por: <span className="font-medium text-zinc-700 dark:text-zinc-300">{ctx.creator_name || "Desconocido"}</span></p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
-              );
+              </Link>
+            );
             })}
         </div>
       )}
