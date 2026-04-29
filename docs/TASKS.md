@@ -37,17 +37,7 @@ Status legend:
 
 
 
-### Phase 9 - Futuro: Congelación de notas por trimestre (Opción B)
 
-> **Nota:** Esta tarea es distinta de los nuevos toggles de cierre global de T1/T2/T3 en 3.6.4. Aquí se mantiene la idea de congelación histórica avanzada (versionado completo de pesos y auditoría).
-
-- [P3] [ ] Definir concepto de "trimestre cerrado": las notas calculadas de un trimestre se congelan y no se ven afectadas por cambios futuros de pesos.
-- [P3] [ ] Mecanismo para que el profesor "cierre" un trimestre explícitamente.
-- [P3] [ ] El motor de notas debe usar dos conjuntos de pesos:
-  - Pesos vigentes al cierre del trimestre → para notas ya calculadas.
-  - Pesos actuales → para trimestres abiertos y futuras entradas de notas.
-- [P3] [ ] UI para mostrar qué pesos se usaron en cada trimestre y permitir revisar histórico.
-- [P3] [ ] Auditoría de cambios de pesos con fecha y responsable.
 
 ## Ongoing Quality Tasks
 
