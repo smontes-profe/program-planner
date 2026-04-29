@@ -1,7 +1,7 @@
 /**
  * Curriculum Template Status
  */
-export type CurriculumStatus = 'draft' | 'published' | 'deprecated';
+export type CurriculumStatus = 'draft' | 'published' | 'deprecated' | 'archived';
 
 /**
  * Source types for curriculum data

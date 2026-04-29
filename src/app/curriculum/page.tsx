@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Plus, FileText, Globe, Lock, AlertCircle, Search } from "lucide-react";
+import { createClient } from "@/lib/supabase";
 
 export const metadata = {
   title: "Currículos - Program Planner",
@@ -32,8 +33,13 @@ interface CurriculumPageProps {
 
 export default async function CurriculumPage({ searchParams }: CurriculumPageProps) {
   const filters = (await searchParams) ?? {};
-  // Ensure the user has an organization to work on (auto-create if empty during Phase 1.5)
+  // Ensure user has an organization to work on (auto-create if empty during Phase 1.5)
   await ensureUserHasOrganization();
+  
+  // Get current user info for creator highlighting
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const currentUserEmail = user?.email;
   
   const result = await listTemplates();
 
@@ -226,45 +232,40 @@ export default async function CurriculumPage({ searchParams }: CurriculumPagePro
             }
 
             return (
-              <Card key={template.id} className="hover:shadow-md transition-shadow group overflow-hidden border-zinc-200 dark:border-zinc-800">
-                <div className={cn("h-1 w-full", statusColor)} />
-                <CardHeader className="space-y-2 pb-1">
-                  <div className="flex justify-between items-start">
-                    <BadgeLocal 
-                      label={label}
-                      variant={badgeVariant}
-                    />
-                    <div className="flex gap-2 text-zinc-400">
-                      {template.visibility_scope === 'organization' && <Globe className="h-4 w-4" aria-label="Ámbito: Público" />}
-                      {template.visibility_scope === 'private' && <Lock className="h-4 w-4" aria-label="Ámbito: Privado" />}
+              <Link key={template.id} href={`/curriculum/${template.id}`} className="block group">
+                <Card className="hover:shadow-md transition-shadow overflow-hidden border-zinc-200 dark:border-zinc-800 h-full">
+                  <div className={cn("h-1 w-full", statusColor)} />
+                  <CardHeader className="space-y-1 pb-2">
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="text-sm font-semibold tracking-tight leading-snug text-zinc-900 dark:text-zinc-50" title={template.module_name}>
+                        {truncateCurriculumTitle(template.module_name)}
+                      </CardTitle>
+                      <div className="flex gap-2 shrink-0">
+                        <BadgeLocal 
+                          label={label}
+                          variant={badgeVariant}
+                        />
+                        {template.visibility_scope === 'organization' && <Globe className="h-4 w-4" aria-label="Ámbito: Público" />}
+                        {template.visibility_scope === 'private' && <Lock className="h-4 w-4" aria-label="Ámbito: Privado" />}
+                      </div>
                     </div>
-                  </div>
-                  <CardTitle className="text-base font-semibold tracking-tight leading-snug text-zinc-900 dark:text-zinc-50 md:text-lg" title={template.module_name}>
-                    {truncateCurriculumTitle(template.module_name)}
-                  </CardTitle>
-                  <CardDescription className="font-mono text-zinc-500 dark:text-zinc-400">
-                    {template.program_code ? `${template.program_code} • ` : ''}
-                    {template.program_course && template.program_course !== 'NA' ? `${template.program_course} • ` : ''}
-                    {template.module_code} • {template.academic_year}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 text-sm pt-1">
-                    <div className="space-y-1 text-xs text-zinc-500 dark:text-zinc-400">
-                      <p>Versión: <span className="font-semibold">{template.version}</span></p>
-                      <p>Creado por: <span className="font-medium text-zinc-700 dark:text-zinc-300">{template.creator_name || "Desconocido"}</span></p>
+                    <CardDescription className="font-mono text-zinc-500 dark:text-zinc-400 text-xs">
+                      {template.program_code ? `${template.program_code} • ` : ''}
+                      {template.program_course && template.program_course !== 'NA' ? `${template.program_course} • ` : ''}
+                      {template.module_code} • {template.academic_year}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {template.creator_email === currentUserEmail ? (
+                        <p className="text-emerald-600 dark:text-emerald-400 font-medium">Creado por: Tú</p>
+                      ) : (
+                        <p>Creado por: <span className="font-medium text-zinc-700 dark:text-zinc-300">{template.creator_name || "Desconocido"}</span></p>
+                      )}
                     </div>
-                    <div className="flex justify-end">
-                      <Link 
-                        href={`/curriculum/${template.id}`} 
-                        className={buttonVariants({ variant: "ghost", size: "sm" })}
-                      >
-                        Ver detalles
-                      </Link>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Link>
             );
           })}
         </div>

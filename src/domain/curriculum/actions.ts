@@ -395,6 +395,39 @@ export async function deleteTemplate(id: string): Promise<ActionResponse> {
 }
 
 /**
+ * Archive a template
+ */
+export async function archiveTemplate(id: string): Promise<ActionResponse> {
+  const supabase = await createClient();
+  const { data: template } = await supabase.from("curriculum_templates").select("organization_id").eq("id", id).single();
+  if (!template) return { ok: false, error: "Plantilla no encontrada" };
+
+  const { authorized, error } = await authorizeAction(supabase, 'write', template.organization_id, id);
+  if (!authorized) return { ok: false, error: error || "Sin autorización" };
+
+  // Check if any plan is using this template
+  const { count, error: countError } = await supabase
+    .from("teaching_plans")
+    .select("*", { count: "exact", head: true })
+    .eq("source_template_id", id)
+    .neq("status", "archived");
+
+  if (countError) return { ok: false, error: "Error al verificar dependencias del currículo" };
+  if (count && count > 0) return { ok: false, error: "No se puede archivar: Hay programaciones activas vinculadas a este currículo." };
+
+  const { error: dbError } = await supabase
+    .from("curriculum_templates")
+    .update({ status: 'archived' })
+    .eq("id", id);
+
+  if (dbError) return { ok: false, error: `Error en la base de datos: ${dbError.message}` };
+
+  revalidatePath("/curriculum");
+  revalidatePath(`/curriculum/${id}`);
+  return { ok: true, data: null };
+}
+
+/**
  * List templates for a user based on their organization and visibility
  */
 export async function listTemplates(): Promise<ActionResponse<CurriculumTemplate[]>> {
@@ -406,6 +439,7 @@ export async function listTemplates(): Promise<ActionResponse<CurriculumTemplate
   const { data, error } = await supabase
     .from("curriculum_templates")
     .select("*")
+    .neq("status", "archived")
     .order("created_at", { ascending: false });
 
   if (error) return { ok: false, error: error.message };
