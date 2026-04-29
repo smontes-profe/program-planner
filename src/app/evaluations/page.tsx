@@ -82,9 +82,7 @@ export default async function EvaluationsPage({
   // Extract filter options and apply filters
   const query = params?.q?.trim().toLowerCase() ?? "";
   const yearFilter = params?.year?.trim() ?? "";
-  const statusFilter = params?.status?.trim() ?? "";
   const moduleFilter = params?.module?.trim() ?? "";
-  const ownerFilter = params?.owner?.trim().toLowerCase() ?? "";
 
   const yearOptions = Array.from(new Set(enrichedContexts.map(c => c.academic_year).filter(Boolean))) as string[];
   const moduleOptions = Array.from(new Set(
@@ -93,19 +91,16 @@ export default async function EvaluationsPage({
       .map(planId => publishedPlans.find(p => p.id === planId)?.module_code)
       .filter(Boolean)
   )) as string[];
-  const ownerOptions = Array.from(new Set(enrichedContexts.map(c => c.creator_name).filter(Boolean))) as string[];
 
   const filteredContexts = enrichedContexts.filter(ctx => {
     const matchesQuery = !query || [ctx.title, ctx.creator_name].some(value =>
       value?.toLowerCase().includes(query)
     );
     const matchesYear = !yearFilter || ctx.academic_year === yearFilter;
-    const matchesStatus = !statusFilter || ctx.status === statusFilter;
     const matchesModule = !moduleFilter || (ctx.plan_ids || []).some(
       planId => publishedPlans.find(p => p.id === planId)?.module_code === moduleFilter
     );
-    const matchesOwner = !ownerFilter || (ctx.creator_name ?? "").toLowerCase() === ownerFilter;
-    return matchesQuery && matchesYear && matchesStatus && matchesModule && matchesOwner;
+    return matchesQuery && matchesYear && matchesModule;
   });
 
   return (
@@ -174,17 +169,7 @@ export default async function EvaluationsPage({
             <option key={module} value={module}>{module}</option>
           ))}
         </select>
-        <select
-          name="owner"
-          defaultValue={params?.owner ?? ""}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
-        >
-          <option value="">Todos los creadores</option>
-          {ownerOptions.map((owner) => (
-            <option key={owner} value={owner}>{owner}</option>
-          ))}
-        </select>
-        <button className={buttonVariants({ variant: "outline" })} type="submit">
+                <button className={buttonVariants({ variant: "outline" })} type="submit">
           Filtrar
         </button>
       </form>
@@ -213,34 +198,15 @@ export default async function EvaluationsPage({
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredContexts.map((ctx) => {
-            const statusColors = {
-              draft: "bg-zinc-300 dark:bg-zinc-700",
-              active: "bg-emerald-500",
-              closed: "bg-blue-500",
-            };
-            const statusLabels = {
-              draft: "Borrador",
-              active: "Activo",
-              closed: "Cerrado",
-            };
-
             return (
               <Link key={ctx.id} href={`/evaluations/${ctx.id}`} className="block group">
                 <Card className="hover:shadow-md transition-shadow overflow-hidden border-zinc-200 dark:border-zinc-800 h-full">
-                  <div className={cn("h-1 w-full", statusColors[ctx.status])} />
+                  <div className="h-1 w-full bg-zinc-300 dark:bg-zinc-700" />
                   <CardHeader className="space-y-1 pb-2">
                     <div className="flex justify-between items-start">
                       <CardTitle className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50" title={ctx.title}>
                         {truncateEvaluationTitle(ctx.title)}
                       </CardTitle>
-                      <div className="flex gap-2 shrink-0">
-                        <span className={cn(
-                          "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium",
-                          "bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
-                        )}>
-                          {statusLabels[ctx.status]}
-                        </span>
-                      </div>
                     </div>
                     <CardDescription className="font-mono text-zinc-500 dark:text-zinc-400 text-xs">
                       <CalendarDays className="h-3.5 w-3.5 inline mr-1" />

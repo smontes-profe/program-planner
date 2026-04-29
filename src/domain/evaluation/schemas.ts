@@ -12,7 +12,6 @@ export const createEvaluationContextSchema = z.object({
 export const updateEvaluationContextSchema = z.object({
   title: z.string().min(1).max(255).optional(),
   academic_year: z.string().regex(/^\d{4}\/\d{4}$/, "Formato: YYYY/YYYY (ej. 2026/2027)").optional(),
-  status: z.enum(["draft", "active", "closed"]).optional(),
 });
 
 export const linkModuleToContextSchema = z.object({

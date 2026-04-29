@@ -1,8 +1,7 @@
-import { getEvaluationContext, computeStudentGrades, listPublishedPlans, getScoresForContext } from "@/domain/evaluation/actions";
+import { getEvaluationContext, computeStudentGrades, getScoresForContext } from "@/domain/evaluation/actions";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { MoveLeft } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { EvalTabs } from "./_components/EvalTabs";
 import { getPlan } from "@/domain/teaching-plan/actions";
 import type { TeachingPlanFull } from "@/domain/teaching-plan/types";
@@ -29,19 +28,8 @@ export default async function EvalDetailPage({ params, searchParams }: EvalDetai
     plans: linkedPlans,
     scores: scoresResult.ok ? scoresResult.data : undefined,
   });
-  const publishedPlansResult = await listPublishedPlans();
-
-  const statusLabels = {
-    draft: "Borrador",
-    active: "Activo",
-    closed: "Cerrado",
-  };
-  const statusVariants = {
-    draft: "neutral" as const,
-    active: "success" as const,
-    closed: "neutral" as const,
-  };
-  const errorMessage = searchParams?.error ? decodeURIComponent(searchParams.error) : null;
+  
+    const errorMessage = searchParams?.error ? decodeURIComponent(searchParams.error) : null;
 
   return (
     <div className="app-content">
@@ -55,8 +43,7 @@ export default async function EvalDetailPage({ params, searchParams }: EvalDetai
             <MoveLeft className="mr-2 h-4 w-4" />
             Evaluaciones
           </Link>
-          <Badge variant={statusVariants[context.status]}>{statusLabels[context.status]}</Badge>
-        </div>
+                  </div>
 
         {/* Header */}
         <div className="border-b border-zinc-200 dark:border-zinc-800 pb-6">

@@ -20,11 +20,12 @@ Status legend:
 - [P0][x] Programaciones/Ras vs Instrumentos: Ahora mismo en la matriz solo aparecen los instrumentos que aportan algo a algún RA. Que aparezcan todos, aunque aun no aporten nada a ningún RA.
 - [P3][x] Los filtros de listas de Currículos y programaciones dejarlos en dos líneas. Ahora mismo intentando ocupase cortan los textos, y el botón de filtrar igualmente está en la segunda línea. Repartir todo mejor.
 - [P3][x] Pastillas de programaciones, currículos, evaluaciones: a veces, incluso truncando el nombre, no cabe bien y el indicador del estado (borrador/publicado) y el de público/privado, se salen de la pastilla. Que no ocurra eso. Que siempre estén alineados a la derecha, y truncar aun más caracteres del nombre si hace falta.
-- [P0][ ] Evaluaciones: Los campos ID, email deben ser únicos para los alumnos. Al insertar nuevo alumno, si ya existe algún alumno con mismo email o ID, que lance un mensaje de error y no permita insertarlo. 
+- [P0][x] Evaluaciones: Los campos ID, email deben ser únicos para los alumnos. Al insertar nuevo alumno, si ya existe algún alumno con mismo email o ID, que lance un mensaje de error y no permita insertarlo. 
+- [P1][x] Evaluaciones: Eliminar el estado (borrador/publicada). Eliminar visibilidad Publica/privada. Que un usuario solo pueda ver sus propias evaluaciones. Eliminar el filtro del creador. Ajustar todos los elementos visuales acorde a todo esto. 
+- [P2][ ] Listas de currículos, programaciones: Añadir un desplegable "Ordenar por.." que permita ordenar por nombre ASC/DESC, fecha ASC/DESC.
+- [P2][ ] Evaluaciones: Si un trimestre está cerrado, no se pueden tocar las notas ajustadas de esos trimestres.
 - [P3][ ] Programaciones: en la pastilla de cada programación, el indicador de "Publicada"/"Draft" cuando esté publciada, debería salir en verde (como para los currículos).
-- [P1][ ] Evaluaciones: Eliminar el estado (borrador/publicada). Eliminar visibilidad Publica/privada. Que un usuario solo pueda ver sus propias evaluaciones. Eliminar el filtro del creador. Ajustar todos los elementos visuales acorde a todo esto. 
-- [P3][ ] Listas de currículos, programaciones: Añadir un desplegable "Ordenar por.." que permita ordenar por nombre ASC/DESC, fecha ASC/DESC.
-- [P3][ ] Evaluaciones: Si un trimestre está cerrado, no se pueden tocar las notas ajustadas de esos trimestres.
+- [P3][ ] Evaluaciones: en la pastilla de cada evaluación, mover el creador en la misma fila de la fecha, un poco a su derecha (truncar el nombre del creador si se saliera de la pastilla). Recortar el tamaño vertical de las pastillas al no necesitar tanto ya. Al no tener estados (publicada, borrador), la franja horizontal, que salga verde en lugar de gris. 
 
 
 ## Phase 10 - Cambio de normativa: 2 evaluaciones por año en lugar de 3

@@ -65,17 +65,17 @@ export async function listEvaluationContexts(): Promise<ActionResponse<Evaluatio
       student_count:evaluation_students!evaluation_students_context_id_fkey(count)
     `)
     .is("archived_at", null)
+    .eq("created_by_profile_id", user.id)
     .order("created_at", { ascending: false });
 
   if (error) return { ok: false, error: error.message };
 
-  const contexts: EvaluationContext[] = (data || []).map((ctx: any) => ({
+  const contexts: EvaluationContext[] = (data || []).map((ctx: any) =>({
     id: ctx.id,
     organization_id: ctx.organization_id,
     created_by_profile_id: ctx.created_by_profile_id,
     academic_year: ctx.academic_year,
     title: ctx.title,
-    status: ctx.status,
     created_at: ctx.created_at,
     plan_ids: ctx.modules?.map((m: any) => m.teaching_plan_id) || [],
     plan_count: ctx.modules?.length || 0,
