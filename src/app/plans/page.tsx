@@ -261,7 +261,9 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
                       <div className="flex gap-2 shrink-0">
                         <span className={cn(
                           "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium",
-                          "bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
+                          isPublished 
+                            ? "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-700"
+                            : "bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
                         )}>
                           {statusLabel}
                         </span>
