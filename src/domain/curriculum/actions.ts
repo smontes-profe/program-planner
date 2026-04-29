@@ -395,35 +395,55 @@ export async function deleteTemplate(id: string): Promise<ActionResponse> {
 }
 
 /**
- * Archive a template
+ * Archive a curriculum template if it has no associated teaching plans
  */
-export async function archiveTemplate(id: string): Promise<ActionResponse> {
+export async function archiveTemplate(templateId: string): Promise<ActionResponse<any>> {
   const supabase = await createClient();
-  const { data: template } = await supabase.from("curriculum_templates").select("organization_id").eq("id", id).single();
-  if (!template) return { ok: false, error: "Plantilla no encontrada" };
-
-  const { authorized, error } = await authorizeAction(supabase, 'write', template.organization_id, id);
-  if (!authorized) return { ok: false, error: error || "Sin autorización" };
-
-  // Check if any plan is using this template
-  const { count, error: countError } = await supabase
-    .from("teaching_plans")
-    .select("*", { count: "exact", head: true })
-    .eq("source_template_id", id)
-    .neq("status", "archived");
-
-  if (countError) return { ok: false, error: "Error al verificar dependencias del currículo" };
-  if (count && count > 0) return { ok: false, error: "No se puede archivar: Hay programaciones activas vinculadas a este currículo." };
-
-  const { error: dbError } = await supabase
+  
+  // Check if template exists and user has permission
+  const { data: template, error: templateError } = await supabase
     .from("curriculum_templates")
-    .update({ status: 'archived' })
-    .eq("id", id);
-
-  if (dbError) return { ok: false, error: `Error en la base de datos: ${dbError.message}` };
+    .select("id, organization_id, created_by_profile_id")
+    .eq("id", templateId)
+    .single();
+    
+  if (templateError || !template) {
+    return { ok: false, error: "Currículo no encontrado" };
+  }
+  
+  // Check user permissions
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || template.created_by_profile_id !== user.id) {
+    return { ok: false, error: "No tienes permiso para archivar este currículo" };
+  }
+  
+  // Check if there are any teaching plans using this template
+  const { data: plans, error: plansError } = await supabase
+    .from("teaching_plans")
+    .select("id")
+    .eq("source_template_id", templateId)
+    .limit(1);
+    
+  if (plansError) {
+    return { ok: false, error: "Error al verificar programaciones asociadas" };
+  }
+  
+  if (plans && plans.length > 0) {
+    return { ok: false, error: "No se puede archivar un currículo que tiene programaciones asociadas" };
+  }
+  
+  // Archive the template
+  const { error: archiveError } = await supabase
+    .from("curriculum_templates")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", templateId);
+    
+  if (archiveError) {
+    return { ok: false, error: `Error al archivar currículo: ${archiveError.message}` };
+  }
 
   revalidatePath("/curriculum");
-  revalidatePath(`/curriculum/${id}`);
+  revalidatePath(`/curriculum/${templateId}`);
   return { ok: true, data: null };
 }
 
@@ -435,11 +455,11 @@ export async function listTemplates(): Promise<ActionResponse<CurriculumTemplate
   const userId = await getCurrentUserId(supabase);
   if (!userId) return { ok: false, error: "Usuario no autenticado" };
 
-  // Use the database RLS via the standard query
+  // Use the database RLS via the standard query, excluding archived templates
   const { data, error } = await supabase
     .from("curriculum_templates")
     .select("*")
-    .neq("status", "archived")
+    .is("archived_at", null)
     .order("created_at", { ascending: false });
 
   if (error) return { ok: false, error: error.message };

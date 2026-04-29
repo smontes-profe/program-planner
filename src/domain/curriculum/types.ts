@@ -33,8 +33,10 @@ export interface CurriculumTemplate {
   program_code?: string | null;
   program_level?: 'FP Básica' | 'Grado Medio' | 'Grado Superior' | 'Máster' | null;
   program_course?: 'Primero' | 'Segundo' | 'NA' | null;
+  archived_at?: string | null;
   created_at: string;
   creator_name?: string | null;
+  creator_email?: string | null;
   is_owner?: boolean;
   can_edit?: boolean;
 }

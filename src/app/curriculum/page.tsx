@@ -4,8 +4,9 @@ import { buttonVariants } from "@/components/ui/button-variants";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { Plus, FileText, Globe, Lock, AlertCircle, Search } from "lucide-react";
+import { Plus, FileText, Search, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { CurriculumCard } from "./_components/CurriculumCard";
 
 export const metadata = {
   title: "Currículos - Program Planner",
@@ -30,6 +31,7 @@ interface CurriculumPageProps {
     course?: string;
   }>;
 }
+
 
 export default async function CurriculumPage({ searchParams }: CurriculumPageProps) {
   const filters = (await searchParams) ?? {};
@@ -213,61 +215,13 @@ export default async function CurriculumPage({ searchParams }: CurriculumPagePro
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredTemplates.map((template) => {
-            const isPublished = template.status === 'published';
-            const isDeprecated = template.status === 'deprecated';
-            
-            let statusColor = "bg-zinc-300 dark:bg-zinc-700";
-            let badgeVariant: 'success' | 'warning' | 'neutral' = 'neutral';
-            let label = 'Borrador';
-
-            if (isPublished) {
-              statusColor = "bg-emerald-500";
-              badgeVariant = 'success';
-              label = 'Publicado';
-            } else if (isDeprecated) {
-              statusColor = "bg-amber-500";
-              badgeVariant = 'warning';
-              label = 'Depreciado';
-            }
-
-            return (
-              <Link key={template.id} href={`/curriculum/${template.id}`} className="block group">
-                <Card className="hover:shadow-md transition-shadow overflow-hidden border-zinc-200 dark:border-zinc-800 h-full">
-                  <div className={cn("h-1 w-full", statusColor)} />
-                  <CardHeader className="space-y-1 pb-2">
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-sm font-semibold tracking-tight leading-snug text-zinc-900 dark:text-zinc-50" title={template.module_name}>
-                        {truncateCurriculumTitle(template.module_name)}
-                      </CardTitle>
-                      <div className="flex gap-2 shrink-0">
-                        <BadgeLocal 
-                          label={label}
-                          variant={badgeVariant}
-                        />
-                        {template.visibility_scope === 'organization' && <Globe className="h-4 w-4" aria-label="Ámbito: Público" />}
-                        {template.visibility_scope === 'private' && <Lock className="h-4 w-4" aria-label="Ámbito: Privado" />}
-                      </div>
-                    </div>
-                    <CardDescription className="font-mono text-zinc-500 dark:text-zinc-400 text-xs">
-                      {template.program_code ? `${template.program_code} • ` : ''}
-                      {template.program_course && template.program_course !== 'NA' ? `${template.program_course} • ` : ''}
-                      {template.module_code} • {template.academic_year}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                      {template.creator_email === currentUserEmail ? (
-                        <p className="text-emerald-600 dark:text-emerald-400 font-medium">Creado por: Tú</p>
-                      ) : (
-                        <p>Creado por: <span className="font-medium text-zinc-700 dark:text-zinc-300">{template.creator_name || "Desconocido"}</span></p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
+          {filteredTemplates.map((template) => (
+            <CurriculumCard 
+              key={template.id} 
+              template={template} 
+              currentUserEmail={currentUserEmail}
+            />
+          ))}
         </div>
       )}
     </div>
