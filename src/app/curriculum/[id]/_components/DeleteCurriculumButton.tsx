@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { deleteTemplate } from "@/domain/curriculum/actions";
+import { archiveTemplate } from "@/domain/curriculum/actions";
 import { Button } from "@/components/ui/button";
-import { Trash2, Loader2 } from "lucide-react";
+import { Archive, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface DeleteCurriculumButtonProps {
@@ -15,9 +15,9 @@ export function DeleteCurriculumButton({ templateId }: DeleteCurriculumButtonPro
   const router = useRouter();
 
   async function handleDelete() {
-    if (!confirm("¿Seguro que quieres eliminar este currículo? Esta acción no se puede deshacer y fallará si hay programaciones vinculadas directamente.")) return;
+    if (!confirm("¿Seguro que quieres archivar este currículo? Esta acción lo ocultará de la lista pero conservará los datos. No se puede archivar si tiene programaciones asociadas.")) return;
     setIsPending(true);
-    const res = await deleteTemplate(templateId);
+    const res = await archiveTemplate(templateId);
     if (res.ok) {
       router.push("/curriculum");
     } else {
@@ -33,9 +33,9 @@ export function DeleteCurriculumButton({ templateId }: DeleteCurriculumButtonPro
       onClick={handleDelete}
       disabled={isPending}
       className="opacity-70 hover:opacity-100 h-9"
-      title="Eliminar Currículo"
+      title="Archivar Currículo"
     >
-      {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+      {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
     </Button>
   );
 }

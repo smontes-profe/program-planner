@@ -13,28 +13,25 @@ Status legend:
 
 (Old finished tasks can be found in TASKS_DONE.md)
 
-## Phase 4 - Ongoing feedback and improvements
+## Phase 9 - Ongoing feedback and improvements
 
-- [P0][x] Cambios en visibilidad de Programaciones y currículos: dejar solo opciones: "Privada" y "Organización". Los acurrículos y programaciones privados solo son visibles y utilizables por sus creadores.
-- [P0][x] Los currículos y programaciones que tengan visibilidad "organización", y estén en estado de "Borrador" solo deben ser visibles y usables por sus dueños.
-- [P0][x] BUG: Currículos: Visibilidad: el desplegable aun muestra "private"/"organization" (en inglés) al seleccionarse
-- [P0][x] Currículos: Añadir los siguientes campos: -Título (por ej. "Técnico Superior en Desarrollo de Aplicaciones Web") -ID (por ej. "DAW") -Nivel (desplegable con las opciones "FP Básica", "Grado Medio", "Grado Superior", "Máster"), -Curso (Desplegable con "Primero", "Segundo", "NA").
-- [P0][x] Currículos: En la "pastilla" de cada currículo, donde ahora mismo aparece ID_título - Código_Módulo - Fecha, que aparezca: ID_título - Curso (salvo si es NA, entonces no aparece curso) - Código_módulo - Fecha.
-- [P0][x] Programaciones: En la "pastilla" de cada programación, donde ahora mismo aparece Código_Módulo - Fecha, que aparezca: ID_título - Curso (salvo si es NA, entonces no aparece curso) - Código_módulo - Fecha (del currículo asociado a la programación).
-- [P0][x] Currículos y programaciones: El filtro, tanto en currículos como en programaciones, que pueda filtrar por año, por título, por ID, por curso (desplegable), por nivel de estudios (desplegable).
-- [P0][x] Evaluaciones: Añadir un filtro similar al de currículos y programaciones.
-- [P2][x] Instrumentos de evaluación: La lista de instrumentos que se ordene por código del instrumento (números, luego letras alfabéticamente).
-- [P2][x] Instrumentos de evaluación: La lista de instrumentos que se pueda reordenar a mano.
-- [P3][x] En las listas de currículos, las "pastillas" de cada currículo, son extremadamente grandes. Hay que comprimirlas aprovechando mucho mejor el espacio: Arriba del todo, el título(2 puntos menos de tamaño de fuente). Misma fila a la derecha, indicador de "publicado" o "Borrador", y el indicador de visibilidad. DEbajo la fila de ID, curso, etc (tal como la tenemos ahora). Siguiente fila: la info del creador, pero si es uno mismo que ponga "Crado por: usuario" y todo en color verde. Eliminamos el indicador de versión y comprimimos en vertical todo. Eliminamos el botón de "Ver detalles". Que toda la pastilla sea clicable.
-- [P3][x] Hacemos cambios similares en las listas de programaciones y evaluaciones.
-- [P1][x] Permitir archivar currículos que no estén asociados a ninguna programación. "Archivar" significa que no se pueda ver ni usar, pero que se guarde en la base de datos por si se quiere restaurar. En un futuro implementaremos una función para recuperar versiones antiguas.
-- [P1][ ] Permitir archivar programaciones que no estén asociadas a ninguna evaluación, y permitir archivar evaluaciones.
+- [P1][x] Currículos: Quitar el botón de archivar de la pastilla. hacer que toda la pastilla vuelva a ser clickable. Usar  el botón de "eliminar" que tenemos al lado del botón de "editar" dentro del currículo para archvar el currículo.
+- [P1][ ] Permitir archivar programaciones que no estén asociadas a ninguna evaluación (añadir un botón junto al de "Configuración") de la programación, y permitir archivar evaluaciones (añadir el botón, dentro de la evaluación, en la línea del nombre, a la derecha.
 - [P3][ ] Los filtros de listas de Currículos y programaciones dejarlos en dos líneas. Ahora mismo intentando ocupase cortan los textos, y el botón de filtrar igualmente está en la segunda línea. Repartir todo mejor.
 - [P3][ ] Pastillas de programaciones, currículos, evaluaciones: a veces, incluso truncando el nombre, no cabe bien y el indicador del estado (borrador/publicado) y el de público/privado, se salen de la pastilla. Que no ocurra eso. Que siempre estén alineados a la derecha, y truncar aun más caracteres del nombre si hace falta.
 - [P3][ ] Programaciones: en la pastilla de cada programación, el indicador de "Publicada"/"Draft" cuando esté publciada, debería salir en verde (como para los currículos).
 - [P1][ ] Evaluaciones: Eliminar el estado (borrador/publicada). Eliminar visibilidad Publica/privada. Que un usuario solo pueda ver sus propias evaluaciones. Eliminar el filtro del creador. Ajustar todos los elementos visuales acorde a todo esto. 
 - [P3][ ] Listas de currículos, programaciones: Añadir un desplegable "Ordenar por.." que permita ordenar por nombre ASC/DESC, fecha ASC/DESC.
+- [P3][ ] Evaluaciones: Si un trimestre está cerrado, no se pueden tocar las notas ajustadas de esos trimestres.
 
+
+## Phase 10 - Cambio de normativa: 2 evaluaciones por año en lugar de 3
+
+- [P0][ ] Cambiamos el concepto de "Trimestre" por "Evaluación". Documentamos cada cambio que se va a hacer en estas tareas, porque son importantes.
+- [P0][ ] Al crear una programación, dar a elegir si la programación constará de 3 periodos de evaluación (plan antiguo, por trimestres), o 2 (plan nuevo, con primera evaluación y segunda evaluación).
+- [P0][ ] Reflejar esos periodos en las pantallas de "Pesos": en lugar de T1, T2, T3, mostrar EV1, EV2, EV3 (o EV1 y EV2 si es plan nuevo), Unidades de Trabajo (Trimestre por evaluaciones y 2 o 3 columnas).
+- [P0][ ] Las evaluaciones "heredan" el número de evaluaciones de su programación. Si la programación tiene 2 evaluaciones, la evaluación tendrá 2 evaluaciones. Si la programación tiene 3 evaluaciones, la evaluación tendrá 3 evaluaciones. Reflejar esto en las pantallas de "Matriz de notas" (en el filtro), en las notas calculadas (tanto en el filtro como en las columnas), y en las exportaciones (NOtas trimestrales pasa a ser "NOtas por evaluaciones" y reflejaría las evaluaciones correspondientes, ya sean 2 o 3).
+- [P0][ ] Evaluaciones: Cambio adicional en las notas calculadas: en el caso de tener la normativa nueva (2 evaluaciones), en la matriz de  notas calculadas, en la columna "FInal", tendremos la "Auto", la ajustada pasaría a llamarse "Final 1" (funcionaría igual que ahora), y tendríamos otra nueva columna "Final 2". De partida, tendrá el mismo funcionamiento que la ajustada (ahora  "final 1").
 
 
 
