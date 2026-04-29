@@ -17,6 +17,7 @@ export interface TeachingPlan {
   hours_total: number;
   ce_weight_auto: boolean;
   imported_at: string | null;
+  archived_at?: string | null;
   created_at: string;
   owner_name?: string | null;
   source_template_name?: string | null;
@@ -24,6 +25,7 @@ export interface TeachingPlan {
   program_code?: string | null;
   program_level?: string | null;
   program_course?: string | null;
+  owner_email?: string | null;
   is_owner?: boolean;
   can_edit?: boolean;
 }

@@ -64,6 +64,7 @@ export async function listEvaluationContexts(): Promise<ActionResponse<Evaluatio
       modules:evaluation_context_modules(teaching_plan_id),
       student_count:evaluation_students!evaluation_students_context_id_fkey(count)
     `)
+    .is("archived_at", null)
     .order("created_at", { ascending: false });
 
   if (error) return { ok: false, error: error.message };

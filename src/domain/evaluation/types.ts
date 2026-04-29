@@ -12,6 +12,7 @@ export interface EvaluationContext {
   academic_year: string;
   title: string;
   status: EvaluationContextStatus;
+  archived_at?: string | null;
   created_at: string;
 
   // Relations

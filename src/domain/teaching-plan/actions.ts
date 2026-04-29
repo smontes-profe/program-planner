@@ -77,6 +77,7 @@ export async function listPlans(): Promise<ActionResponse<TeachingPlan[]>> {
   const { data, error } = await supabase
     .from("teaching_plans")
     .select("*")
+    .is("archived_at", null)
     .order("created_at", { ascending: false });
 
   if (error) return { ok: false, error: error.message };
@@ -1037,6 +1038,61 @@ export async function updatePlanInstrumentOrder(planId: string, orderedIds: stri
   );
   await Promise.all(promises);
   revalidatePath(`/plans/${planId}`);
+  return { ok: true, data: null };
+}
+
+// ARCHIVING
+// =================================================================
+
+/**
+ * Archive a teaching plan if it has no associated evaluations
+ */
+export async function archiveTeachingPlan(planId: string): Promise<ActionResponse<any>> {
+  const supabase = await createClient();
+  
+  // Check if plan exists and user has permission
+  const { data: plan, error: planError } = await supabase
+    .from("teaching_plans")
+    .select("id, organization_id, owner_profile_id")
+    .eq("id", planId)
+    .single();
+    
+  if (planError || !plan) {
+    return { ok: false, error: "Programación no encontrada" };
+  }
+  
+  // Check user permissions
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || plan.owner_profile_id !== user.id) {
+    return { ok: false, error: "No tienes permiso para archivar esta programación" };
+  }
+  
+  // Check if there are any evaluations using this plan
+  const { data: evaluations, error: evaluationsError } = await supabase
+    .from("evaluations")
+    .select("id")
+    .eq("plan_id", planId)
+    .limit(1);
+    
+  if (evaluationsError) {
+    return { ok: false, error: "Error al verificar evaluaciones asociadas" };
+  }
+  
+  if (evaluations && evaluations.length > 0) {
+    return { ok: false, error: "No se puede archivar una programación que tiene evaluaciones asociadas" };
+  }
+  
+  // Archive the plan
+  const { error: archiveError } = await supabase
+    .from("teaching_plans")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", planId);
+    
+  if (archiveError) {
+    return { ok: false, error: `Error al archivar programación: ${archiveError.message}` };
+  }
+  
+  revalidatePath("/plans");
   return { ok: true, data: null };
 }
 

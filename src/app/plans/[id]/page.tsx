@@ -8,6 +8,7 @@ import { PlanHoursEditor } from "./_components/PlanHoursEditor";
 import { PlanStatusControls } from "./_components/PlanStatusControls";
 import { PlanWarnings } from "./_components/PlanWarnings";
 import { PlanSettingsEditor } from "./_components/PlanSettingsEditor";
+import { ArchivePlanButton } from "./_components/ArchivePlanButton";
 import { ClonePlanButton } from "../_components/ClonePlanButton";
 
 interface PlanDetailPageProps {
@@ -46,6 +47,7 @@ export default async function PlanDetailPage({ params }: PlanDetailPageProps) {
           </Link>
           <div className="flex items-center gap-3">
             {canEdit ? <PlanSettingsEditor plan={plan} /> : null}
+            {canEdit ? <ArchivePlanButton planId={plan.id} /> : null}
             {!canEdit ? (
               <ClonePlanButton
                 sourcePlanId={plan.id}
