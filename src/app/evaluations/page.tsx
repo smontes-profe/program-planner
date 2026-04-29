@@ -6,7 +6,7 @@ import Link from "next/link";
 import { BookOpen, AlertCircle, CalendarDays, Plus, Search } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createAdminClient, createClient } from "@/lib/supabase";
+import { createAdminClient } from "@/lib/supabase";
 
 const EVALUATION_TITLE_MAX_LENGTH = 25;
 
@@ -36,11 +36,7 @@ export default async function EvaluationsPage({
 }) {
   const params = await searchParams;
   
-  // Get current user info for creator highlighting
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const currentUserProfileId = user?.id;
-  
+    
   const [contextsResult, plansResult] = await Promise.all([
     listEvaluationContexts(),
     listPublishedPlans(),
@@ -201,8 +197,8 @@ export default async function EvaluationsPage({
             return (
               <Link key={ctx.id} href={`/evaluations/${ctx.id}`} className="block group">
                 <Card className="hover:shadow-md transition-shadow overflow-hidden border-zinc-200 dark:border-zinc-800 h-full">
-                  <div className="h-1 w-full bg-zinc-300 dark:bg-zinc-700" />
-                  <CardHeader className="space-y-1 pb-2">
+                  <div className="h-1 w-full bg-emerald-500" />
+                  <CardHeader className="space-y-1 pb-1">
                     <div className="flex justify-between items-start">
                       <CardTitle className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50" title={ctx.title}>
                         {truncateEvaluationTitle(ctx.title)}
@@ -213,15 +209,6 @@ export default async function EvaluationsPage({
                       {ctx.academic_year}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                      {ctx.created_by_profile_id === currentUserProfileId ? (
-                        <p className="text-emerald-600 dark:text-emerald-400 font-medium">Creado por: Tú</p>
-                      ) : (
-                        <p>Creado por: <span className="font-medium text-zinc-700 dark:text-zinc-300">{ctx.creator_name || "Desconocido"}</span></p>
-                      )}
-                    </div>
-                  </CardContent>
                 </Card>
               </Link>
             );
