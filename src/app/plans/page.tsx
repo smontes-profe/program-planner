@@ -253,9 +253,9 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
               <Link key={plan.id} href={`/plans/${plan.id}`} className="block group">
                 <Card className="hover:shadow-md transition-shadow overflow-hidden border-zinc-200 dark:border-zinc-800 h-full">
                   <div className={cn("h-1 w-full", statusColor)} />
-                  <CardHeader className="space-y-1 pb-2">
+                  <CardHeader className="gap-0">
                     <div className="flex justify-between items-start">
-                      <CardTitle className="text-sm font-semibold tracking-tight leading-snug text-zinc-900 dark:text-zinc-50" title={plan.title}>
+                      <CardTitle className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50" title={plan.title}>
                         {truncatePlanTitle(plan.title)}
                       </CardTitle>
                       <div className="flex gap-2 shrink-0">
@@ -283,6 +283,9 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
                         <p className="text-emerald-600 dark:text-emerald-400 font-medium">Creada por: Tú</p>
                       ) : (
                         <p>Creada por: <span className="font-medium text-zinc-700 dark:text-zinc-300">{plan.owner_name || "Desconocido"}</span></p>
+                      )}
+                      {plan.source_template_name && (
+                        <p className="mt-1">Currículo base: <span className="font-medium text-zinc-700 dark:text-zinc-300">{plan.source_template_name}</span></p>
                       )}
                     </div>
                   </CardContent>
