@@ -56,6 +56,11 @@ export function PriPmiTab({ context, plans, scores, scoreError }: PriPmiTabProps
     return plans.map((plan) => {
       const columns: PriPmiColumn[] = (plan.instruments || [])
         .filter((instrument) => instrument.is_pri_pmi)
+        .sort((a, b) => {
+          const codeA = a.code || "";
+          const codeB = b.code || "";
+          return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: "base" });
+        })
         .map((instrument) => ({
           instrumentId: instrument.id,
           instrumentCode: instrument.code || instrument.name,

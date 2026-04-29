@@ -121,7 +121,12 @@ export function ExportTab({ context, gradesResult, plans, scores }: ExportTabPro
     // Obtener instrumentos válidos
     const allInstruments = plans
       .flatMap(p => p.instruments || [])
-      .filter(inst => includePriPmi || !inst.is_pri_pmi);
+      .filter(inst => includePriPmi || !inst.is_pri_pmi)
+      .sort((a, b) => {
+        const codeA = a.code || "";
+        const codeB = b.code || "";
+        return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: "base" });
+      });
 
     const headers = ["Código", "Apellidos", "Nombre", ...allInstruments.map(i => esc(i.code || i.name))];
 

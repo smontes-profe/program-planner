@@ -729,7 +729,13 @@ export function InstrumentsTab({ plan, readOnly = false }: InstrumentsTabProps) 
                   </TableCell>
                 </TableRow>
               ) : (
-                plan.instruments?.map((inst) => {
+                (plan.instruments || [])
+                  .sort((a, b) => {
+                    const codeA = a.code || "";
+                    const codeB = b.code || "";
+                    return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: 'base' });
+                  })
+                  .map((inst) => {
                   const unitCodes = (inst.unit_ids || []).map(uId => {
                     const unit = plan.units?.find(u => u.id === uId);
                     return { id: uId, code: unit?.code || "?" };

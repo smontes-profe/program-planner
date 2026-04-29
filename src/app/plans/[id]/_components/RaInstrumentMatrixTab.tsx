@@ -145,7 +145,13 @@ function CoverageCellEditor({
 
 export function RaInstrumentMatrixTab({ plan, readOnly = false }: RaInstrumentMatrixTabProps) {
   const ras = plan.ras || [];
-  const instruments = (plan.instruments || []).filter((i) => !i.is_pri_pmi);
+  const instruments = (plan.instruments || [])
+    .filter((i) => !i.is_pri_pmi)
+    .sort((a, b) => {
+      const codeA = a.code || "";
+      const codeB = b.code || "";
+      return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: "base" });
+    });
 
   if (ras.length === 0) {
     return (
