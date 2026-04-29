@@ -242,6 +242,41 @@ export async function addStudent(
   if (!validated.success) return { ok: false, error: "Datos inválidos" };
 
   const supabase = await createClient();
+  
+  // Check for duplicate student_code
+  if (validated.data.student_code) {
+    const { data: existingCode, error: codeError } = await supabase
+      .from("evaluation_students")
+      .select("id")
+      .eq("context_id", contextId)
+      .eq("student_code", validated.data.student_code)
+      .single();
+    
+    if (existingCode) {
+      return { ok: false, error: `Ya existe un alumno con el ID "${validated.data.student_code}" en esta evaluación` };
+    }
+    if (codeError && codeError.code !== 'PGRST116') { // PGRST116 is "not found"
+      return { ok: false, error: `Error al verificar ID: ${codeError.message}` };
+    }
+  }
+  
+  // Check for duplicate student_email
+  if (validated.data.student_email) {
+    const { data: existingEmail, error: emailError } = await supabase
+      .from("evaluation_students")
+      .select("id")
+      .eq("context_id", contextId)
+      .eq("student_email", validated.data.student_email)
+      .single();
+    
+    if (existingEmail) {
+      return { ok: false, error: `Ya existe un alumno con el email "${validated.data.student_email}" en esta evaluación` };
+    }
+    if (emailError && emailError.code !== 'PGRST116') { // PGRST116 is "not found"
+      return { ok: false, error: `Error al verificar email: ${emailError.message}` };
+    }
+  }
+
   const { data, error } = await supabase
     .from("evaluation_students")
     .insert({ context_id: contextId, ...validated.data })
@@ -294,6 +329,50 @@ export async function bulkImportStudents(
   if (!validated.success) return { ok: false, error: "Datos inválidos" };
 
   const supabase = await createClient();
+  
+  // Check for duplicates within the import batch
+  const seenCodes = new Set<string>();
+  const seenEmails = new Set<string>();
+  
+  for (const student of validated.data.students) {
+    if (student.student_code) {
+      if (seenCodes.has(student.student_code)) {
+        return { ok: false, error: `Hay IDs duplicados en el archivo: "${student.student_code}"` };
+      }
+      seenCodes.add(student.student_code);
+    }
+    
+    if (student.student_email) {
+      if (seenEmails.has(student.student_email)) {
+        return { ok: false, error: `Hay emails duplicados en el archivo: "${student.student_email}"` };
+      }
+      seenEmails.add(student.student_email);
+    }
+  }
+  
+  // Check for duplicates with existing students
+  const existingStudents = await supabase
+    .from("evaluation_students")
+    .select("student_code, student_email")
+    .eq("context_id", contextId);
+  
+  if (existingStudents.error) {
+    return { ok: false, error: `Error al verificar alumnos existentes: ${existingStudents.error.message}` };
+  }
+  
+  const existingCodes = new Set(existingStudents.data?.filter(s => s.student_code).map(s => s.student_code) || []);
+  const existingEmails = new Set(existingStudents.data?.filter(s => s.student_email).map(s => s.student_email) || []);
+  
+  for (const student of validated.data.students) {
+    if (student.student_code && existingCodes.has(student.student_code)) {
+      return { ok: false, error: `Ya existe un alumno con el ID "${student.student_code}" en esta evaluación` };
+    }
+    
+    if (student.student_email && existingEmails.has(student.student_email)) {
+      return { ok: false, error: `Ya existe un alumno con el email "${student.student_email}" en esta evaluación` };
+    }
+  }
+  
   const rows = students.map(s => ({
     context_id: contextId,
     student_name: s.student_name,
