@@ -24,13 +24,12 @@ Status legend:
 - [P0][x] Currículos y programaciones: El filtro, tanto en currículos como en programaciones, que pueda filtrar por año, por título, por ID, por curso (desplegable), por nivel de estudios (desplegable).
 - [P0][x] Evaluaciones: Añadir un filtro similar al de currículos y programaciones.
 - [P2][x] Instrumentos de evaluación: La lista de instrumentos que se ordene por código del instrumento (números, luego letras alfabéticamente).
-- [P2][ ] Instrumentos de evaluación: La lista de instrumentos que se pueda reordenar a mano.
+- [P2][x] Instrumentos de evaluación: La lista de instrumentos que se pueda reordenar a mano.
 - [P3][x] En las listas de currículos, las "pastillas" de cada currículo, son extremadamente grandes. Hay que comprimirlas aprovechando mucho mejor el espacio: Arriba del todo, el título(2 puntos menos de tamaño de fuente). Misma fila a la derecha, indicador de "publicado" o "Borrador", y el indicador de visibilidad. DEbajo la fila de ID, curso, etc (tal como la tenemos ahora). Siguiente fila: la info del creador, pero si es uno mismo que ponga "Crado por: usuario" y todo en color verde. Eliminamos el indicador de versión y comprimimos en vertical todo. Eliminamos el botón de "Ver detalles". Que toda la pastilla sea clicable.
 - [P3][x] Hacemos cambios similares en las listas de programaciones y evaluaciones.
 - [P1][ ] Permitir archivar currículos que no estén asociados a ninguna programación. "Archivar" significa que no se pueda ver ni usar, pero que se guarde en la base de datos por si se quiere restaurar. En un futuro implementaremos una función para recuperar versiones antiguas.
-- [P1][ ] Permitir archivar programaciones que no estén asociadas a ninguna evaluación.
-- [P1][ ] Permitir archivar evaluaciones.
-- [P3][ ] Los filtros de listas de Currículos, programaciones y evaluaciones, dejarlos en dos líneas. Ahora mismo intentando ocupase cortan los textos, y el botón de filtrar igualmente está en la segunda línea. Repartir todo mejor.
+- [P1][ ] Permitir archivar programaciones que no estén asociadas a ninguna evaluación, y permitir archivar evaluaciones.
+- [P3][ ] Los filtros de listas de Currículos y programaciones dejarlos en dos líneas. Ahora mismo intentando ocupase cortan los textos, y el botón de filtrar igualmente está en la segunda línea. Repartir todo mejor.
 - [P3][ ] Pastillas de programaciones, currículos, evaluaciones: a veces, incluso truncando el nombre, no cabe bien y el indicador del estado (borrador/publicado) y el de público/privado, se salen de la pastilla. Que no ocurra eso. Que siempre estén alineados a la derecha, y truncar aun más caracteres del nombre si hace falta.
 - [P3][ ] Programaciones: en la pastilla de cada programación, el indicador de "Publicada"/"Draft" cuando esté publciada, debería salir en verde (como para los currículos).
 - [P1][ ] Evaluaciones: Eliminar el estado (borrador/publicada). Eliminar visibilidad Publica/privada. Que un usuario solo pueda ver sus propias evaluaciones. Eliminar el filtro del creador. Ajustar todos los elementos visuales acorde a todo esto. 

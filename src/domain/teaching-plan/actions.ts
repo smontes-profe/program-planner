@@ -127,6 +127,9 @@ export async function getPlan(planId: string): Promise<ActionResponse<TeachingPl
   if (data.units) {
     data.units.sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0));
   }
+  if (data.instruments) {
+    data.instruments.sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0));
+  }
 
   // Map the coverage data into simpler arrays for the frontend
   const mappedUnits = (data.units || []).map((u: any) => ({
@@ -1021,6 +1024,16 @@ export async function updatePlanUnitOrder(planId: string, orderedIds: string[]):
   const supabase = await createClient();
   const promises = orderedIds.map((id, index) => 
     supabase.from("plan_teaching_unit").update({ order_index: index }).eq("id", id).eq("plan_id", planId)
+  );
+  await Promise.all(promises);
+  revalidatePath(`/plans/${planId}`);
+  return { ok: true, data: null };
+}
+
+export async function updatePlanInstrumentOrder(planId: string, orderedIds: string[]): Promise<ActionResponse> {
+  const supabase = await createClient();
+  const promises = orderedIds.map((id, index) => 
+    supabase.from("plan_instrument").update({ order_index: index }).eq("id", id).eq("plan_id", planId)
   );
   await Promise.all(promises);
   revalidatePath(`/plans/${planId}`);

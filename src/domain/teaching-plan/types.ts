@@ -89,11 +89,12 @@ export interface PlanInstrument {
   id: string;
   plan_id: string;
   code: string;
+  name: string;
   type: InstrumentType;
   is_pri_pmi: boolean;
+  description?: string | null;
   ce_weight_auto: boolean;
-  name: string;
-  description: string | null;
+  order_index: number;
   created_at: string;
   
   // Relations
