@@ -180,10 +180,7 @@ export function RaInstrumentMatrixTab({ plan, readOnly = false }: RaInstrumentMa
     return { ra, coverageByInstrument, totalCoverage };
   });
 
-  const activeInstruments = instruments.filter((inst) =>
-    ras.some((ra) => (inst.ra_coverages || []).some((rc) => rc.plan_ra_id === ra.id && Number(rc.coverage_percent) > 0))
-  );
-
+  
   return (
     <TooltipProvider>
       <div className="space-y-4">
@@ -220,8 +217,8 @@ export function RaInstrumentMatrixTab({ plan, readOnly = false }: RaInstrumentMa
                 <th className={cn("sticky left-[120px] z-10 bg-zinc-50 dark:bg-zinc-900/50 px-3 py-3 text-center min-w-[90px] w-[90px]", COLUMN_SEPARATOR_CLASS)}>
                   Cobertura
                 </th>
-                {activeInstruments.map((inst, index) => (
-                  <th key={inst.id} className={cn(INSTRUMENT_COLUMN_CLASS, index < activeInstruments.length - 1 && COLUMN_SEPARATOR_CLASS)}>
+                {instruments.map((inst, index) => (
+                  <th key={inst.id} className={cn(INSTRUMENT_COLUMN_CLASS, index < instruments.length - 1 && COLUMN_SEPARATOR_CLASS)}>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <span className="cursor-help font-mono text-xs font-bold text-zinc-700 dark:text-zinc-300">
@@ -274,14 +271,14 @@ export function RaInstrumentMatrixTab({ plan, readOnly = false }: RaInstrumentMa
                       </span>
                     </td>
 
-                    {activeInstruments.map((inst, index) => {
+                    {instruments.map((inst, index) => {
                       const entry = coverageByInstrument.find((c) => c.inst.id === inst.id);
                       const percent = entry?.percent ?? 0;
 
                       return (
                         <td
                           key={inst.id}
-                          className={cn(INSTRUMENT_COLUMN_CLASS, index < activeInstruments.length - 1 && COLUMN_SEPARATOR_CLASS)}
+                          className={cn(INSTRUMENT_COLUMN_CLASS, index < instruments.length - 1 && COLUMN_SEPARATOR_CLASS)}
                         >
                           <CoverageCellEditor
                             planId={plan.id}
