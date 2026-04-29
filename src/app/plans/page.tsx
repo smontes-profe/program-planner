@@ -59,8 +59,8 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
     );
   }
 
-  const plans = plansResult.data;
-  const publishedTemplates = templatesResult.data;
+  const plans = plansResult.ok ? plansResult.data : [];
+  const publishedTemplates = templatesResult.ok ? templatesResult.data : [];
   const query = filters.q?.trim().toLowerCase() ?? "";
   const ownerFilter = filters.owner?.trim().toLowerCase() ?? "";
   const templateFilter = filters.template?.trim() ?? "";
@@ -72,7 +72,7 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
   const sortBy = filters.sortBy?.trim() ?? "";
   
   const ownerOptions = Array.from(new Set(plans.map((plan) => plan.owner_name).filter(Boolean))) as string[];
-  const templateOptions = Array.from(new Set(publishedTemplates.map((template) => template.module_name).filter(Boolean))) as string[];
+  const templateOptions = Array.from(new Set(publishedTemplates.map((template: any) => template.module_name).filter(Boolean))) as string[];
   const yearOptions = Array.from(new Set(plans.map((plan) => plan.academic_year).filter(Boolean))) as string[];
   const titleOptions = Array.from(new Set(plans.map((plan) => plan.program_title).filter(Boolean))) as string[];
   const codeOptions = Array.from(new Set(plans.map((plan) => plan.program_code).filter(Boolean))) as string[];

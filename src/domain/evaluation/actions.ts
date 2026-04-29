@@ -125,7 +125,6 @@ export async function getEvaluationContext(contextId: string): Promise<ActionRes
     created_by_profile_id: ctx.created_by_profile_id,
     academic_year: ctx.academic_year,
     title: ctx.title,
-    status: ctx.status,
     created_at: ctx.created_at,
     plan_ids: modules?.map((m: any) => m.teaching_plan_id) || [],
     plans: modules?.map((m: any) => m.plan).filter(Boolean) || [],
