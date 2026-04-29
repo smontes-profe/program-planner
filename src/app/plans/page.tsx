@@ -31,6 +31,7 @@ interface PlansPageProps {
     code?: string;
     level?: string;
     course?: string;
+    sortBy?: string;
   }>;
 }
 
@@ -59,18 +60,19 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
   }
 
   const plans = plansResult.data;
+  const publishedTemplates = templatesResult.data;
   const query = filters.q?.trim().toLowerCase() ?? "";
   const ownerFilter = filters.owner?.trim().toLowerCase() ?? "";
-  const templateFilter = filters.template?.trim().toLowerCase() ?? "";
+  const templateFilter = filters.template?.trim() ?? "";
   const yearFilter = filters.year?.trim() ?? "";
   const titleFilter = filters.title?.trim() ?? "";
   const codeFilter = filters.code?.trim() ?? "";
   const levelFilter = filters.level?.trim() ?? "";
   const courseFilter = filters.course?.trim() ?? "";
-  const publishedTemplates = templatesResult.ok ? templatesResult.data : [];
+  const sortBy = filters.sortBy?.trim() ?? "";
   
   const ownerOptions = Array.from(new Set(plans.map((plan) => plan.owner_name).filter(Boolean))) as string[];
-  const templateOptions = Array.from(new Set(plans.map((plan) => plan.source_template_name).filter(Boolean))) as string[];
+  const templateOptions = Array.from(new Set(publishedTemplates.map((template) => template.module_name).filter(Boolean))) as string[];
   const yearOptions = Array.from(new Set(plans.map((plan) => plan.academic_year).filter(Boolean))) as string[];
   const titleOptions = Array.from(new Set(plans.map((plan) => plan.program_title).filter(Boolean))) as string[];
   const codeOptions = Array.from(new Set(plans.map((plan) => plan.program_code).filter(Boolean))) as string[];
@@ -89,6 +91,22 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
     const matchesLevel = !levelFilter || (plan.program_level ?? "") === levelFilter;
     const matchesCourse = !courseFilter || (plan.program_course ?? "") === courseFilter;
     return matchesQuery && matchesOwner && matchesTemplate && matchesYear && matchesTitle && matchesCode && matchesLevel && matchesCourse;
+  });
+
+  // Sort filtered plans
+  const sortedPlans = [...filteredPlans].sort((a, b) => {
+    switch (sortBy) {
+      case "name_asc":
+        return a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" });
+      case "name_desc":
+        return b.title.localeCompare(a.title, undefined, { numeric: true, sensitivity: "base" });
+      case "date_asc":
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      case "date_desc":
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      default:
+        return 0;
+    }
   });
 
   return (
@@ -187,6 +205,17 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
             <option key={owner} value={owner}>{owner}</option>
           ))}
         </select>
+        <select
+          name="sortBy"
+          defaultValue={filters.sortBy ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Ordenar por...</option>
+          <option value="name_asc">Nombre (A-Z)</option>
+          <option value="name_desc">Nombre (Z-A)</option>
+          <option value="date_asc">Fecha (más antiguo)</option>
+          <option value="date_desc">Fecha (más reciente)</option>
+        </select>
         <button className={buttonVariants({ variant: "outline" })} type="submit">
           Filtrar
         </button>
@@ -207,15 +236,15 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
             <CreatePlanButton publishedTemplates={publishedTemplates} />
           </CardContent>
         </Card>
-      ) : filteredPlans.length === 0 ? (
-        <Card className="bg-zinc-50/50 border-dashed dark:bg-zinc-900/20 border-zinc-200 dark:border-zinc-800">
+      ) : sortedPlans.length === 0 ? (
+        <Card className="bg-zinc-50/50 border-dashed border-2 dark:bg-zinc-900/20 border-zinc-200 dark:border-zinc-800">
           <CardContent className="py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">
             No hay programaciones que coincidan con los filtros actuales.
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredPlans.map((plan) => {
+          {sortedPlans.map((plan) => {
             const isPublished = plan.status === "published";
             const statusColor = isPublished ? "bg-emerald-500" : "bg-zinc-300 dark:bg-zinc-700";
             const statusLabel = isPublished ? "Publicada" : "Borrador";

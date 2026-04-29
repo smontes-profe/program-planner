@@ -22,7 +22,7 @@ Status legend:
 - [P3][x] Pastillas de programaciones, currículos, evaluaciones: a veces, incluso truncando el nombre, no cabe bien y el indicador del estado (borrador/publicado) y el de público/privado, se salen de la pastilla. Que no ocurra eso. Que siempre estén alineados a la derecha, y truncar aun más caracteres del nombre si hace falta.
 - [P0][x] Evaluaciones: Los campos ID, email deben ser únicos para los alumnos. Al insertar nuevo alumno, si ya existe algún alumno con mismo email o ID, que lance un mensaje de error y no permita insertarlo. 
 - [P1][x] Evaluaciones: Eliminar el estado (borrador/publicada). Eliminar visibilidad Publica/privada. Que un usuario solo pueda ver sus propias evaluaciones. Eliminar el filtro del creador. Ajustar todos los elementos visuales acorde a todo esto. 
-- [P2][ ] Listas de currículos, programaciones: Añadir un desplegable "Ordenar por.." que permita ordenar por nombre ASC/DESC, fecha ASC/DESC.
+- [P2][x] Listas de currículos, programaciones: Añadir un desplegable "Ordenar por.." que permita ordenar por nombre ASC/DESC, fecha ASC/DESC.
 - [P2][ ] Evaluaciones: Si un trimestre está cerrado, no se pueden tocar las notas ajustadas de esos trimestres.
 - [P3][ ] Programaciones: en la pastilla de cada programación, el indicador de "Publicada"/"Draft" cuando esté publciada, debería salir en verde (como para los currículos).
 - [P3][ ] Evaluaciones: en la pastilla de cada evaluación, mover el creador en la misma fila de la fecha, un poco a su derecha (truncar el nombre del creador si se saliera de la pastilla). Recortar el tamaño vertical de las pastillas al no necesitar tanto ya. Al no tener estados (publicada, borrador), la franja horizontal, que salga verde en lugar de gris. 
@@ -36,6 +36,10 @@ Status legend:
 - [P0][ ] Las evaluaciones "heredan" el número de evaluaciones de su programación. Si la programación tiene 2 evaluaciones, la evaluación tendrá 2 evaluaciones. Si la programación tiene 3 evaluaciones, la evaluación tendrá 3 evaluaciones. Reflejar esto en las pantallas de "Matriz de notas" (en el filtro), en las notas calculadas (tanto en el filtro como en las columnas), y en las exportaciones (NOtas trimestrales pasa a ser "NOtas por evaluaciones" y reflejaría las evaluaciones correspondientes, ya sean 2 o 3).
 - [P0][ ] Evaluaciones: Cambio adicional en las notas calculadas: en el caso de tener la normativa nueva (2 evaluaciones), en la matriz de  notas calculadas, en la columna "FInal", tendremos la "Auto", la ajustada pasaría a llamarse "Final 1" (funcionaría igual que ahora), y tendríamos otra nueva columna "Final 2". De partida, tendrá el mismo funcionamiento que la ajustada (ahora  "final 1").
 
+## Phase 11 - Exportar programación
+
+- [P1][ ] Buscar una manera de poder exportar un pdf o un docx con un formato igual al de los documentos de programación que se encuentran en la carpeta `docs/templates`. Inicialmente, solo con el contenido de la programación (sin las evaluaciones).
+- [P2][ ] Añadir la posibilidad de añadir los bloques adicionales "tipo" a la exportación, de acuerdo también a los templates.
 
 
 

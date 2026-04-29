@@ -29,6 +29,7 @@ interface CurriculumPageProps {
     code?: string;
     level?: string;
     course?: string;
+    sortBy?: string;
   }>;
 }
 
@@ -74,6 +75,7 @@ export default async function CurriculumPage({ searchParams }: CurriculumPagePro
   const codeFilter = filters.code?.trim() ?? "";
   const levelFilter = filters.level?.trim() ?? "";
   const courseFilter = filters.course?.trim() ?? "";
+  const sortBy = filters.sortBy?.trim() ?? "";
   
   const ownerOptions = Array.from(new Set(templates.map((template) => template.creator_name).filter(Boolean))) as string[];
   const yearOptions = Array.from(new Set(templates.map((template) => template.academic_year).filter(Boolean))) as string[];
@@ -93,6 +95,22 @@ export default async function CurriculumPage({ searchParams }: CurriculumPagePro
     const matchesLevel = !levelFilter || (template.program_level ?? "") === levelFilter;
     const matchesCourse = !courseFilter || (template.program_course ?? "") === courseFilter;
     return matchesQuery && matchesOwner && matchesYear && matchesTitle && matchesCode && matchesLevel && matchesCourse;
+  });
+
+  // Sort the filtered templates
+  const sortedTemplates = [...filteredTemplates].sort((a, b) => {
+    switch (sortBy) {
+      case "name_asc":
+        return a.module_name.localeCompare(b.module_name, undefined, { numeric: true, sensitivity: "base" });
+      case "name_desc":
+        return b.module_name.localeCompare(a.module_name, undefined, { numeric: true, sensitivity: "base" });
+      case "date_asc":
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      case "date_desc":
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      default:
+        return 0;
+    }
   });
 
   return (
@@ -184,6 +202,17 @@ export default async function CurriculumPage({ searchParams }: CurriculumPagePro
             <option key={owner} value={owner}>{owner}</option>
           ))}
         </select>
+        <select
+          name="sortBy"
+          defaultValue={filters.sortBy ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Ordenar por...</option>
+          <option value="name_asc">Nombre (A-Z)</option>
+          <option value="name_desc">Nombre (Z-A)</option>
+          <option value="date_asc">Fecha (más antiguo)</option>
+          <option value="date_desc">Fecha (más reciente)</option>
+        </select>
         <button className={buttonVariants({ variant: "outline" })} type="submit">
           Filtrar
         </button>
@@ -207,7 +236,7 @@ export default async function CurriculumPage({ searchParams }: CurriculumPagePro
             </Link>
           </CardContent>
         </Card>
-      ) : filteredTemplates.length === 0 ? (
+      ) : sortedTemplates.length === 0 ? (
         <Card className="bg-zinc-50/50 border-dashed dark:bg-zinc-900/20">
           <CardContent className="py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">
             No hay currículos que coincidan con los filtros actuales.
@@ -215,7 +244,7 @@ export default async function CurriculumPage({ searchParams }: CurriculumPagePro
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredTemplates.map((template) => (
+          {sortedTemplates.map((template) => (
             <CurriculumCard 
               key={template.id} 
               template={template} 
