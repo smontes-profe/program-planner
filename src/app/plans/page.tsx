@@ -105,7 +105,7 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
         <CreatePlanButton publishedTemplates={publishedTemplates} />
       </div>
 
-      <form className="mb-6 grid gap-3 rounded-xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/40 md:grid-cols-[minmax(0,2fr)_repeat(auto-fit,minmax(120px,1fr))_auto] lg:grid-cols-[minmax(0,2fr)_repeat(6,minmax(0,1fr))_auto]">
+      <form className="mb-6 grid gap-3 rounded-xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/40 md:grid-cols-[minmax(0,2fr)_repeat(auto-fit,minmax(140px,1fr))_auto] lg:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))_auto] xl:grid-cols-[minmax(0,2fr)_repeat(5,minmax(0,1fr))_auto]">
         <label className="relative block">
           <span className="sr-only">Buscar programaciones</span>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
