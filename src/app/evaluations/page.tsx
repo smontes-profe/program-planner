@@ -198,16 +198,21 @@ export default async function EvaluationsPage({
               <Link key={ctx.id} href={`/evaluations/${ctx.id}`} className="block group">
                 <Card className="hover:shadow-md transition-shadow overflow-hidden border-zinc-200 dark:border-zinc-800 h-full">
                   <div className="h-1 w-full bg-emerald-500" />
-                  <CardHeader className="space-y-1 pb-1">
+                  <CardHeader className="pb-1">
                     <div className="flex justify-between items-start">
                       <CardTitle className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50" title={ctx.title}>
                         {truncateEvaluationTitle(ctx.title)}
                       </CardTitle>
+                      <CardDescription className="font-mono text-zinc-500 dark:text-zinc-400 text-xs">
+                        <CalendarDays className="h-3.5 w-3.5 inline mr-1" />
+                        {ctx.academic_year}
+                      </CardDescription>
                     </div>
-                    <CardDescription className="font-mono text-zinc-500 dark:text-zinc-400 text-xs">
-                      <CalendarDays className="h-3.5 w-3.5 inline mr-1" />
-                      {ctx.academic_year}
-                    </CardDescription>
+                    {ctx.plan_names && ctx.plan_names.length > 0 && (
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                        <span className="font-medium">Programación:</span> {ctx.plan_names.join(", ")}
+                      </div>
+                    )}
                   </CardHeader>
                 </Card>
               </Link>

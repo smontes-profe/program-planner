@@ -61,7 +61,10 @@ export async function listEvaluationContexts(): Promise<ActionResponse<Evaluatio
     .from("evaluation_contexts")
     .select(`
       *,
-      modules:evaluation_context_modules(teaching_plan_id),
+      modules:evaluation_context_modules(
+        teaching_plan_id,
+        plan:teaching_plans(id, title, module_code, academic_year)
+      ),
       student_count:evaluation_students!evaluation_students_context_id_fkey(count)
     `)
     .is("archived_at", null)
@@ -80,6 +83,8 @@ export async function listEvaluationContexts(): Promise<ActionResponse<Evaluatio
     plan_ids: ctx.modules?.map((m: any) => m.teaching_plan_id) || [],
     plan_count: ctx.modules?.length || 0,
     student_count: ctx.student_count?.[0]?.count || 0,
+    // Include plan names for display
+    plan_names: ctx.modules?.map((m: any) => m.plan?.title) || [],
   }));
 
   return { ok: true, data: contexts };

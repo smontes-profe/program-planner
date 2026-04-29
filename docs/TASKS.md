@@ -25,6 +25,8 @@ Status legend:
 - [P2][x] Listas de currículos, programaciones: Añadir un desplegable "Ordenar por.." que permita ordenar por nombre ASC/DESC, fecha ASC/DESC.
 - [P2][x] Evaluaciones: Si un trimestre está cerrado, no se pueden tocar las notas ajustadas de esos trimestres.
 - [P3][x] Programaciones: en la pastilla de cada programación, el indicador de "Publicada"/"Draft" cuando esté publciada, debería salir en verde (como para los currículos).
+- [P3][x] Evaluaciones, pastillas: Añadimos una fila más donde mostremos el nombre de la programación que se usa en la evaluación y quitamos el creador.
+- [P3][ ] Programaciones, pastillas: Añadir una fila más donde mostremos el currículo usado inicialmente. 
 - [P3][ ] Evaluaciones: en la pastilla de cada evaluación, mover el creador en la misma fila de la fecha, un poco a su derecha (truncar el nombre del creador si se saliera de la pastilla). Recortar el tamaño vertical de las pastillas al no necesitar tanto ya. Al no tener estados (publicada, borrador), la franja horizontal, que salga verde en lugar de gris. 
 - [P3][ ] Evaluaciones, PRIS/PMIS: Poner un tamaño máximo de casilla. Ahora mismo se autoajusta al ancho y cuando hay pocos (2 o 3 sueles er lo normal), queda gigantesco.
 

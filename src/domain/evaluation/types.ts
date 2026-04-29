@@ -17,6 +17,7 @@ export interface EvaluationContext {
   plan_ids?: string[];
   plan_count?: number;
   student_count?: number;
+  plan_names?: string[];
 }
 
 export interface EvaluationContextFull extends EvaluationContext {
