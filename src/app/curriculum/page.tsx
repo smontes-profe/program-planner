@@ -4,7 +4,9 @@ import { buttonVariants } from "@/components/ui/button-variants";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { Plus, FileText, Globe, Lock, AlertCircle, Search } from "lucide-react";
+import { Plus, FileText, Search, AlertCircle } from "lucide-react";
+import { createClient } from "@/lib/supabase";
+import { CurriculumCard } from "./_components/CurriculumCard";
 
 export const metadata = {
   title: "Currículos - Program Planner",
@@ -22,13 +24,25 @@ interface CurriculumPageProps {
   readonly searchParams?: Promise<{
     q?: string;
     owner?: string;
+    year?: string;
+    title?: string;
+    code?: string;
+    level?: string;
+    course?: string;
+    sortBy?: string;
   }>;
 }
 
+
 export default async function CurriculumPage({ searchParams }: CurriculumPageProps) {
   const filters = (await searchParams) ?? {};
-  // Ensure the user has an organization to work on (auto-create if empty during Phase 1.5)
+  // Ensure user has an organization to work on (auto-create if empty during Phase 1.5)
   await ensureUserHasOrganization();
+  
+  // Get current user info for creator highlighting
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const currentUserEmail = user?.email;
   
   const result = await listTemplates();
 
@@ -56,13 +70,47 @@ export default async function CurriculumPage({ searchParams }: CurriculumPagePro
   const templates = result.data;
   const query = filters.q?.trim().toLowerCase() ?? "";
   const ownerFilter = filters.owner?.trim().toLowerCase() ?? "";
+  const yearFilter = filters.year?.trim() ?? "";
+  const titleFilter = filters.title?.trim() ?? "";
+  const codeFilter = filters.code?.trim() ?? "";
+  const levelFilter = filters.level?.trim() ?? "";
+  const courseFilter = filters.course?.trim() ?? "";
+  const sortBy = filters.sortBy?.trim() ?? "";
+  
   const ownerOptions = Array.from(new Set(templates.map((template) => template.creator_name).filter(Boolean))) as string[];
+  const yearOptions = Array.from(new Set(templates.map((template) => template.academic_year).filter(Boolean))) as string[];
+  const titleOptions = Array.from(new Set(templates.map((template) => template.program_title).filter(Boolean))) as string[];
+  const codeOptions = Array.from(new Set(templates.map((template) => template.program_code).filter(Boolean))) as string[];
+  const levelOptions = Array.from(new Set(templates.map((template) => template.program_level).filter(Boolean))) as string[];
+  const courseOptions = Array.from(new Set(templates.map((template) => template.program_course).filter(Boolean))) as string[];
+  
   const filteredTemplates = templates.filter((template) => {
     const matchesQuery = !query || [template.module_name, template.creator_name].some((value) =>
       value?.toLowerCase().includes(query)
     );
     const matchesOwner = !ownerFilter || (template.creator_name ?? "").toLowerCase() === ownerFilter;
-    return matchesQuery && matchesOwner;
+    const matchesYear = !yearFilter || (template.academic_year ?? "") === yearFilter;
+    const matchesTitle = !titleFilter || (template.program_title ?? "") === titleFilter;
+    const matchesCode = !codeFilter || (template.program_code ?? "") === codeFilter;
+    const matchesLevel = !levelFilter || (template.program_level ?? "") === levelFilter;
+    const matchesCourse = !courseFilter || (template.program_course ?? "") === courseFilter;
+    return matchesQuery && matchesOwner && matchesYear && matchesTitle && matchesCode && matchesLevel && matchesCourse;
+  });
+
+  // Sort the filtered templates
+  const sortedTemplates = [...filteredTemplates].sort((a, b) => {
+    switch (sortBy) {
+      case "name_asc":
+        return a.module_name.localeCompare(b.module_name, undefined, { numeric: true, sensitivity: "base" });
+      case "name_desc":
+        return b.module_name.localeCompare(a.module_name, undefined, { numeric: true, sensitivity: "base" });
+      case "date_asc":
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      case "date_desc":
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      default:
+        return 0;
+    }
   });
 
   return (
@@ -82,7 +130,7 @@ export default async function CurriculumPage({ searchParams }: CurriculumPagePro
         </Link>
       </div>
 
-      <form className="mb-6 grid gap-3 rounded-xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/40 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_auto]">
+      <form className="mb-6 grid gap-3 rounded-xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/40 md:grid-cols-[minmax(0,2fr)_repeat(auto-fit,minmax(140px,1fr))_auto] lg:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))_auto] xl:grid-cols-[minmax(0,2fr)_repeat(5,minmax(0,1fr))_auto]">
         <label className="relative block">
           <span className="sr-only">Buscar currículos</span>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
@@ -95,6 +143,56 @@ export default async function CurriculumPage({ searchParams }: CurriculumPagePro
           />
         </label>
         <select
+          name="year"
+          defaultValue={filters.year ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los años</option>
+          {yearOptions.sort().map((year) => (
+            <option key={year} value={year}>{year}</option>
+          ))}
+        </select>
+        <select
+          name="title"
+          defaultValue={filters.title ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los títulos</option>
+          {titleOptions.map((title) => (
+            <option key={title} value={title}>{title}</option>
+          ))}
+        </select>
+        <select
+          name="code"
+          defaultValue={filters.code ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los IDs</option>
+          {codeOptions.map((code) => (
+            <option key={code} value={code}>{code}</option>
+          ))}
+        </select>
+        <select
+          name="level"
+          defaultValue={filters.level ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los niveles</option>
+          {levelOptions.map((level) => (
+            <option key={level} value={level}>{level}</option>
+          ))}
+        </select>
+        <select
+          name="course"
+          defaultValue={filters.course ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los cursos</option>
+          {courseOptions.map((course) => (
+            <option key={course} value={course}>{course}</option>
+          ))}
+        </select>
+        <select
           name="owner"
           defaultValue={filters.owner ?? ""}
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
@@ -103,6 +201,17 @@ export default async function CurriculumPage({ searchParams }: CurriculumPagePro
           {ownerOptions.map((owner) => (
             <option key={owner} value={owner}>{owner}</option>
           ))}
+        </select>
+        <select
+          name="sortBy"
+          defaultValue={filters.sortBy ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Ordenar por...</option>
+          <option value="name_asc">Nombre (A-Z)</option>
+          <option value="name_desc">Nombre (Z-A)</option>
+          <option value="date_asc">Fecha (más antiguo)</option>
+          <option value="date_desc">Fecha (más reciente)</option>
         </select>
         <button className={buttonVariants({ variant: "outline" })} type="submit">
           Filtrar
@@ -127,7 +236,7 @@ export default async function CurriculumPage({ searchParams }: CurriculumPagePro
             </Link>
           </CardContent>
         </Card>
-      ) : filteredTemplates.length === 0 ? (
+      ) : sortedTemplates.length === 0 ? (
         <Card className="bg-zinc-50/50 border-dashed dark:bg-zinc-900/20">
           <CardContent className="py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">
             No hay currículos que coincidan con los filtros actuales.
@@ -135,64 +244,13 @@ export default async function CurriculumPage({ searchParams }: CurriculumPagePro
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredTemplates.map((template) => {
-            const isPublished = template.status === 'published';
-            const isDeprecated = template.status === 'deprecated';
-            
-            let statusColor = "bg-zinc-300 dark:bg-zinc-700";
-            let badgeVariant: 'success' | 'warning' | 'neutral' = 'neutral';
-            let label = 'Borrador';
-
-            if (isPublished) {
-              statusColor = "bg-emerald-500";
-              badgeVariant = 'success';
-              label = 'Publicado';
-            } else if (isDeprecated) {
-              statusColor = "bg-amber-500";
-              badgeVariant = 'warning';
-              label = 'Depreciado';
-            }
-
-            return (
-              <Card key={template.id} className="hover:shadow-md transition-shadow group overflow-hidden border-zinc-200 dark:border-zinc-800">
-                <div className={cn("h-1 w-full", statusColor)} />
-                <CardHeader className="space-y-2 pb-1">
-                  <div className="flex justify-between items-start">
-                    <BadgeLocal 
-                      label={label}
-                      variant={badgeVariant}
-                    />
-                    <div className="flex gap-2 text-zinc-400">
-                      {template.visibility_scope === 'organization' && <Globe className="h-4 w-4" aria-label="Ámbito: Público" />}
-                      {template.visibility_scope === 'private' && <Lock className="h-4 w-4" aria-label="Ámbito: Privado" />}
-                    </div>
-                  </div>
-                  <CardTitle className="text-base font-semibold tracking-tight leading-snug text-zinc-900 dark:text-zinc-50 md:text-lg" title={template.module_name}>
-                    {truncateCurriculumTitle(template.module_name)}
-                  </CardTitle>
-                  <CardDescription className="font-mono text-zinc-500 dark:text-zinc-400">
-                    {template.module_code} • {template.academic_year}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 text-sm pt-1">
-                    <div className="space-y-1 text-xs text-zinc-500 dark:text-zinc-400">
-                      <p>Versión: <span className="font-semibold">{template.version}</span></p>
-                      <p>Creado por: <span className="font-medium text-zinc-700 dark:text-zinc-300">{template.creator_name || "Desconocido"}</span></p>
-                    </div>
-                    <div className="flex justify-end">
-                      <Link 
-                        href={`/curriculum/${template.id}`} 
-                        className={buttonVariants({ variant: "ghost", size: "sm" })}
-                      >
-                        Ver detalles
-                      </Link>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+          {sortedTemplates.map((template) => (
+            <CurriculumCard 
+              key={template.id} 
+              template={template} 
+              currentUserEmail={currentUserEmail}
+            />
+          ))}
         </div>
       )}
     </div>

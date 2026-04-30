@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { getSupabaseEnv, getSupabaseServiceRoleKey } from "./supabase-env";
 
 /**
  * Creates a Supabase client for Server Components, Server Actions, and Route Handlers.
@@ -7,10 +8,11 @@ import { cookies } from "next/headers";
  */
 export async function createClient() {
   const cookieStore = await cookies();
+  const { url, key } = getSupabaseEnv();
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL as string,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
+    url,
+    key,
     {
       cookies: {
         getAll() {
@@ -37,9 +39,12 @@ export async function createClient() {
  * Use with caution and only in server-side code.
  */
 export function createAdminClient() {
+  const { url } = getSupabaseEnv();
+  const serviceRoleKey = getSupabaseServiceRoleKey();
+
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL as string,
-    process.env.SUPABASE_SERVICE_ROLE_KEY as string,
+    url,
+    serviceRoleKey,
     {
       cookies: {
         getAll() {

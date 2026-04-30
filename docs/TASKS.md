@@ -13,36 +13,42 @@ Status legend:
 
 (Old finished tasks can be found in TASKS_DONE.md)
 
-## Phase 4 - Ongoing feedback and improvements
+## Phase 9 - Ongoing feedback and improvements
 
-- [P0][x] Cambios en visibilidad de Programaciones y currículos: dejar solo opciones: "Privada" y "Organización". Los acurrículos y programaciones privados solo son visibles y utilizables por sus creadores.
-- [P0][x] Los currículos y programaciones que tengan visibilidad "organización", y estén en estado de "Borrador" solo deben ser visibles y usables por sus dueños.
-- [P0][x] BUG: Currículos: Visibilidad: el desplegable aun muestra "private"/"organization" (en inglés) al seleccionarse
+- [P1][x] Currículos: Quitar el botón de archivar de la pastilla. hacer que toda la pastilla vuelva a ser clickable. Usar  el botón de "eliminar" que tenemos al lado del botón de "editar" dentro del currículo para archvar el currículo.
+- [P1][x] Permitir archivar programaciones que no estén asociadas a ninguna evaluación (añadir un botón junto al de "Configuración") de la programación, y permitir archivar evaluaciones (añadir el botón, dentro de la evaluación, en la línea del nombre, a la derecha).
+- [P0][x] Programaciones/Ras vs Instrumentos: Ahora mismo en la matriz solo aparecen los instrumentos que aportan algo a algún RA. Que aparezcan todos, aunque aun no aporten nada a ningún RA.
+- [P3][x] Los filtros de listas de Currículos y programaciones dejarlos en dos líneas. Ahora mismo intentando ocupase cortan los textos, y el botón de filtrar igualmente está en la segunda línea. Repartir todo mejor.
+- [P3][x] Pastillas de programaciones, currículos, evaluaciones: a veces, incluso truncando el nombre, no cabe bien y el indicador del estado (borrador/publicado) y el de público/privado, se salen de la pastilla. Que no ocurra eso. Que siempre estén alineados a la derecha, y truncar aun más caracteres del nombre si hace falta.
+- [P0][x] Evaluaciones: Los campos ID, email deben ser únicos para los alumnos. Al insertar nuevo alumno, si ya existe algún alumno con mismo email o ID, que lance un mensaje de error y no permita insertarlo. 
+- [P1][x] Evaluaciones: Eliminar el estado (borrador/publicada). Eliminar visibilidad Publica/privada. Que un usuario solo pueda ver sus propias evaluaciones. Eliminar el filtro del creador. Ajustar todos los elementos visuales acorde a todo esto. 
+- [P2][x] Listas de currículos, programaciones: Añadir un desplegable "Ordenar por.." que permita ordenar por nombre ASC/DESC, fecha ASC/DESC.
+- [P2][x] Evaluaciones: Si un trimestre está cerrado, no se pueden tocar las notas ajustadas de esos trimestres.
+- [P3][x] Programaciones: en la pastilla de cada programación, el indicador de "Publicada"/"Draft" cuando esté publciada, debería salir en verde (como para los currículos).
+- [P3][x] Evaluaciones, pastillas: Añadimos una fila más donde mostremos el nombre de la programación que se usa en la evaluación y quitamos el creador.
+- [P3][x] Evaluaciones, PRIS/PMIS: Poner un tamaño máximo de casilla. Ahora mismo se autoajusta al ancho y cuando hay pocos (2 o 3 sueles er lo normal), queda gigantesco.
+- [P3][ ] Evaluaciones, PRIS/PMIS: FIX: No está bien ajustado al ancho. Sobra muhco.
+- [P2][ ] "Mi Cuenta": Que permita editar el nombre y los apellidos.
 
-## Phase 6 - Collaboration and Visibility
 
-- [P0][x] Programación: Que se pueda editar la visibilidad, el año académico, y el título.
-- [P0][x] BUG: Los currículos y programaciones que tengan visibilidad "Organización" no aparecen para otros usuarios.
-- [P0][x] Los currículos y programaciones que tengan visibilidad "Organización", solo son accesibles en modo "lectura" (como consulta) por aquellos que no sean sus creadores. Los currículos que no sean propios y estén visibles a nivel de organización se podrán usar de base para crear una programación nueva propia.
-- [P1][x] Añadir una opción para "clonar" una programación de visibilidad "organización" para usarla como propia.
-- [P1][x] Currículos: Que aparezca el nombre del usuario que creó el currículo.
-- [P1][x] Currículos: Añadir un filtro para poder filtrar por nombre o dueño.
-- [P1][x] Programaciones: Que aparezca el nombre del usuario que creó la programación y el currículo usado.
-- [P1][x] Programaciones: Añadir un filtro para poder filtrar por nombre, dueño, currículo usado.
-- [P2][x] Currículos: los bloques de cada currículo son muy grandes. Reducir tamaño, reducir también el tamaño del texto del nombre
-- [P2][x] Currículos y programaciones: Cambiar la etiqueta de visibilidad "organización" o "Mi organización" por "Público".
+## Phase 10 - Cambio de normativa: 2 evaluaciones por año en lugar de 3
 
-### Phase 9 - Futuro: Congelación de notas por trimestre (Opción B)
+- [P0][ ] Cambiamos el concepto de "Trimestre" por "Evaluación". Documentamos cada cambio que se va a hacer en estas tareas, porque son importantes.
+- [P0][ ] Al crear una programación, dar a elegir si la programación constará de 3 periodos de evaluación (plan antiguo, por trimestres), o 2 (plan nuevo, con primera evaluación y segunda evaluación).
+- [P0][ ] Reflejar esos periodos en las pantallas de "Pesos": en lugar de T1, T2, T3, mostrar EV1, EV2, EV3 (o EV1 y EV2 si es plan nuevo), Unidades de Trabajo (Trimestre por evaluaciones y 2 o 3 columnas).
+- [P0][ ] Las evaluaciones "heredan" el número de evaluaciones de su programación. Si la programación tiene 2 evaluaciones, la evaluación tendrá 2 evaluaciones. Si la programación tiene 3 evaluaciones, la evaluación tendrá 3 evaluaciones. Reflejar esto en las pantallas de "Matriz de notas" (en el filtro), en las notas calculadas (tanto en el filtro como en las columnas), y en las exportaciones (NOtas trimestrales pasa a ser "NOtas por evaluaciones" y reflejaría las evaluaciones correspondientes, ya sean 2 o 3).
+- [P0][ ] Evaluaciones: Cambio adicional en las notas calculadas: en el caso de tener la normativa nueva (2 evaluaciones), en la matriz de  notas calculadas, en la columna "FInal", tendremos la "Auto", la ajustada pasaría a llamarse "Final 1" (funcionaría igual que ahora), y tendríamos otra nueva columna "Final 2". De partida, tendrá el mismo funcionamiento que la ajustada (ahora  "final 1").
 
-> **Nota:** Esta tarea es distinta de los nuevos toggles de cierre global de T1/T2/T3 en 3.6.4. Aquí se mantiene la idea de congelación histórica avanzada (versionado completo de pesos y auditoría).
+## Phase 11 - Continuar con los Tests.
+- [P2][ ] Revisar y actualizar el estado de los tests.
+- [P3][ ] Elaborar los tests pendientes. Ir marcando los que se vayan completando.
 
-- [P3] [ ] Definir concepto de "trimestre cerrado": las notas calculadas de un trimestre se congelan y no se ven afectadas por cambios futuros de pesos.
-- [P3] [ ] Mecanismo para que el profesor "cierre" un trimestre explícitamente.
-- [P3] [ ] El motor de notas debe usar dos conjuntos de pesos:
-  - Pesos vigentes al cierre del trimestre → para notas ya calculadas.
-  - Pesos actuales → para trimestres abiertos y futuras entradas de notas.
-- [P3] [ ] UI para mostrar qué pesos se usaron en cada trimestre y permitir revisar histórico.
-- [P3] [ ] Auditoría de cambios de pesos con fecha y responsable.
+## Phase 12 - Exportar programación
+
+- [P1][ ] Buscar una manera de poder exportar un pdf o un docx con un formato igual al de los documentos de programación que se encuentran en la carpeta `docs/templates`. Inicialmente, solo con el contenido de la programación (sin las evaluaciones).
+- [P2][ ] Añadir la posibilidad de añadir los bloques adicionales "tipo" a la exportación, de acuerdo también a los templates.
+
+
 
 ## Ongoing Quality Tasks
 

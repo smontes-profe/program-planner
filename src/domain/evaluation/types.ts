@@ -2,7 +2,6 @@
  * Evaluation Module Types
  */
 
-export type EvaluationContextStatus = 'draft' | 'active' | 'closed';
 export type TrimesterKey = 'T1' | 'T2' | 'T3';
 
 export interface EvaluationContext {
@@ -11,13 +10,14 @@ export interface EvaluationContext {
   created_by_profile_id: string;
   academic_year: string;
   title: string;
-  status: EvaluationContextStatus;
+  archived_at?: string | null;
   created_at: string;
 
   // Relations
   plan_ids?: string[];
   plan_count?: number;
   student_count?: number;
+  plan_names?: string[];
 }
 
 export interface EvaluationContextFull extends EvaluationContext {

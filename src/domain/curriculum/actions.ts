@@ -395,6 +395,59 @@ export async function deleteTemplate(id: string): Promise<ActionResponse> {
 }
 
 /**
+ * Archive a curriculum template if it has no associated teaching plans
+ */
+export async function archiveTemplate(templateId: string): Promise<ActionResponse<any>> {
+  const supabase = await createClient();
+  
+  // Check if template exists and user has permission
+  const { data: template, error: templateError } = await supabase
+    .from("curriculum_templates")
+    .select("id, organization_id, created_by_profile_id")
+    .eq("id", templateId)
+    .single();
+    
+  if (templateError || !template) {
+    return { ok: false, error: "Currículo no encontrado" };
+  }
+  
+  // Check user permissions
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || template.created_by_profile_id !== user.id) {
+    return { ok: false, error: "No tienes permiso para archivar este currículo" };
+  }
+  
+  // Check if there are any teaching plans using this template
+  const { data: plans, error: plansError } = await supabase
+    .from("teaching_plans")
+    .select("id")
+    .eq("source_template_id", templateId)
+    .limit(1);
+    
+  if (plansError) {
+    return { ok: false, error: "Error al verificar programaciones asociadas" };
+  }
+  
+  if (plans && plans.length > 0) {
+    return { ok: false, error: "No se puede archivar un currículo que tiene programaciones asociadas" };
+  }
+  
+  // Archive the template
+  const { error: archiveError } = await supabase
+    .from("curriculum_templates")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", templateId);
+    
+  if (archiveError) {
+    return { ok: false, error: `Error al archivar currículo: ${archiveError.message}` };
+  }
+
+  revalidatePath("/curriculum");
+  revalidatePath(`/curriculum/${templateId}`);
+  return { ok: true, data: null };
+}
+
+/**
  * List templates for a user based on their organization and visibility
  */
 export async function listTemplates(): Promise<ActionResponse<CurriculumTemplate[]>> {
@@ -402,10 +455,11 @@ export async function listTemplates(): Promise<ActionResponse<CurriculumTemplate
   const userId = await getCurrentUserId(supabase);
   if (!userId) return { ok: false, error: "Usuario no autenticado" };
 
-  // Use the database RLS via the standard query
+  // Use the database RLS via the standard query, excluding archived templates
   const { data, error } = await supabase
     .from("curriculum_templates")
     .select("*")
+    .is("archived_at", null)
     .order("created_at", { ascending: false });
 
   if (error) return { ok: false, error: error.message };

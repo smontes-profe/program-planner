@@ -1,20 +1,42 @@
-import { listEvaluationContexts, listPublishedPlans, createEvaluationContext, deleteEvaluationContext, linkTeachingPlan } from "@/domain/evaluation/actions";
+import { listEvaluationContexts, listPublishedPlans, createEvaluationContext, linkTeachingPlan } from "@/domain/evaluation/actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { BookOpen, AlertCircle, Users, CalendarDays, Trash2, Plus } from "lucide-react";
+import { BookOpen, AlertCircle, CalendarDays, Plus, Search } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { DeleteContextButton } from "./_components/DeleteContextButton";
+import { createAdminClient } from "@/lib/supabase";
+
+const EVALUATION_TITLE_MAX_LENGTH = 25;
+
+function truncateEvaluationTitle(title: string): string {
+  if (title.length <= EVALUATION_TITLE_MAX_LENGTH) {
+    return title;
+  }
+  return `${title.slice(0, EVALUATION_TITLE_MAX_LENGTH).trimEnd()}...`;
+}
 
 export const metadata = {
   title: "Evaluaciones - Program Planner",
   description: "Gestiona las evaluaciones de tus módulos y alumnos.",
 };
 
-export default async function EvaluationsPage({ searchParams }: { searchParams?: Promise<{ error?: string }> }) {
+export default async function EvaluationsPage({ 
+  searchParams 
+}: { 
+  searchParams?: Promise<{ 
+    error?: string
+    q?: string
+    year?: string
+    status?: string
+    module?: string
+    owner?: string
+  }> 
+}) {
   const params = await searchParams;
+  
+    
   const [contextsResult, plansResult] = await Promise.all([
     listEvaluationContexts(),
     listPublishedPlans(),
@@ -38,6 +60,44 @@ export default async function EvaluationsPage({ searchParams }: { searchParams?:
 
   const contexts = contextsResult.data;
   const publishedPlans = plansResult.ok ? plansResult.data : [];
+
+  // Enrich contexts with creator names and module information
+  const adminClient = createAdminClient();
+  const creatorIds = Array.from(new Set(contexts.map(c => c.created_by_profile_id).filter(Boolean)));
+  const { data: creators } = creatorIds.length > 0
+    ? await adminClient.from("profiles").select("id, full_name").in("id", creatorIds)
+    : { data: [] as { id: string; full_name: string | null }[] };
+
+  const creatorNameById = new Map((creators ?? []).map(creator => [creator.id, creator.full_name]));
+
+  const enrichedContexts = contexts.map(ctx => ({
+    ...ctx,
+    creator_name: creatorNameById.get(ctx.created_by_profile_id) ?? null,
+  }));
+
+  // Extract filter options and apply filters
+  const query = params?.q?.trim().toLowerCase() ?? "";
+  const yearFilter = params?.year?.trim() ?? "";
+  const moduleFilter = params?.module?.trim() ?? "";
+
+  const yearOptions = Array.from(new Set(enrichedContexts.map(c => c.academic_year).filter(Boolean))) as string[];
+  const moduleOptions = Array.from(new Set(
+    enrichedContexts
+      .flatMap(c => c.plan_ids || [])
+      .map(planId => publishedPlans.find(p => p.id === planId)?.module_code)
+      .filter(Boolean)
+  )) as string[];
+
+  const filteredContexts = enrichedContexts.filter(ctx => {
+    const matchesQuery = !query || [ctx.title, ctx.creator_name].some(value =>
+      value?.toLowerCase().includes(query)
+    );
+    const matchesYear = !yearFilter || ctx.academic_year === yearFilter;
+    const matchesModule = !moduleFilter || (ctx.plan_ids || []).some(
+      planId => publishedPlans.find(p => p.id === planId)?.module_code === moduleFilter
+    );
+    return matchesQuery && matchesYear && matchesModule;
+  });
 
   return (
     <div className="app-content">
@@ -63,89 +123,100 @@ export default async function EvaluationsPage({ searchParams }: { searchParams?:
         </Card>
       )}
 
-      {contexts.length === 0 ? (
+      <form className="mb-6 grid gap-3 rounded-xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/40 md:grid-cols-[minmax(0,2fr)_repeat(auto-fit,minmax(120px,1fr))_auto] lg:grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))_auto]">
+        <label className="relative block">
+          <span className="sr-only">Buscar evaluaciones</span>
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <input
+            type="text"
+            name="q"
+            defaultValue={params?.q ?? ""}
+            placeholder="Buscar por título o creador"
+            className="flex h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+          />
+        </label>
+        <select
+          name="year"
+          defaultValue={params?.year ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los años</option>
+          {yearOptions.sort().reverse().map((year) => (
+            <option key={year} value={year}>{year}</option>
+          ))}
+        </select>
+        <select
+          name="status"
+          defaultValue={params?.status ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los estados</option>
+          <option value="draft">Borrador</option>
+          <option value="active">Activo</option>
+          <option value="closed">Cerrado</option>
+        </select>
+        <select
+          name="module"
+          defaultValue={params?.module ?? ""}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
+        >
+          <option value="">Todos los módulos</option>
+          {moduleOptions.map((module) => (
+            <option key={module} value={module}>{module}</option>
+          ))}
+        </select>
+                <button className={buttonVariants({ variant: "outline" })} type="submit">
+          Filtrar
+        </button>
+      </form>
+
+      {filteredContexts.length === 0 ? (
         <Card className="bg-zinc-50/50 border-dashed border-2 dark:bg-zinc-900/20 border-zinc-200 dark:border-zinc-800">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <div className="bg-zinc-100 dark:bg-zinc-800 p-5 rounded-full mb-5">
               <BookOpen className="h-12 w-12 text-zinc-400" />
             </div>
             <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
-              Aún no tienes contextos de evaluación
+              {contexts.length === 0 
+                ? "Aún no tienes contextos de evaluación"
+                : "No hay contextos que coincidan con los filtros"
+              }
             </h3>
             <p className="text-zinc-500 dark:text-zinc-400 text-center max-w-sm mb-6 text-sm">
-              Crea tu primer contexto de evaluación para empezar a registrar notas de tus alumnos.
+              {contexts.length === 0
+                ? "Crea tu primer contexto de evaluación para empezar a registrar notas de tus alumnos."
+                : "Intenta cambiar los filtros para ver más resultados."
+              }
             </p>
-            <CreateContextButton publishedPlans={publishedPlans} />
+            {contexts.length === 0 && <CreateContextButton publishedPlans={publishedPlans} />}
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {contexts.map((ctx) => {
-            const statusColors = {
-              draft: "bg-zinc-300 dark:bg-zinc-700",
-              active: "bg-emerald-500",
-              closed: "bg-blue-500",
-            };
-            const statusLabels = {
-              draft: "Borrador",
-              active: "Activo",
-              closed: "Cerrado",
-            };
-
+          {filteredContexts.map((ctx) => {
             return (
-              <Card
-                key={ctx.id}
-                className="hover:shadow-md transition-shadow group overflow-hidden border-zinc-200 dark:border-zinc-800"
-              >
-                <div className={cn("h-1 w-full", statusColors[ctx.status])} />
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <span className={cn(
-                      "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium",
-                      "bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
-                    )}>
-                      {statusLabels[ctx.status]}
-                    </span>
-                  </div>
-                  <CardTitle className="mt-2 text-xl tracking-tight text-zinc-900 dark:text-zinc-50">
-                    {ctx.title}
-                  </CardTitle>
-                  <CardDescription className="flex items-center gap-1 font-mono text-zinc-500 dark:text-zinc-400">
-                    <CalendarDays className="h-3.5 w-3.5" />
-                    {ctx.academic_year}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-4 text-sm text-zinc-400 mb-3">
-                    <span className="flex items-center gap-1">
-                      <BookOpen className="h-3.5 w-3.5" />
-                      {ctx.plan_count} módulo{ctx.plan_count !== 1 ? "s" : ""}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Users className="h-3.5 w-3.5" />
-                      {ctx.student_count} alumno{ctx.student_count !== 1 ? "s" : ""}
-                    </span>
-                  </div>
-                    <div className="flex justify-between items-center text-sm pt-2">
-                      <div className="flex gap-2">
-                        <Link
-                          href={`/evaluations/${ctx.id}`}
-                          className={cn(buttonVariants({ variant: "default", size: "sm" }), "bg-emerald-600 hover:bg-emerald-700 text-white")}
-                        >
-                          Abrir
-                        </Link>
-                        <Link
-                          href={`/evaluations/configurar/${ctx.id}`}
-                          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "text-zinc-900 dark:text-zinc-50")}
-                        >
-                          Configurar
-                        </Link>
-                      </div>
-                      <DeleteContextButton contextId={ctx.id} />
+              <Link key={ctx.id} href={`/evaluations/${ctx.id}`} className="block group">
+                <Card className="hover:shadow-md transition-shadow overflow-hidden border-zinc-200 dark:border-zinc-800 h-full">
+                  <div className="h-1 w-full bg-emerald-500" />
+                  <CardHeader className="pb-1">
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-50" title={ctx.title}>
+                        {truncateEvaluationTitle(ctx.title)}
+                      </CardTitle>
+                      <CardDescription className="font-mono text-zinc-500 dark:text-zinc-400 text-xs">
+                        <CalendarDays className="h-3.5 w-3.5 inline mr-1" />
+                        {ctx.academic_year}
+                      </CardDescription>
                     </div>
-                  </CardContent>
+                    {ctx.plan_names && ctx.plan_names.length > 0 && (
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+                        <span className="font-medium">Programación:</span> {ctx.plan_names.join(", ")}
+                      </div>
+                    )}
+                  </CardHeader>
                 </Card>
-              );
+              </Link>
+            );
             })}
         </div>
       )}

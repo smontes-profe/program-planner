@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { type TeachingPlanFull, type PlanInstrument, type InstrumentType } from "@/domain/teaching-plan/types";
 import { 
-  addPlanInstrument, updatePlanInstrument, deletePlanInstrument 
+  addPlanInstrument, updatePlanInstrument, deletePlanInstrument, updatePlanInstrumentOrder 
 } from "@/domain/teaching-plan/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Plus, Edit2, Trash2, Loader2, Calculator, Zap } from "lucide-react";
+import { Plus, Edit2, Trash2, Loader2, Calculator, Zap, GripVertical } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Checkbox } from "@/components/ui/checkbox";
 import { 
@@ -26,6 +26,25 @@ import {
   Tooltip, TooltipTrigger, TooltipContent, TooltipProvider 
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface InstrumentsTabProps {
   readonly plan: TeachingPlanFull;
@@ -613,12 +632,217 @@ function InstrumentForm({ plan, initialData, onSubmit, onCancel, isPending, erro
   )
 }
 
+// Sortable row component
+function SortableInstrumentRow({ 
+  instrument, 
+  plan, 
+  readOnly, 
+  onEdit, 
+  onDelete, 
+  onTypeChange 
+}: {
+  instrument: PlanInstrument;
+  plan: TeachingPlanFull;
+  readOnly: boolean;
+  onEdit: (instrument: PlanInstrument) => void;
+  onDelete: (instrument: PlanInstrument) => void;
+  onTypeChange: (instrumentId: string, newType: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: instrument.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const unitCodes = (instrument.unit_ids || []).map(uId => {
+    const unit = plan.units?.find(u => u.id === uId);
+    return { id: uId, code: unit?.code || "?" };
+  });
+
+  // RA info with coverage percent — include RA id for unique key
+  const rasWithCoverage = (instrument.ra_coverages || []).map(rc => {
+    const ra = plan.ras.find(r => r.id === rc.plan_ra_id);
+    return ra ? { id: ra.id, code: ra.code, description: ra.description, coverage: rc.coverage_percent } : null;
+  }).filter(Boolean);
+
+  // Fallback: legacy ra_ids without coverage data
+  if (rasWithCoverage.length === 0 && instrument.ra_ids?.length) {
+    for (const raId of instrument.ra_ids) {
+      const ra = plan.ras.find(r => r.id === raId);
+      if (ra) rasWithCoverage.push({ id: ra.id, code: ra.code, description: ra.description, coverage: 0 });
+    }
+  }
+
+  // Filtered weights and their associated CEs — include CE id for unique key
+  const ces = (instrument.ce_weights || []).map(cw => {
+    const ce = plan.ras.flatMap(r => r.ces || []).find(c => c.id === cw.plan_ce_id);
+    // Find which RA this CE belongs to
+    const parentRA = plan.ras.find(r => r.ces?.some(c => c.id === cw.plan_ce_id));
+    return ce ? { id: ce.id, code: ce.code, description: ce.description, weight: cw.weight, raId: parentRA?.id, raCode: parentRA?.code } : null;
+  }).filter(Boolean);
+
+  // Group CEs by RA
+  const cesByRA = new Map<string, typeof ces>();
+  for (const ce of ces) {
+    if (!ce) continue;
+    const raId = ce.raId || "unknown";
+    if (!cesByRA.has(raId)) cesByRA.set(raId, []);
+    cesByRA.get(raId)!.push(ce);
+  }
+
+  return (
+    <TableRow ref={setNodeRef} style={style} {...attributes} className={cn(isDragging && "opacity-50")}>
+      <TableCell className={cn("font-mono text-xs font-bold text-zinc-400", COLUMN_SEPARATOR_CLASS)}>
+        {instrument.code}
+      </TableCell>
+      <TableCell className={cn("min-w-0", COLUMN_SEPARATOR_CLASS)}>
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2">
+            <span
+              className="font-medium text-sm text-zinc-900 dark:text-zinc-100 truncate max-w-[220px]"
+              title={instrument.name}
+            >
+              {instrument.name}
+            </span>
+            {instrument.is_pri_pmi && (
+              <Badge variant="warning" className="text-[10px] py-0">PRI/PMI</Badge>
+            )}
+          </div>
+          {instrument.description && (
+            <span className="text-xs text-zinc-400 truncate max-w-[220px]" title={instrument.description}>
+              {instrument.description}
+            </span>
+          )}
+        </div>
+      </TableCell>
+      <TableCell className={COLUMN_SEPARATOR_CLASS}>
+        {readOnly ? (
+          <span className="px-1 text-[11px] font-medium text-zinc-600 dark:text-zinc-300">
+            {getInstrumentTypeLabel(instrument.type)}
+          </span>
+        ) : (
+          <Select value={instrument.type} onValueChange={(v) => v && onTypeChange(instrument.id, v)}>
+            <SelectTrigger className="h-6 w-auto min-w-[90px] border-0 bg-transparent shadow-none px-1 py-0 text-[11px] font-medium focus:ring-0 focus:outline-none">
+              <SelectValue>{getInstrumentTypeLabel(instrument.type)}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {INSTRUMENT_TYPES.map(t => (
+                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </TableCell>
+      <TableCell className={cn("max-w-[100px] min-w-0", COLUMN_SEPARATOR_CLASS)}>
+        <div className="flex flex-wrap gap-1">
+          {unitCodes.map(uc => (
+            <Badge key={uc.id} variant="outline" className="text-[10px] py-0">{uc.code}</Badge>
+          ))}
+        </div>
+      </TableCell>
+      <TableCell className={cn("max-w-[140px] min-w-0", COLUMN_SEPARATOR_CLASS)}>
+        <div className="flex flex-wrap gap-1">
+          {rasWithCoverage.map(ra => (
+            <Tooltip key={ra!.id}>
+              <TooltipTrigger className="cursor-help">
+                <Badge variant="neutral" className="bg-zinc-100 text-[10px] py-0 hover:bg-zinc-200 gap-0.5">
+                  RA {ra!.code}
+                  {!instrument.is_pri_pmi && ra!.coverage > 0 && (
+                    <span className="text-emerald-600 font-bold ml-0.5">{ra!.coverage}%</span>
+                  )}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="space-y-1">
+                  <p className="font-bold">{ra!.description}</p>
+                  {!instrument.is_pri_pmi && ra!.coverage > 0 && (
+                    <p className="text-emerald-400">Cobertura: {ra!.coverage}% de la nota del RA</p>
+                  )}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          ))}
+        </div>
+      </TableCell>
+      <TableCell className={cn("min-w-0", COLUMN_SEPARATOR_CLASS)}>
+        <div className="flex flex-col gap-1.5">
+          {instrument.is_pri_pmi ? (
+            <span className="text-[11px] text-zinc-400">No aplica (PRI/PMI)</span>
+          ) : ces.length > 0 ? (
+            Array.from(cesByRA.entries()).map(([raId, raCes]) => (
+              <div key={raId} className="flex flex-col gap-0.5">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400">
+                  RA {raCes[0]?.raCode}
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {raCes.map(ce => (
+                    <Tooltip key={ce!.id}>
+                      <TooltipTrigger className="cursor-help flex items-center gap-1 group">
+                        <span className="text-[11px] font-mono font-bold text-zinc-500 group-hover:text-primary transition-colors">{ce!.code})</span>
+                        <span className="text-[10px] text-zinc-400 font-medium">{ce!.weight}%</span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="space-y-1">
+                          <p className="font-bold border-b border-zinc-700 pb-1 mb-1">Criterio {ce!.code}</p>
+                          <p>{ce!.description}</p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  ))}
+                </div>
+              </div>
+            ))
+          ) : (
+            <span className="text-zinc-300">-</span>
+          )}
+        </div>
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex justify-end gap-1">
+          {!readOnly && (
+            <>
+              <div 
+                className="flex items-center justify-center w-8 h-8 text-zinc-400 hover:text-zinc-600 cursor-grab active:cursor-grabbing"
+                {...listeners}
+              >
+                <GripVertical className="h-4 w-4" />
+              </div>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900" onClick={() => onEdit(instrument)}>
+                <Edit2 className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-red-600" onClick={() => onDelete(instrument)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
+
 export function InstrumentsTab({ plan, readOnly = false }: InstrumentsTabProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [editingInstrument, setEditingInstrument] = useState<PlanInstrument | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState("");
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   async function handleSubmit(
     payload: any,
@@ -667,6 +891,25 @@ export function InstrumentsTab({ plan, readOnly = false }: InstrumentsTabProps) 
     else alert(res.error);
   };
 
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = plan.instruments?.findIndex((inst) => inst.id === active.id) ?? 0;
+      const newIndex = plan.instruments?.findIndex((inst) => inst.id === over.id) ?? 0;
+      
+      const newOrder = arrayMove(plan.instruments || [], oldIndex, newIndex);
+      const orderedIds = newOrder.map(inst => inst.id);
+      
+      const res = await updatePlanInstrumentOrder(plan.id, orderedIds);
+      if (res.ok) {
+        router.refresh();
+      } else {
+        alert(res.error);
+      }
+    }
+  };
+
   return (
     <TooltipProvider>
       <div className="space-y-4">
@@ -709,188 +952,242 @@ export function InstrumentsTab({ plan, readOnly = false }: InstrumentsTabProps) 
         </div>
 
         <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-white dark:bg-zinc-950 shadow-sm">
-          <Table>
-            <TableHeader className="bg-zinc-50/50 dark:bg-zinc-900/50">
-              <TableRow>
-                <TableHead className={cn("w-[80px]", COLUMN_SEPARATOR_CLASS)}>Código</TableHead>
-                <TableHead className={COLUMN_SEPARATOR_CLASS}>Instrumento</TableHead>
-                <TableHead className={cn("w-[90px]", COLUMN_SEPARATOR_CLASS)}>Tipo</TableHead>
-                <TableHead className={cn("w-[100px]", COLUMN_SEPARATOR_CLASS)}>UTs</TableHead>
-                <TableHead className={cn("w-[140px]", COLUMN_SEPARATOR_CLASS)}>RAs (cobertura)</TableHead>
-                <TableHead className={COLUMN_SEPARATOR_CLASS}>CEs</TableHead>
-                <TableHead className="text-right w-[100px]">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {plan.instruments?.length === 0 ? (
+          {!readOnly && plan.instruments && plan.instruments.length > 0 ? (
+            <DndContext 
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext 
+                items={plan.instruments.map(inst => inst.id)} 
+                strategy={verticalListSortingStrategy}
+              >
+                <Table>
+                  <TableHeader className="bg-zinc-50/50 dark:bg-zinc-900/50">
+                    <TableRow>
+                      <TableHead className={cn("w-[80px]", COLUMN_SEPARATOR_CLASS)}>Código</TableHead>
+                      <TableHead className={COLUMN_SEPARATOR_CLASS}>Instrumento</TableHead>
+                      <TableHead className={cn("w-[90px]", COLUMN_SEPARATOR_CLASS)}>Tipo</TableHead>
+                      <TableHead className={cn("w-[100px]", COLUMN_SEPARATOR_CLASS)}>UTs</TableHead>
+                      <TableHead className={cn("w-[140px]", COLUMN_SEPARATOR_CLASS)}>RAs (cobertura)</TableHead>
+                      <TableHead className={COLUMN_SEPARATOR_CLASS}>CEs</TableHead>
+                      <TableHead className="text-right w-[120px]">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {plan.instruments?.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="h-32 text-center text-zinc-500 italic">
+                          No hay instrumentos definidos.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      plan.instruments.map((inst) => (
+                        <SortableInstrumentRow
+                          key={inst.id}
+                          instrument={inst}
+                          plan={plan}
+                          readOnly={readOnly}
+                          onEdit={handleEdit}
+                          onDelete={handleDelete}
+                          onTypeChange={handleTypeChange}
+                        />
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </SortableContext>
+            </DndContext>
+          ) : (
+            <Table>
+              <TableHeader className="bg-zinc-50/50 dark:bg-zinc-900/50">
                 <TableRow>
-                  <TableCell colSpan={7} className="h-32 text-center text-zinc-500 italic">
-                    No hay instrumentos definidos.
-                  </TableCell>
+                  <TableHead className={cn("w-[80px]", COLUMN_SEPARATOR_CLASS)}>Código</TableHead>
+                  <TableHead className={COLUMN_SEPARATOR_CLASS}>Instrumento</TableHead>
+                  <TableHead className={cn("w-[90px]", COLUMN_SEPARATOR_CLASS)}>Tipo</TableHead>
+                  <TableHead className={cn("w-[100px]", COLUMN_SEPARATOR_CLASS)}>UTs</TableHead>
+                  <TableHead className={cn("w-[140px]", COLUMN_SEPARATOR_CLASS)}>RAs (cobertura)</TableHead>
+                  <TableHead className={COLUMN_SEPARATOR_CLASS}>CEs</TableHead>
+                  <TableHead className="text-right w-[100px]">Acciones</TableHead>
                 </TableRow>
-              ) : (
-                plan.instruments?.map((inst) => {
-                  const unitCodes = (inst.unit_ids || []).map(uId => {
-                    const unit = plan.units?.find(u => u.id === uId);
-                    return { id: uId, code: unit?.code || "?" };
-                  });
+              </TableHeader>
+              <TableBody>
+                {plan.instruments?.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="h-32 text-center text-zinc-500 italic">
+                      No hay instrumentos definidos.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  (plan.instruments || [])
+                    .sort((a, b) => {
+                      const codeA = a.code || "";
+                      const codeB = b.code || "";
+                      return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: 'base' });
+                    })
+                    .map((inst) => {
+                    const unitCodes = (inst.unit_ids || []).map(uId => {
+                      const unit = plan.units?.find(u => u.id === uId);
+                      return { id: uId, code: unit?.code || "?" };
+                    });
 
-                  // RA info with coverage percent — include RA id for unique key
-                  const rasWithCoverage = (inst.ra_coverages || []).map(rc => {
-                    const ra = plan.ras.find(r => r.id === rc.plan_ra_id);
-                    return ra ? { id: ra.id, code: ra.code, description: ra.description, coverage: rc.coverage_percent } : null;
-                  }).filter(Boolean);
+                    // RA info with coverage percent — include RA id for unique key
+                    const rasWithCoverage = (inst.ra_coverages || []).map(rc => {
+                      const ra = plan.ras.find(r => r.id === rc.plan_ra_id);
+                      return ra ? { id: ra.id, code: ra.code, description: ra.description, coverage: rc.coverage_percent } : null;
+                    }).filter(Boolean);
 
-                  // Fallback: legacy ra_ids without coverage data
-                  if (rasWithCoverage.length === 0 && inst.ra_ids?.length) {
-                    for (const raId of inst.ra_ids) {
-                      const ra = plan.ras.find(r => r.id === raId);
-                      if (ra) rasWithCoverage.push({ id: ra.id, code: ra.code, description: ra.description, coverage: 0 });
+                    // Fallback: legacy ra_ids without coverage data
+                    if (rasWithCoverage.length === 0 && inst.ra_ids?.length) {
+                      for (const raId of inst.ra_ids) {
+                        const ra = plan.ras.find(r => r.id === raId);
+                        if (ra) rasWithCoverage.push({ id: ra.id, code: ra.code, description: ra.description, coverage: 0 });
+                      }
                     }
-                  }
 
-                  // Filtered weights and their associated CEs — include CE id for unique key
-                  const ces = (inst.ce_weights || []).map(cw => {
-                    const ce = plan.ras.flatMap(r => r.ces || []).find(c => c.id === cw.plan_ce_id);
-                    // Find which RA this CE belongs to
-                    const parentRA = plan.ras.find(r => r.ces?.some(c => c.id === cw.plan_ce_id));
-                    return ce ? { id: ce.id, code: ce.code, description: ce.description, weight: cw.weight, raId: parentRA?.id, raCode: parentRA?.code } : null;
-                  }).filter(Boolean);
+                    // Filtered weights and their associated CEs — include CE id for unique key
+                    const ces = (inst.ce_weights || []).map(cw => {
+                      const ce = plan.ras.flatMap(r => r.ces || []).find(c => c.id === cw.plan_ce_id);
+                      // Find which RA this CE belongs to
+                      const parentRA = plan.ras.find(r => r.ces?.some(c => c.id === cw.plan_ce_id));
+                      return ce ? { id: ce.id, code: ce.code, description: ce.description, weight: cw.weight, raId: parentRA?.id, raCode: parentRA?.code } : null;
+                    }).filter(Boolean);
 
-                  // Group CEs by RA
-                  const cesByRA = new Map<string, typeof ces>();
-                  for (const ce of ces) {
-                    if (!ce) continue;
-                    const raId = ce.raId || "unknown";
-                    if (!cesByRA.has(raId)) cesByRA.set(raId, []);
-                    cesByRA.get(raId)!.push(ce);
-                  }
+                    // Group CEs by RA
+                    const cesByRA = new Map<string, typeof ces>();
+                    for (const ce of ces) {
+                      if (!ce) continue;
+                      const raId = ce.raId || "unknown";
+                      if (!cesByRA.has(raId)) cesByRA.set(raId, []);
+                      cesByRA.get(raId)!.push(ce);
+                    }
 
-                  return (
-                    <TableRow key={inst.id}>
-                      <TableCell className={cn("font-mono text-xs font-bold text-zinc-400", COLUMN_SEPARATOR_CLASS)}>
-                        {inst.code}
-                      </TableCell>
-                      <TableCell className={cn("min-w-0", COLUMN_SEPARATOR_CLASS)}>
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="font-medium text-sm text-zinc-900 dark:text-zinc-100 truncate max-w-[220px]"
-                              title={inst.name}
-                            >
-                              {inst.name}
-                            </span>
-                            {inst.is_pri_pmi && (
-                              <Badge variant="warning" className="text-[10px] py-0">PRI/PMI</Badge>
+                    return (
+                      <TableRow key={inst.id}>
+                        <TableCell className={cn("font-mono text-xs font-bold text-zinc-400", COLUMN_SEPARATOR_CLASS)}>
+                          {inst.code}
+                        </TableCell>
+                        <TableCell className={cn("min-w-0", COLUMN_SEPARATOR_CLASS)}>
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="font-medium text-sm text-zinc-900 dark:text-zinc-100 truncate max-w-[220px]"
+                                title={inst.name}
+                              >
+                                {inst.name}
+                              </span>
+                              {inst.is_pri_pmi && (
+                                <Badge variant="warning" className="text-[10px] py-0">PRI/PMI</Badge>
+                              )}
+                            </div>
+                            {inst.description && (
+                              <span className="text-xs text-zinc-400 truncate max-w-[220px]" title={inst.description}>
+                                {inst.description}
+                              </span>
                             )}
                           </div>
-                          {inst.description && (
-                            <span className="text-xs text-zinc-400 truncate max-w-[220px]" title={inst.description}>
-                              {inst.description}
+                        </TableCell>
+                        <TableCell className={COLUMN_SEPARATOR_CLASS}>
+                          {readOnly ? (
+                            <span className="px-1 text-[11px] font-medium text-zinc-600 dark:text-zinc-300">
+                              {getInstrumentTypeLabel(inst.type)}
                             </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className={COLUMN_SEPARATOR_CLASS}>
-                        {readOnly ? (
-                          <span className="px-1 text-[11px] font-medium text-zinc-600 dark:text-zinc-300">
-                            {getInstrumentTypeLabel(inst.type)}
-                          </span>
-                        ) : (
-                          <Select value={inst.type} onValueChange={(v) => v && handleTypeChange(inst.id, v)}>
-                            <SelectTrigger className="h-6 w-auto min-w-[90px] border-0 bg-transparent shadow-none px-1 py-0 text-[11px] font-medium focus:ring-0 focus:outline-none">
-                              <SelectValue>{getInstrumentTypeLabel(inst.type)}</SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
-                              {INSTRUMENT_TYPES.map(t => (
-                                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </TableCell>
-                      <TableCell className={cn("max-w-[100px] min-w-0", COLUMN_SEPARATOR_CLASS)}>
-                        <div className="flex flex-wrap gap-1">
-                          {unitCodes.map(uc => (
-                            <Badge key={uc.id} variant="outline" className="text-[10px] py-0">{uc.code}</Badge>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell className={cn("max-w-[140px] min-w-0", COLUMN_SEPARATOR_CLASS)}>
-                        <div className="flex flex-wrap gap-1">
-                          {rasWithCoverage.map(ra => (
-                            <Tooltip key={ra!.id}>
-                              <TooltipTrigger className="cursor-help">
-                                <Badge variant="neutral" className="bg-zinc-100 text-[10px] py-0 hover:bg-zinc-200 gap-0.5">
-                                  RA {ra!.code}
-                                  {!inst.is_pri_pmi && ra!.coverage > 0 && (
-                                    <span className="text-emerald-600 font-bold ml-0.5">{ra!.coverage}%</span>
-                                  )}
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <div className="space-y-1">
-                                  <p className="font-bold">{ra!.description}</p>
-                                  {!inst.is_pri_pmi && ra!.coverage > 0 && (
-                                    <p className="text-emerald-400">Cobertura: {ra!.coverage}% de la nota del RA</p>
-                                  )}
-                                </div>
-                              </TooltipContent>
-                            </Tooltip>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell className={cn("min-w-0", COLUMN_SEPARATOR_CLASS)}>
-                        <div className="flex flex-col gap-1.5">
-                          {inst.is_pri_pmi ? (
-                            <span className="text-[11px] text-zinc-400">No aplica (PRI/PMI)</span>
-                          ) : ces.length > 0 ? (
-                            Array.from(cesByRA.entries()).map(([raId, raCes]) => (
-                              <div key={raId} className="flex flex-col gap-0.5">
-                                <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400">
-                                  RA {raCes[0]?.raCode}
-                                </span>
-                                <div className="flex flex-wrap gap-1">
-                                  {raCes.map(ce => (
-                                    <Tooltip key={ce!.id}>
-                                      <TooltipTrigger className="cursor-help flex items-center gap-1 group">
-                                        <span className="text-[11px] font-mono font-bold text-zinc-500 group-hover:text-primary transition-colors">{ce!.code})</span>
-                                        <span className="text-[10px] text-zinc-400 font-medium">{ce!.weight}%</span>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <div className="space-y-1">
-                                          <p className="font-bold border-b border-zinc-700 pb-1 mb-1">Criterio {ce!.code}</p>
-                                          <p>{ce!.description}</p>
-                                        </div>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  ))}
-                                </div>
-                              </div>
-                            ))
                           ) : (
-                            <span className="text-zinc-300">-</span>
+                            <Select value={inst.type} onValueChange={(v) => v && handleTypeChange(inst.id, v)}>
+                              <SelectTrigger className="h-6 w-auto min-w-[90px] border-0 bg-transparent shadow-none px-1 py-0 text-[11px] font-medium focus:ring-0 focus:outline-none">
+                                <SelectValue>{getInstrumentTypeLabel(inst.type)}</SelectValue>
+                              </SelectTrigger>
+                              <SelectContent>
+                                {INSTRUMENT_TYPES.map(t => (
+                                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {!readOnly ? (
-                          <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900" onClick={() => handleEdit(inst)}>
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-red-600" onClick={() => handleDelete(inst)} disabled={isPending}>
-                              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                            </Button>
+                        </TableCell>
+                        <TableCell className={cn("max-w-[100px] min-w-0", COLUMN_SEPARATOR_CLASS)}>
+                          <div className="flex flex-wrap gap-1">
+                            {unitCodes.map(uc => (
+                              <Badge key={uc.id} variant="outline" className="text-[10px] py-0">{uc.code}</Badge>
+                            ))}
                           </div>
-                        ) : null}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
+                        </TableCell>
+                        <TableCell className={cn("max-w-[140px] min-w-0", COLUMN_SEPARATOR_CLASS)}>
+                          <div className="flex flex-wrap gap-1">
+                            {rasWithCoverage.map(ra => (
+                              <Tooltip key={ra!.id}>
+                                <TooltipTrigger className="cursor-help">
+                                  <Badge variant="neutral" className="bg-zinc-100 text-[10px] py-0 hover:bg-zinc-200 gap-0.5">
+                                    RA {ra!.code}
+                                    {!inst.is_pri_pmi && ra!.coverage > 0 && (
+                                      <span className="text-emerald-600 font-bold ml-0.5">{ra!.coverage}%</span>
+                                    )}
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <div className="space-y-1">
+                                    <p className="font-bold">{ra!.description}</p>
+                                    {!inst.is_pri_pmi && ra!.coverage > 0 && (
+                                      <p className="text-emerald-400">Cobertura: {ra!.coverage}% de la nota del RA</p>
+                                    )}
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell className={cn("min-w-0", COLUMN_SEPARATOR_CLASS)}>
+                          <div className="flex flex-col gap-1.5">
+                            {inst.is_pri_pmi ? (
+                              <span className="text-[11px] text-zinc-400">No aplica (PRI/PMI)</span>
+                            ) : ces.length > 0 ? (
+                              Array.from(cesByRA.entries()).map(([raId, raCes]) => (
+                                <div key={raId} className="flex flex-col gap-0.5">
+                                  <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400">
+                                    RA {raCes[0]?.raCode}
+                                  </span>
+                                  <div className="flex flex-wrap gap-1">
+                                    {raCes.map(ce => (
+                                      <Tooltip key={ce!.id}>
+                                        <TooltipTrigger className="cursor-help flex items-center gap-1 group">
+                                          <span className="text-[11px] font-mono font-bold text-zinc-500 group-hover:text-primary transition-colors">{ce!.code})</span>
+                                          <span className="text-[10px] text-zinc-400 font-medium">{ce!.weight}%</span>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <div className="space-y-1">
+                                            <p className="font-bold border-b border-zinc-700 pb-1 mb-1">Criterio {ce!.code}</p>
+                                            <p>{ce!.description}</p>
+                                          </div>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <span className="text-zinc-300">-</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {!readOnly ? (
+                            <div className="flex justify-end gap-1">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900" onClick={() => handleEdit(inst)}>
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-red-600" onClick={() => handleDelete(inst)} disabled={isPending}>
+                                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                              </Button>
+                            </div>
+                          ) : null}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          )}
         </div>
 
         <div className="bg-emerald-50/50 border border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/50 p-4 rounded-xl flex items-start gap-4">

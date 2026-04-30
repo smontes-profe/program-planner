@@ -39,19 +39,23 @@ async function enrichPlansMetadata<T extends { owner_profile_id: string; source_
       ? adminClient.from("profiles").select("id, full_name").in("id", ownerIds)
       : Promise.resolve({ data: [] as { id: string; full_name: string | null }[] }),
     templateIds.length > 0
-      ? adminClient.from("curriculum_templates").select("id, module_name").in("id", templateIds)
-      : Promise.resolve({ data: [] as { id: string; module_name: string | null }[] }),
+      ? adminClient.from("curriculum_templates").select("id, module_name, program_title, program_code, program_level, program_course").in("id", templateIds)
+      : Promise.resolve({ data: [] as any[] }),
   ]);
 
   const ownerNameById = new Map((owners ?? []).map((owner) => [owner.id, owner.full_name]));
-  const templateNameById = new Map((templates ?? []).map((template) => [template.id, template.module_name]));
+  const templateMetadataById = new Map((templates ?? []).map((t) => [t.id, t]));
 
   return plans.map((plan) => {
     const isOwner = plan.owner_profile_id === currentUserId;
     return {
       ...plan,
       owner_name: ownerNameById.get(plan.owner_profile_id) ?? null,
-      source_template_name: plan.source_template_id ? templateNameById.get(plan.source_template_id) ?? null : null,
+      source_template_name: plan.source_template_id ? templateMetadataById.get(plan.source_template_id)?.module_name ?? null : null,
+      program_title: plan.source_template_id ? templateMetadataById.get(plan.source_template_id)?.program_title ?? null : null,
+      program_code: plan.source_template_id ? templateMetadataById.get(plan.source_template_id)?.program_code ?? null : null,
+      program_level: plan.source_template_id ? templateMetadataById.get(plan.source_template_id)?.program_level ?? null : null,
+      program_course: plan.source_template_id ? templateMetadataById.get(plan.source_template_id)?.program_course ?? null : null,
       is_owner: isOwner,
       can_edit: isOwner,
     };
@@ -73,6 +77,7 @@ export async function listPlans(): Promise<ActionResponse<TeachingPlan[]>> {
   const { data, error } = await supabase
     .from("teaching_plans")
     .select("*")
+    .is("archived_at", null)
     .order("created_at", { ascending: false });
 
   if (error) return { ok: false, error: error.message };
@@ -123,6 +128,9 @@ export async function getPlan(planId: string): Promise<ActionResponse<TeachingPl
   if (data.units) {
     data.units.sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0));
   }
+  if (data.instruments) {
+    data.instruments.sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0));
+  }
 
   // Map the coverage data into simpler arrays for the frontend
   const mappedUnits = (data.units || []).map((u: any) => ({
@@ -148,7 +156,7 @@ export async function getPlan(planId: string): Promise<ActionResponse<TeachingPl
   const [{ data: owner }, { data: sourceTemplate }] = await Promise.all([
     adminClient.from("profiles").select("full_name").eq("id", data.owner_profile_id).maybeSingle(),
     data.source_template_id
-      ? adminClient.from("curriculum_templates").select("module_name").eq("id", data.source_template_id).maybeSingle()
+      ? adminClient.from("curriculum_templates").select("module_name, program_title, program_code, program_level, program_course").eq("id", data.source_template_id).maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
 
@@ -162,6 +170,10 @@ export async function getPlan(planId: string): Promise<ActionResponse<TeachingPl
     sourceTemplateHours: data.hours_total ?? 0,
     owner_name: owner?.full_name ?? null,
     source_template_name: sourceTemplate?.module_name ?? null,
+    program_title: sourceTemplate?.program_title ?? null,
+    program_code: sourceTemplate?.program_code ?? null,
+    program_level: sourceTemplate?.program_level ?? null,
+    program_course: sourceTemplate?.program_course ?? null,
     is_owner: isOwner,
     can_edit: isOwner,
   };
@@ -1016,6 +1028,71 @@ export async function updatePlanUnitOrder(planId: string, orderedIds: string[]):
   );
   await Promise.all(promises);
   revalidatePath(`/plans/${planId}`);
+  return { ok: true, data: null };
+}
+
+export async function updatePlanInstrumentOrder(planId: string, orderedIds: string[]): Promise<ActionResponse> {
+  const supabase = await createClient();
+  const promises = orderedIds.map((id, index) => 
+    supabase.from("plan_instrument").update({ order_index: index }).eq("id", id).eq("plan_id", planId)
+  );
+  await Promise.all(promises);
+  revalidatePath(`/plans/${planId}`);
+  return { ok: true, data: null };
+}
+
+// ARCHIVING
+// =================================================================
+
+/**
+ * Archive a teaching plan if it has no associated evaluations
+ */
+export async function archiveTeachingPlan(planId: string): Promise<ActionResponse<any>> {
+  const supabase = await createClient();
+  
+  // Check if plan exists and user has permission
+  const { data: plan, error: planError } = await supabase
+    .from("teaching_plans")
+    .select("id, organization_id, owner_profile_id")
+    .eq("id", planId)
+    .single();
+    
+  if (planError || !plan) {
+    return { ok: false, error: "Programación no encontrada" };
+  }
+  
+  // Check user permissions
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || plan.owner_profile_id !== user.id) {
+    return { ok: false, error: "No tienes permiso para archivar esta programación" };
+  }
+  
+  // Check if there are any evaluations using this plan
+  const { data: evaluations, error: evaluationsError } = await supabase
+    .from("evaluations")
+    .select("id")
+    .eq("plan_id", planId)
+    .limit(1);
+    
+  if (evaluationsError) {
+    return { ok: false, error: "Error al verificar evaluaciones asociadas" };
+  }
+  
+  if (evaluations && evaluations.length > 0) {
+    return { ok: false, error: "No se puede archivar una programación que tiene evaluaciones asociadas" };
+  }
+  
+  // Archive the plan
+  const { error: archiveError } = await supabase
+    .from("teaching_plans")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", planId);
+    
+  if (archiveError) {
+    return { ok: false, error: `Error al archivar programación: ${archiveError.message}` };
+  }
+  
+  revalidatePath("/plans");
   return { ok: true, data: null };
 }
 

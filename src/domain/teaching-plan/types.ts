@@ -17,9 +17,15 @@ export interface TeachingPlan {
   hours_total: number;
   ce_weight_auto: boolean;
   imported_at: string | null;
+  archived_at?: string | null;
   created_at: string;
   owner_name?: string | null;
   source_template_name?: string | null;
+  program_title?: string | null;
+  program_code?: string | null;
+  program_level?: string | null;
+  program_course?: string | null;
+  owner_email?: string | null;
   is_owner?: boolean;
   can_edit?: boolean;
 }
@@ -85,11 +91,12 @@ export interface PlanInstrument {
   id: string;
   plan_id: string;
   code: string;
+  name: string;
   type: InstrumentType;
   is_pri_pmi: boolean;
+  description?: string | null;
   ce_weight_auto: boolean;
-  name: string;
-  description: string | null;
+  order_index: number;
   created_at: string;
   
   // Relations

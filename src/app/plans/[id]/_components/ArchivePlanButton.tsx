@@ -1,25 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { archiveTemplate } from "@/domain/curriculum/actions";
+import { archiveTeachingPlan } from "@/domain/teaching-plan/actions";
 import { Button } from "@/components/ui/button";
 import { Archive, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-interface DeleteCurriculumButtonProps {
-  readonly templateId: string;
+interface ArchivePlanButtonProps {
+  readonly planId: string;
 }
 
-export function DeleteCurriculumButton({ templateId }: DeleteCurriculumButtonProps) {
+export function ArchivePlanButton({ planId }: ArchivePlanButtonProps) {
   const [isPending, setIsPending] = useState(false);
   const router = useRouter();
 
-  async function handleDelete() {
-    if (!confirm("¿Seguro que quieres archivar este currículo? Esta acción lo ocultará de la lista pero conservará los datos. No se puede archivar si tiene programaciones asociadas.")) return;
+  async function handleArchive() {
+    if (!confirm("¿Seguro que quieres archivar esta programación? Esta acción la ocultará de la lista pero conservará los datos. No se puede archivar si tiene evaluaciones asociadas.")) return;
     setIsPending(true);
-    const res = await archiveTemplate(templateId);
+    const res = await archiveTeachingPlan(planId);
     if (res.ok) {
-      router.push("/curriculum");
+      router.push("/plans");
     } else {
       alert(res.error);
       setIsPending(false);
@@ -30,10 +30,10 @@ export function DeleteCurriculumButton({ templateId }: DeleteCurriculumButtonPro
     <Button 
       variant="destructive" 
       size="sm" 
-      onClick={handleDelete}
+      onClick={handleArchive}
       disabled={isPending}
       className="opacity-70 hover:opacity-100 h-9"
-      title="Archivar Currículo"
+      title="Archivar Programación"
     >
       {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4" />}
     </Button>

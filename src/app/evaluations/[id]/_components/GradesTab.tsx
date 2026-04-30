@@ -304,7 +304,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
     const key = `tri:${studentId}:${trimester}`;
     const student = studentGrades.find(s => s.studentId === studentId);
     const tri = student?.trimesterGrades.find(t => t.key === trimester);
-    if (!student || !tri || !tri.adjustedIsManual) return;
+    if (!student || !tri || tri.autoIsLocked) return;
     setPendingKey(key);
     startTransition(() => {
       void (async () => {
@@ -480,6 +480,7 @@ export function GradesTab({ contextId, gradesResult }: GradesTabProps) {
                           <div className="inline-flex items-center gap-0.5">
                             <Select
                               value={value}
+                              disabled={tri.autoIsLocked}
                               onValueChange={nextValue => {
                                 const selectedValue = nextValue ?? "";
                                 setTrimesterInputs(prev => ({ ...prev, [key]: selectedValue }));

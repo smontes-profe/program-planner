@@ -56,6 +56,11 @@ export function PriPmiTab({ context, plans, scores, scoreError }: PriPmiTabProps
     return plans.map((plan) => {
       const columns: PriPmiColumn[] = (plan.instruments || [])
         .filter((instrument) => instrument.is_pri_pmi)
+        .sort((a, b) => {
+          const codeA = a.code || "";
+          const codeB = b.code || "";
+          return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: "base" });
+        })
         .map((instrument) => ({
           instrumentId: instrument.id,
           instrumentCode: instrument.code || instrument.name,
@@ -162,8 +167,8 @@ export function PriPmiTab({ context, plans, scores, scoreError }: PriPmiTabProps
       {planGroups.map((group) => (
         group.columns.length > 0 && (
           <section key={group.plan.id}>
-            <div className="overflow-x-auto max-w-full rounded-xl border border-zinc-200 dark:border-zinc-800">
-              <table className="w-full min-w-[640px] text-sm">
+            <div className="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800 inline-block">
+              <table className="w-auto min-w-[640px] text-sm">
                 <thead>
                   <tr className="bg-zinc-50 text-left text-xs font-semibold tracking-wide text-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-400">
                     <th className="px-4 py-3">Alumno</th>
@@ -197,7 +202,7 @@ export function PriPmiTab({ context, plans, scores, scoreError }: PriPmiTabProps
                           <td key={`${student.id}-${column.instrumentId}`} className="px-3 py-3 align-top">
                             <div className="flex items-center gap-2">
                               <Input
-                                className="min-w-[3rem]"
+                                className="w-16 min-w-[3rem] max-w-20"
                                 type="number"
                                 min={0}
                                 max={10}

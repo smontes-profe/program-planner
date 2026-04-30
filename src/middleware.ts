@@ -1,11 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getSupabaseEnv } from "@/lib/supabase-env";
 
 const PROTECTED_PREFIXES = ["/curriculum", "/plans", "/evaluations", "/account", "/admin"];
 const AUTH_PATH_PREFIX = "/auth";
 const AUTH_PATHS_ALLOWED_WHEN_LOGGED = ["/auth/reset-password", "/auth/confirm"];
 
 export async function middleware(request: NextRequest) {
+  const { url, key } = getSupabaseEnv();
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -13,8 +15,8 @@ export async function middleware(request: NextRequest) {
   });
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    key,
     {
       cookies: {
         getAll() {

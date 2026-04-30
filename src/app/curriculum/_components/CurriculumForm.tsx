@@ -48,7 +48,11 @@ export function CurriculumForm({ regions, organizations, templateId, initialData
     version: initialData?.version || "v1",
     region_code: initialData?.region_code || "",
     visibility_scope: initialData?.visibility_scope || "organization",
-    hours_total: initialData?.hours_total || 0
+    hours_total: initialData?.hours_total || 0,
+    program_title: initialData?.program_title || "",
+    program_code: initialData?.program_code || "",
+    program_level: initialData?.program_level || "",
+    program_course: initialData?.program_course || ""
   });
 
   // Sync state if form re-renders with new state.fields after error
@@ -62,7 +66,11 @@ export function CurriculumForm({ regions, organizations, templateId, initialData
         version: state.fields.version ?? prev.version,
         region_code: state.fields.region_code ?? prev.region_code,
         visibility_scope: state.fields.visibility_scope ?? prev.visibility_scope,
-        hours_total: state.fields.hours_total ?? prev.hours_total
+        hours_total: state.fields.hours_total ?? prev.hours_total,
+        program_title: state.fields.program_title ?? prev.program_title,
+        program_code: state.fields.program_code ?? prev.program_code,
+        program_level: state.fields.program_level ?? prev.program_level,
+        program_course: state.fields.program_course ?? prev.program_course
       }));
     }
   }, [state.fields]);
@@ -144,6 +152,87 @@ export function CurriculumForm({ regions, organizations, templateId, initialData
         {fieldErrors.module_name && (
           <p className="text-xs text-destructive">{fieldErrors.module_name[0]}</p>
         )}
+      </div>
+
+      <div className="space-y-4 p-4 rounded-lg bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800">
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Información del Título / Programa</h3>
+        
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="program_title">Título del Programa</Label>
+            <Input 
+              id="program_title" 
+              name="program_title" 
+              placeholder="Ej: Técnico Superior en Desarrollo de Aplicaciones Web" 
+              className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950"
+              value={formData.program_title}
+              onChange={handleInputChange}
+            />
+            {fieldErrors.program_title && (
+              <p className="text-xs text-destructive">{fieldErrors.program_title[0]}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="program_code">ID / Siglas</Label>
+            <Input 
+              id="program_code" 
+              name="program_code" 
+              placeholder="Ej: DAW" 
+              className="border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950"
+              value={formData.program_code}
+              onChange={handleInputChange}
+            />
+            {fieldErrors.program_code && (
+              <p className="text-xs text-destructive">{fieldErrors.program_code[0]}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="program_level">Nivel</Label>
+            <Select 
+              name="program_level" 
+              value={formData.program_level} 
+              onValueChange={(val) => setFormData(prev => ({ ...prev, program_level: val || "" }))}
+            >
+              <SelectTrigger id="program_level" className="w-full h-10 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+                <SelectValue placeholder="Selecciona nivel" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="FP Básica">FP Básica</SelectItem>
+                <SelectItem value="Grado Medio">Grado Medio</SelectItem>
+                <SelectItem value="Grado Superior">Grado Superior</SelectItem>
+                <SelectItem value="Máster">Máster</SelectItem>
+              </SelectContent>
+            </Select>
+            {fieldErrors.program_level && (
+              <p className="text-xs text-destructive">{fieldErrors.program_level[0]}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="program_course">Curso</Label>
+            <Select 
+              name="program_course" 
+              value={formData.program_course} 
+              onValueChange={(val) => setFormData(prev => ({ ...prev, program_course: val || "" }))}
+            >
+              <SelectTrigger id="program_course" className="w-full h-10 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
+                <SelectValue placeholder="Selecciona curso" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Primero">Primero</SelectItem>
+                <SelectItem value="Segundo">Segundo</SelectItem>
+                <SelectItem value="NA">NA</SelectItem>
+              </SelectContent>
+            </Select>
+            {fieldErrors.program_course && (
+              <p className="text-xs text-destructive">{fieldErrors.program_course[0]}</p>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">

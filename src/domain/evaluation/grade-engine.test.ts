@@ -77,6 +77,7 @@ function makeInstrument(
     name: "Instrumento",
     description: null,
     created_at: "2024-01-01T00:00:00Z",
+    order_index: 1,
     unit_ids: [],
     ra_ids: [],
     ra_coverages: [],
@@ -117,7 +118,6 @@ function makeContext(studentIds: string[]): EvaluationContextFull {
     created_by_profile_id: "profile-1",
     academic_year: "2024/2025",
     title: "Contexto de prueba",
-    status: "active",
     created_at: "2024-01-01T00:00:00Z",
     plans: [],
     students: studentIds.map((id, i) => ({

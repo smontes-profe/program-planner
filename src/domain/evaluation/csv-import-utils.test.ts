@@ -32,6 +32,7 @@ function makePlan(): TeachingPlanFull {
         name: "Proyecto Intermodular",
         description: null,
         created_at: "2025-01-01T00:00:00Z",
+        order_index: 1,
       },
     ],
   };

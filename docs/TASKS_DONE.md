@@ -298,6 +298,19 @@ Nuevo módulo de Evaluaciones al mismo nivel que Plantillas de Currículo y Prog
 - [P1][x] Notas calculadas: Para la nota Final ajustada, que inicialmente autocacule haciendo redondeo normal.
 - [P1][x] Notas calculadas: Calificaciones y situaciones especiales
 - [P1][x] Instrumentos: permitir desactivar la automatización de CE por instrumento y validar que sumen 100% al guardar.
+- [P0][x] Cambios en visibilidad de Programaciones y currículos: dejar solo opciones: "Privada" y "Organización". Los acurrículos y programaciones privados solo son visibles y utilizables por sus creadores.
+- [P0][x] Los currículos y programaciones que tengan visibilidad "organización", y estén en estado de "Borrador" solo deben ser visibles y usables por sus dueños.
+- [P0][x] BUG: Currículos: Visibilidad: el desplegable aun muestra "private"/"organization" (en inglés) al seleccionarse
+- [P0][x] Currículos: Añadir los siguientes campos: -Título (por ej. "Técnico Superior en Desarrollo de Aplicaciones Web") -ID (por ej. "DAW") -Nivel (desplegable con las opciones "FP Básica", "Grado Medio", "Grado Superior", "Máster"), -Curso (Desplegable con "Primero", "Segundo", "NA").
+- [P0][x] Currículos: En la "pastilla" de cada currículo, donde ahora mismo aparece ID_título - Código_Módulo - Fecha, que aparezca: ID_título - Curso (salvo si es NA, entonces no aparece curso) - Código_módulo - Fecha.
+- [P0][x] Programaciones: En la "pastilla" de cada programación, donde ahora mismo aparece Código_Módulo - Fecha, que aparezca: ID_título - Curso (salvo si es NA, entonces no aparece curso) - Código_módulo - Fecha (del currículo asociado a la programación).
+- [P0][x] Currículos y programaciones: El filtro, tanto en currículos como en programaciones, que pueda filtrar por año, por título, por ID, por curso (desplegable), por nivel de estudios (desplegable).
+- [P0][x] Evaluaciones: Añadir un filtro similar al de currículos y programaciones.
+- [P2][x] Instrumentos de evaluación: La lista de instrumentos que se ordene por código del instrumento (números, luego letras alfabéticamente).
+- [P2][x] Instrumentos de evaluación: La lista de instrumentos que se pueda reordenar a mano.
+- [P3][x] En las listas de currículos, las "pastillas" de cada currículo, son extremadamente grandes. Hay que comprimirlas aprovechando mucho mejor el espacio: Arriba del todo, el título(2 puntos menos de tamaño de fuente). Misma fila a la derecha, indicador de "publicado" o "Borrador", y el indicador de visibilidad. DEbajo la fila de ID, curso, etc (tal como la tenemos ahora). Siguiente fila: la info del creador, pero si es uno mismo que ponga "Crado por: usuario" y todo en color verde. Eliminamos el indicador de versión y comprimimos en vertical todo. Eliminamos el botón de "Ver detalles". Que toda la pastilla sea clicable.
+- [P3][x] Hacemos cambios similares en las listas de programaciones y evaluaciones.
+- [P1][x] Permitir archivar currículos que no estén asociados a ninguna programación. "Archivar" significa que no se pueda ver ni usar, pero que se guarde en la base de datos por si se quiere restaurar. En un futuro implementaremos una función para recuperar versiones antiguas.
 
 
 ## Phase 5 - Evaluation Engine
@@ -308,10 +321,19 @@ Nuevo módulo de Evaluaciones al mismo nivel que Plantillas de Currículo y Prog
 
 - [x] Implement deep import/fork from template.
 - [x] Ensure no automatic source sync after import.
+- [P0][x] Programación: Que se pueda editar la visibilidad, el año académico, y el título.
+- [P0][x] BUG: Los currículos y programaciones que tengan visibilidad "Organización" no aparecen para otros usuarios.
+- [P0][x] Los currículos y programaciones que tengan visibilidad "Organización", solo son accesibles en modo "lectura" (como consulta) por aquellos que no sean sus creadores. Los currículos que no sean propios y estén visibles a nivel de organización se podrán usar de base para crear una programación nueva propia.
+- [P1][x] Añadir una opción para "clonar" una programación de visibilidad "organización" para usarla como propia.
+- [P1][x] Currículos: Que aparezca el nombre del usuario que creó el currículo.
+- [P1][x] Currículos: Añadir un filtro para poder filtrar por nombre o dueño.
+- [P1][x] Programaciones: Que aparezca el nombre del usuario que creó la programación y el currículo usado.
+- [P1][x] Programaciones: Añadir un filtro para poder filtrar por nombre, dueño, currículo usado.
+- [P2][x] Currículos: los bloques de cada currículo son muy grandes. Reducir tamaño, reducir también el tamaño del texto del nombre
+- [P2][x] Currículos y programaciones: Cambiar la etiqueta de visibilidad "organización" o "Mi organización" por "Público".
+- [P0][ ] Evaluaciones: Mismas reglas de visiblidad que para currículos y programaciones: hacer que una evaluaación pueda ser privada o pública. Que las privadas solo las pueda ver su propio usuario, que las públcias no propias se puedan ver y clonar. No editar..
 
-
-
-## Phase 8 - CI/CD and Release
+## Phase 7 - CI/CD and Release
 
 - [x] GitHub Actions: lint + typecheck + test on PR (via quality-gates.yml).
 - [x] Branch strategy: `develop` -> development deploy, `main` -> production deploy (managed by Vercel).
@@ -319,7 +341,7 @@ Nuevo módulo de Evaluaciones al mismo nivel que Plantillas de Currículo y Prog
 - [x] Vercel environment segregation.
 - [x] Corregir tipado del Route Handler `import-grades` para Next 16 (`params` como `Promise`) y evitar fallo de `next build` en Vercel.
 
-## Phase 8.1 - UX Quality Gates
+## Phase 8 - UX Quality Gates
 
 - [x] Add automated accessibility checks (manual trigger via workflow_dispatch).
 - [x] Add responsive visual checks in CI scaffold for key breakpoints.

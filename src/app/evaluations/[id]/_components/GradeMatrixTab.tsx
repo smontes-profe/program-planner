@@ -68,6 +68,11 @@ export function GradeMatrixTab({ context, plans, scores, scoreError }: GradeMatr
       const units = plan.units || [];
       const columns: InstrumentColumn[] = (plan.instruments || [])
         .filter(instrument => !instrument.is_pri_pmi)
+        .sort((a, b) => {
+          const codeA = a.code || "";
+          const codeB = b.code || "";
+          return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: "base" });
+        })
         .map(instrument => {
           // Determine trimesters for this instrument from its units
           const instTrimesters: TrimesterKey[] = [];
