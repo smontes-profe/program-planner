@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { ChangePasswordForm } from "./_components/ChangePasswordForm";
+import { ProfileForm } from "./_components/ProfileForm";
 
 export const metadata = {
   title: "Mi cuenta - Program Planner",
-  description: "Gestiona la seguridad de tu cuenta.",
+  description: "Gestiona tus datos personales y la seguridad de tu cuenta.",
 };
 
 export default async function AccountPage() {
@@ -17,6 +18,12 @@ export default async function AccountPage() {
     redirect("/auth");
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .maybeSingle();
+
   return (
     <div className="container mx-auto max-w-3xl py-8 px-4 sm:px-6 lg:px-8 space-y-6">
       <header className="space-y-1">
@@ -26,6 +33,7 @@ export default async function AccountPage() {
         </p>
       </header>
 
+      <ProfileForm fullName={profile?.full_name ?? ""} />
       <ChangePasswordForm />
     </div>
   );
