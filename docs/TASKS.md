@@ -29,20 +29,33 @@ Status legend:
 - [P3][x] Evaluaciones, PRIS/PMIS: Poner un tamaño máximo de casilla. Ahora mismo se autoajusta al ancho y cuando hay pocos (2 o 3 sueles er lo normal), queda gigantesco.
 - [P2][x] "Mi Cuenta": Que permita editar el nombre y los apellidos.
 
+## Phase 10 - Importaciones y visibilidad
 
-## Phase 10 - Cambio de normativa: 2 evaluaciones por año en lugar de 3
+- [P1][x] NOTA: Estos cambios son importantes. Hay que documentarlos bien antes de ponerse a ello. Currículo: Cuando accedes a un currículo público no propio, habilitar un botón justo a la izquierda del de "Solo lectura" que permita importar el currículo a tu cuenta. Hacer el botón grande y visible. Los currículos clonados así, los marcamos en la base de datos como tales. El tratamiento de estos clones sería distinto: -EN la lista de currículos, y luego dentro de su propia vista, aparecen con una marca "clon". -No se pueden hacer públicos nunca. Se quedan como privados del usuario que clonó.
+- [P1][ ] Programaciones: Al crear una programación, a la hora de selecionar el currículo base, solo aparecerán los propios (ya sean originales o clones).
+- [P1][ ] Programaciones: Al crear una programación, añadir un filtro para la selección de currículo base.
+- [P1][ ] Programaciones: Similar a los currículos, cuando se accede a una programación pública no propia, habilitar un botón justo a la izquierda del de "Solo lectura" que permita importar la programación a tu cuenta. Hacer el botón grande y visible. Las programaciones clonadas así, las marcamos en la base de datos como tales. El tratamiento de estos clones sería distinto: -EN la lista de programaciones, y luego dentro de su propia vista, aparecen con una marca "clon". -No se pueden hacer públicas nunca. Se quedan como privadas del usuario que clonó.
+- [P1][ ] Evaluaciones-Exportación: Habilitar un bloque que sea "Compartir evaluación". Este bloque permitirá invitar a otros usuarios a ver la evaluación. Se mostrará un editor nuevo, donde se puedan ver la lista de emails de usuarios con acceso a la evaluación (con posibilidad de eliminarlos), y un campo de texto para añadir nuevos emails separados por comas. Si se añade algún email ya existente, se lanza un mensaje de aviso y no se duplica. Si se añade un email no válido, se lanza un aviso y no se añade. También un texto explicativo: "Añade los emails de los usuarios que quieras invitar, separados por comas. Esos usuarios podrán ver tus evaluaciones pero no modificarlas. Esto es útil, por ejemplo, para dar visibilidad a tus evaluaciones a tutores, jefes de estudio, etc."
+- [P1][ ] Evaluaciones: Deberían aparecer, no solo las evaluaciones propias, sino también aquellas en las que esté invitado el usuario. Dichas evaluaciones aparecerán con indicador en la cabecera a la derecha (Bajamos la fecha que está ahora ahí a la fila de abajo).
+- [P1][ ] Evaluación: Si es una evaluación no propia (a la que el usuario está como invitado), que aprezca el indicador arriba/derecha, y que sea solo de lectura. 
+- [P3][ ] Currículos, programaciones: en las pastillas, si el currículo o programación han sido clonados, mostrar la info "Importado: [número de veces que ha sido importado]"
+
+
+## Phase 11 - Cambio de normativa: 2 evaluaciones por año en lugar de 3
 
 - [P0][ ] Cambiamos el concepto de "Trimestre" por "Evaluación". Documentamos cada cambio que se va a hacer en estas tareas, porque son importantes.
-- [P0][ ] Al crear una programación, dar a elegir si la programación constará de 3 periodos de evaluación (plan antiguo, por trimestres), o 2 (plan nuevo, con primera evaluación y segunda evaluación).
+- [P0][ ] Al crear una programación, dar a elegir si la programación constará de 3 periodos de evaluación (plan antiguo, por trimestres), o 2 (plan nuevo, con primera evaluación y segunda evaluación). Esta elección no se puede cambiar a posteriori (avisar al usuario de esto).
 - [P0][ ] Reflejar esos periodos en las pantallas de "Pesos": en lugar de T1, T2, T3, mostrar EV1, EV2, EV3 (o EV1 y EV2 si es plan nuevo), Unidades de Trabajo (Trimestre por evaluaciones y 2 o 3 columnas).
 - [P0][ ] Las evaluaciones "heredan" el número de evaluaciones de su programación. Si la programación tiene 2 evaluaciones, la evaluación tendrá 2 evaluaciones. Si la programación tiene 3 evaluaciones, la evaluación tendrá 3 evaluaciones. Reflejar esto en las pantallas de "Matriz de notas" (en el filtro), en las notas calculadas (tanto en el filtro como en las columnas), y en las exportaciones (NOtas trimestrales pasa a ser "NOtas por evaluaciones" y reflejaría las evaluaciones correspondientes, ya sean 2 o 3).
 - [P0][ ] Evaluaciones: Cambio adicional en las notas calculadas: en el caso de tener la normativa nueva (2 evaluaciones), en la matriz de  notas calculadas, en la columna "FInal", tendremos la "Auto", la ajustada pasaría a llamarse "Final 1" (funcionaría igual que ahora), y tendríamos otra nueva columna "Final 2". De partida, tendrá el mismo funcionamiento que la ajustada (ahora  "final 1").
 
-## Phase 11 - Continuar con los Tests.
+## Phase 12 - Continuar con los Tests.
 - [P2][ ] Revisar y actualizar el estado de los tests.
 - [P3][ ] Elaborar los tests pendientes. Ir marcando los que se vayan completando.
 
-## Phase 12 - Exportar programación
+
+
+## Phase 13 - Exportar programación
 
 - [P1][ ] Buscar una manera de poder exportar un pdf o un docx con un formato igual al de los documentos de programación que se encuentran en la carpeta `docs/templates`. Inicialmente, solo con el contenido de la programación (sin las evaluaciones).
 - [P2][ ] Añadir la posibilidad de añadir los bloques adicionales "tipo" a la exportación, de acuerdo también a los templates.

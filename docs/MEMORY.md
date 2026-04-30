@@ -4,6 +4,8 @@ This doc is to be used as a persistent "memory" for AI agents working on this pr
 
 ## Important Notes
 
+- **Phase 10 importaciones y visibilidad (abril 2026):** El desarrollador ha pedido trabajar esta fase por bloques pequeÃ±os, avisando al terminar cada bloque y esperando confirmaciÃ³n antes de continuar. Documentar cada cambio confirmado en `SPECS.md`, `ARCHITECTURE.md` y `TASKS.md` antes de avanzar al siguiente bloque.
+
 - **Certeza**: Cuando des alguna respuesta sobre la que no estés seguro al 100% (ya sea de código, solución a un problema, lo que sea...), avisa de ello, a ser posible dando un porcentaje de fiabilidad.
 - **Honestidad**: Salvo que se especifique lo contrario, sé honesto. Evita "hacer la pelota". Si crees que algo está bien, regular, mal, excelente... dilo.
 - **Comunicación de Cambios:** Antes de realizar cualquier modificación importante en los archivos, el agente debe explicar detalladamente el plan de acción al usuario y esperar su visto bueno.

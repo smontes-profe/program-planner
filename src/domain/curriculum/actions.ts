@@ -302,7 +302,11 @@ export async function createTemplateDraft(payload: z.infer<typeof curriculumTemp
  */
 export async function updateTemplateDraft(id: string, payload: Partial<z.infer<typeof curriculumTemplateSchema>>): Promise<ActionResponse<CurriculumTemplate>> {
   const supabase = await createClient();
-  const { data: template } = await supabase.from("curriculum_templates").select("organization_id").eq("id", id).single();
+  const { data: template } = await supabase
+    .from("curriculum_templates")
+    .select("organization_id, is_clone")
+    .eq("id", id)
+    .single();
   if (!template) return { ok: false, error: "Plantilla no encontrada" };
 
   const { authorized, error } = await authorizeAction(supabase, 'write', template.organization_id, id);
@@ -310,10 +314,21 @@ export async function updateTemplateDraft(id: string, payload: Partial<z.infer<t
 
   const validated = curriculumTemplateSchema.partial().safeParse(payload);
   if (!validated.success) return { ok: false, error: "Datos del formulario inválidos", details: validated.error.flatten() };
+  if (template.is_clone && validated.data.visibility_scope === "organization") {
+    return {
+      ok: false,
+      error: "Los currículos clonados no se pueden hacer públicos.",
+      fields: { ...payload, visibility_scope: "private" },
+    };
+  }
+
+  const updatePayload = template.is_clone
+    ? { ...validated.data, visibility_scope: "private" as const }
+    : validated.data;
 
   const { data: updated, error: dbError } = await supabase
     .from("curriculum_templates")
-    .update(validated.data)
+    .update(updatePayload)
     .eq("id", id)
     .select()
     .single();
@@ -323,6 +338,135 @@ export async function updateTemplateDraft(id: string, payload: Partial<z.infer<t
   revalidatePath(`/curriculum/edit/${id}`);
   revalidatePath("/curriculum");
   return { ok: true, data: updated };
+}
+
+/**
+ * Clone a visible published organization curriculum into a private copy owned by the current user.
+ */
+export async function cloneCurriculumTemplate(sourceTemplateId: string): Promise<ActionResponse<CurriculumTemplate>> {
+  const parsed = z.string().uuid().safeParse(sourceTemplateId);
+  if (!parsed.success) return { ok: false, error: "Currículo no válido" };
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Usuario no autenticado" };
+
+  const { data: source, error: sourceError } = await supabase
+    .from("curriculum_templates")
+    .select(`
+      *,
+      ras:template_ra (
+        *,
+        ces:template_ce (*)
+      )
+    `)
+    .eq("id", parsed.data)
+    .single();
+
+  if (sourceError || !source) {
+    return { ok: false, error: "No se ha encontrado el currículo de origen" };
+  }
+  if (source.created_by_profile_id === user.id) {
+    return { ok: false, error: "Este currículo ya es tuyo." };
+  }
+  if (source.status !== "published" || source.visibility_scope !== "organization") {
+    return { ok: false, error: "Solo se pueden importar currículos públicos publicados." };
+  }
+
+  const { data: membership } = await supabase
+    .from("organization_memberships")
+    .select("organization_id")
+    .eq("profile_id", user.id)
+    .eq("organization_id", source.organization_id)
+    .eq("is_active", true)
+    .single();
+
+  if (!membership) {
+    return { ok: false, error: "No tienes acceso para importar este currículo." };
+  }
+
+  const cloneVersion = `clon-${Date.now().toString(36).slice(-8)}`;
+  const { data: clone, error: cloneError } = await supabase
+    .from("curriculum_templates")
+    .insert({
+      organization_id: source.organization_id,
+      created_by_profile_id: user.id,
+      source_template_id: source.id,
+      is_clone: true,
+      region_code: source.region_code,
+      module_code: source.module_code,
+      module_name: source.module_name,
+      academic_year: source.academic_year,
+      version: cloneVersion,
+      status: "published",
+      source_type: source.source_type,
+      visibility_scope: "private",
+      hours_total: source.hours_total || 0,
+      program_title: source.program_title,
+      program_code: source.program_code,
+      program_level: source.program_level,
+      program_course: source.program_course,
+    })
+    .select()
+    .single();
+
+  if (cloneError || !clone) {
+    return { ok: false, error: `Error al clonar el currículo: ${cloneError?.message}` };
+  }
+
+  const cleanupClone = async () => {
+    await supabase
+      .from("curriculum_templates")
+      .delete()
+      .eq("id", clone.id)
+      .eq("created_by_profile_id", user.id);
+  };
+
+  for (const ra of source.ras ?? []) {
+    const { data: clonedRa, error: raError } = await supabase
+      .from("template_ra")
+      .insert({
+        template_id: clone.id,
+        code: ra.code,
+        description: ra.description,
+        weight_in_template: ra.weight_in_template ?? 0,
+        order_index: ra.order_index ?? 0,
+      })
+      .select("id")
+      .single();
+
+    if (raError || !clonedRa) {
+      await cleanupClone();
+      return { ok: false, error: `Error al copiar el RA ${ra.code}: ${raError?.message}` };
+    }
+
+    const ceRows = (ra.ces ?? []).map((ce: {
+      code: string;
+      description: string;
+      weight_in_ra?: number | null;
+      order_index?: number | null;
+    }) => ({
+      template_ra_id: clonedRa.id,
+      code: ce.code,
+      description: ce.description,
+      weight_in_ra: ce.weight_in_ra ?? 0,
+      order_index: ce.order_index ?? 0,
+    }));
+
+    if (ceRows.length > 0) {
+      const { error: ceError } = await supabase.from("template_ce").insert(ceRows);
+      if (ceError) {
+        await cleanupClone();
+        return { ok: false, error: `Error al copiar los CE del RA ${ra.code}: ${ceError.message}` };
+      }
+    }
+  }
+
+  revalidatePath("/curriculum");
+  revalidatePath(`/curriculum/${source.id}`);
+  revalidatePath(`/curriculum/${clone.id}`);
+
+  return { ok: true, data: clone as CurriculumTemplate };
 }
 
 /**

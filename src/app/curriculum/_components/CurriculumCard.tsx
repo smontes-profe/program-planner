@@ -58,6 +58,7 @@ export function CurriculumCard({ template }: { template: any }) {
               {truncateCurriculumTitle(template.module_name)}
             </CardTitle>
             <div className="flex gap-2 shrink-0">
+              {template.is_clone ? <BadgeLocal label="Clon" variant="warning" /> : null}
               <BadgeLocal label={label} variant={badgeVariant} />
               {template.visibility_scope === "organization" && <Globe className="h-4 w-4" aria-label="Ambito: Publico" />}
               {template.visibility_scope === "private" && <Lock className="h-4 w-4" aria-label="Ambito: Privado" />}

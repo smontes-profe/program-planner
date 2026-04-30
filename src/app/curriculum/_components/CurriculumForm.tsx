@@ -29,6 +29,7 @@ const visibilityLabels: Record<"private" | "organization", string> = {
 
 export function CurriculumForm({ regions, organizations, templateId, initialData }: CurriculumFormProps) {
   const router = useRouter();
+  const isClone = Boolean(initialData?.is_clone);
   
   const [state, formAction, isPending] = useActionState(
     async (prevState: any, formData: FormData) => {
@@ -47,7 +48,7 @@ export function CurriculumForm({ regions, organizations, templateId, initialData
     academic_year: initialData?.academic_year || "",
     version: initialData?.version || "v1",
     region_code: initialData?.region_code || "",
-    visibility_scope: initialData?.visibility_scope || "organization",
+    visibility_scope: isClone ? "private" : initialData?.visibility_scope || "organization",
     hours_total: initialData?.hours_total || 0,
     program_title: initialData?.program_title || "",
     program_code: initialData?.program_code || "",
@@ -290,9 +291,10 @@ export function CurriculumForm({ regions, organizations, templateId, initialData
 
       <div className="space-y-2">
         <Label htmlFor="visibility_scope">Visibilidad</Label>
-        <input type="hidden" name="visibility_scope" value={formData.visibility_scope} />
+        <input type="hidden" name="visibility_scope" value={isClone ? "private" : formData.visibility_scope} />
         <Select 
-          value={formData.visibility_scope} 
+          value={isClone ? "private" : formData.visibility_scope} 
+          disabled={isClone}
           onValueChange={(val) =>
             setFormData((prev) => ({
               ...prev,
@@ -301,13 +303,18 @@ export function CurriculumForm({ regions, organizations, templateId, initialData
           }
         >
           <SelectTrigger id="visibility_scope" className="w-full h-10 border-zinc-200 dark:border-zinc-800">
-            <SelectValue>{visibilityLabels[formData.visibility_scope as "private" | "organization"]}</SelectValue>
+            <SelectValue>{visibilityLabels[(isClone ? "private" : formData.visibility_scope) as "private" | "organization"]}</SelectValue>
           </SelectTrigger>
         <SelectContent>
             <SelectItem value="private">Privada (solo creador)</SelectItem>
-            <SelectItem value="organization">Público</SelectItem>
+            {!isClone ? <SelectItem value="organization">Público</SelectItem> : null}
           </SelectContent>
         </Select>
+        {isClone ? (
+          <p className="text-xs text-amber-700 dark:text-amber-400">
+            Los currículos clonados permanecen siempre privados.
+          </p>
+        ) : null}
       </div>
 
       <div className="pt-4 flex items-center justify-end gap-3">

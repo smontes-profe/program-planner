@@ -43,6 +43,7 @@ erDiagram
     ORGANIZATION ||--o{ CURRICULUM_TEMPLATE : owns
     CURRICULUM_TEMPLATE ||--o{ TEMPLATE_RA : contains
     TEMPLATE_RA ||--o{ TEMPLATE_CE : contains
+    CURRICULUM_TEMPLATE }o--|| CURRICULUM_TEMPLATE : cloned_from
 
     ORGANIZATION ||--o{ TEACHING_PLAN : contains
     PROFILE ||--o{ TEACHING_PLAN : owns
@@ -58,8 +59,12 @@ erDiagram
     EVALUATION_INSTRUMENT ||--o{ INSTRUMENT_CE_WEIGHT : maps
     PLAN_CE ||--o{ INSTRUMENT_CE_WEIGHT : weighted_by
 
+    PROFILE ||--o{ EVALUATION_CONTEXT : creates
+    ORGANIZATION ||--o{ EVALUATION_CONTEXT : contains
     EVALUATION_INSTRUMENT ||--o{ INSTRUMENT_SCORE : records
     PLAN_CE ||--o{ INSTRUMENT_SCORE : graded_for
+    EVALUATION_CONTEXT ||--o{ EVALUATION_CONTEXT_SHARE : shared_with
+    PROFILE ||--o{ EVALUATION_CONTEXT_SHARE : invited
 
     TEACHING_PLAN }o--|| TEACHING_PLAN : cloned_from
     TEACHING_PLAN }o--|| CURRICULUM_TEMPLATE : imported_from
@@ -94,6 +99,8 @@ erDiagram
         uuid id PK
         uuid organization_id FK
         uuid created_by_profile_id FK
+        uuid source_template_id FK
+        boolean is_clone
         string region_code
         string module_code
         string module_name
@@ -125,6 +132,7 @@ erDiagram
         uuid owner_profile_id FK
         uuid source_plan_id FK
         uuid source_template_id FK
+        boolean is_clone
         string source_version
         string title
         string region_code
@@ -214,6 +222,16 @@ erDiagram
         numeric coverage_percent
     }
 
+    EVALUATION_CONTEXT {
+        uuid id PK
+        uuid organization_id FK
+        uuid created_by_profile_id FK
+        string academic_year
+        string title
+        timestamptz archived_at
+        timestamptz created_at
+    }
+
     INSTRUMENT_SCORE {
         uuid id PK
         uuid instrument_id FK
@@ -221,6 +239,15 @@ erDiagram
         numeric score_value
         date score_date
         text notes
+    }
+
+    EVALUATION_CONTEXT_SHARE {
+        uuid id PK
+        uuid context_id FK
+        uuid invited_profile_id FK
+        uuid invited_by_profile_id FK
+        string invited_email
+        timestamptz created_at
     }
 ```
 
@@ -259,6 +286,8 @@ Visibility rules:
 
 - `private`: creator only.
 - `organization`: same org members can read/import when published; drafts stay creator-only.
+- Curriculum and teaching-plan clones are creator-owned private copies. App validation and database constraints must prevent clones from being published as `organization`.
+- Evaluation invitations grant read-only access to existing users by profile/email. The creator keeps all write permissions; invited users only get SELECT access through RLS.
 
 Admin provisioning rules:
 
@@ -325,6 +354,46 @@ sequenceDiagram
     SA->>DB: Save lineage metadata (source_plan_id, source_template_id, source_version)
     DB-->>SA: New plan id
     SA-->>UI: Redirect to cloned workspace
+```
+
+### 6.2c Clone shared curriculum
+
+```mermaid
+sequenceDiagram
+    actor U as Teacher
+    participant UI as WebUI
+    participant SA as ServerAction
+    participant DB as PostgreSQL
+
+    U->>UI: Open shared read-only curriculum
+    UI->>SA: cloneCurriculumTemplate(sourceTemplateId)
+    SA->>DB: Validate published organization visibility and membership
+    SA->>DB: Create private curriculum clone owned by current user
+    SA->>DB: Deep copy template RA/CE
+    SA->>DB: Save lineage metadata (source_template_id, is_clone)
+    DB-->>SA: New curriculum id
+    SA-->>UI: Redirect to cloned curriculum
+```
+
+### 6.2d Share evaluation read-only
+
+```mermaid
+sequenceDiagram
+    actor Owner as Evaluation owner
+    actor Guest as Invited user
+    participant UI as WebUI
+    participant SA as ServerAction
+    participant DB as PostgreSQL
+
+    Owner->>UI: Add comma-separated emails
+    UI->>SA: shareEvaluation(contextId, emails)
+    SA->>DB: Validate owner can manage context
+    SA->>DB: Resolve existing profiles by email
+    SA->>DB: Upsert evaluation_context_shares
+    DB-->>SA: Share list and warnings
+    Guest->>UI: Opens Evaluations
+    UI->>DB: List own contexts plus invited contexts
+    DB-->>UI: Invited context marked read-only
 ```
 
 ### 6.3 Configure CE weight automation and instrument coverage

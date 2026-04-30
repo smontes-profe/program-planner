@@ -12,6 +12,8 @@ export const curriculumTemplateSchema = z.object({
   id: z.string().uuid().optional(),
   organization_id: z.string().uuid(),
   created_by_profile_id: z.string().uuid().optional(),
+  source_template_id: z.string().uuid().optional().nullable(),
+  is_clone: z.coerce.boolean().optional(),
   region_code: z.string().min(2).max(10), // e.g., 'AND', 'MAD'
   module_code: z.string().min(1).max(50),
   module_name: z.string().min(1).max(255),

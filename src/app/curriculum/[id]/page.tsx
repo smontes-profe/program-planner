@@ -6,6 +6,7 @@ import { PublishButton } from "./_components/PublishButton";
 import { AddRAButton } from "./_components/AddRAButton";
 import { BulkAddRAButton } from "./_components/BulkAddRAButton";
 import { DeleteCurriculumButton } from "./_components/DeleteCurriculumButton";
+import { CloneCurriculumButton } from "./_components/CloneCurriculumButton";
 import { CurriculumSortableList } from "./_components/CurriculumSortableList";
 import { TemplateHoursEditor } from "./_components/TemplateHoursEditor";
 import Link from "next/link";
@@ -51,6 +52,8 @@ export default async function TemplateDetailsPage({ params }: TemplatePageProps)
   const isDraft = template.status === 'draft';
   const isOwner = Boolean(user && template.created_by_profile_id === user.id);
   const canEdit = isOwner;
+  const isClone = Boolean(template.is_clone);
+  const canClone = !isOwner && template.status === "published" && template.visibility_scope === "organization";
   const ownerLabel = isOwner ? "Tú" : "Otro creador";
 
   let badgeVariant: 'success' | 'warning' | 'neutral' = 'neutral';
@@ -88,10 +91,13 @@ export default async function TemplateDetailsPage({ params }: TemplatePageProps)
                 <DeleteCurriculumButton templateId={id} />
               </>
             ) : (
-              <Badge variant="outline" className="gap-1">
-                <Eye className="h-3.5 w-3.5" />
-                Solo lectura
-              </Badge>
+              <>
+                {canClone ? <CloneCurriculumButton templateId={id} /> : null}
+                <Badge variant="outline" className="gap-1">
+                  <Eye className="h-3.5 w-3.5" />
+                  Solo lectura
+                </Badge>
+              </>
             )}
           </div>
         </div>
@@ -140,6 +146,7 @@ export default async function TemplateDetailsPage({ params }: TemplatePageProps)
             <Badge variant={badgeVariant}>
                {badgeLabel}
             </Badge>
+            {isClone ? <Badge variant="outline">Clon</Badge> : null}
           </div>
         </div>
 

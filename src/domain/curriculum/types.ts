@@ -20,6 +20,8 @@ export interface CurriculumTemplate {
   id: string;
   organization_id: string;
   created_by_profile_id: string;
+  source_template_id?: string | null;
+  is_clone: boolean;
   region_code: string;
   module_code: string;
   module_name: string;

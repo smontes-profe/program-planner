@@ -352,6 +352,34 @@ Visibility scopes:
 - `organization`: same-organization members can read/import when published; drafts are creator-only.
 - Shared published curricula and teaching plans open in full detail for other organization members, but always in read-only mode.
 
+### 8.1 Phase 10 import and invited-visibility rules
+
+Phase 10 adds explicit clone/import behavior for shared curricula and teaching plans, plus read-only invitations for evaluations.
+
+Curriculum clone rules:
+
+- A user who can read a published `organization` curriculum owned by another profile can import it into their own account.
+- The imported curriculum is a deep copy of template RA and CE content.
+- The imported curriculum must be marked as a clone in storage and in the UI.
+- Curriculum clones are always private to the importing user and cannot be made public.
+- Curriculum clones can be used by their owner as base curricula for new teaching plans.
+- When creating a teaching plan, the curriculum picker must list only curricula owned by the current user, including original curricula and curriculum clones.
+
+Teaching plan clone rules:
+
+- A user who can read a published `organization` teaching plan owned by another profile can import it into their own account.
+- The imported teaching plan is a deep copy of the planning graph: RA, CE, UT links, instruments, RA coverage, and CE weights.
+- The imported teaching plan must be marked as a clone in storage and in the UI.
+- Teaching plan clones are always private to the importing user and cannot be made public.
+
+Evaluation invitation rules:
+
+- Evaluations remain editable only by their creator.
+- The creator can invite other existing users by email from a "Compartir evaluacion" block.
+- Invited users can see the evaluation in their evaluations list and open it in read-only mode.
+- Invitation input accepts comma-separated emails, rejects invalid emails, ignores/flags duplicates, and must not create duplicate access rows.
+- Read-only invited users can inspect students, instruments, grades, computed results, and exports, but cannot mutate scores, students, locks, overrides, settings, or sharing access.
+
 Import/fork behavior:
 
 - Deep copy related entities (`RA`, `CE`, `UT`, mappings, instruments if selected).
