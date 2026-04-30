@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createAdminClient, createClient } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase";
 import { createPlanSchema, updatePlanSchema, updatePlanRAConfigSchema, planRASchema, planCESchema, planTeachingUnitSchema, planInstrumentSchema } from "./schemas";
 import { type TeachingPlan, type TeachingPlanFull, type PlanRA, type PlanCE } from "./types";
 import { z } from "zod";
@@ -25,32 +25,27 @@ async function canCurrentUserEditPlan(
 }
 
 async function enrichPlansMetadata<T extends { owner_profile_id: string; source_template_id?: string | null }>(
+  supabase: Awaited<ReturnType<typeof createClient>>,
   plans: T[],
   currentUserId: string
 ): Promise<(T & { owner_name?: string | null; source_template_name?: string | null; is_owner: boolean; can_edit: boolean })[]> {
   if (plans.length === 0) return [];
 
-  const adminClient = createAdminClient();
-  const ownerIds = Array.from(new Set(plans.map((plan) => plan.owner_profile_id).filter(Boolean)));
   const templateIds = Array.from(new Set(plans.map((plan) => plan.source_template_id).filter(Boolean))) as string[];
+  const { data: templates } = templateIds.length > 0
+    ? await supabase
+        .from("curriculum_templates")
+        .select("id, module_name, program_title, program_code, program_level, program_course")
+        .in("id", templateIds)
+    : { data: [] as any[] };
 
-  const [{ data: owners }, { data: templates }] = await Promise.all([
-    ownerIds.length > 0
-      ? adminClient.from("profiles").select("id, full_name").in("id", ownerIds)
-      : Promise.resolve({ data: [] as { id: string; full_name: string | null }[] }),
-    templateIds.length > 0
-      ? adminClient.from("curriculum_templates").select("id, module_name, program_title, program_code, program_level, program_course").in("id", templateIds)
-      : Promise.resolve({ data: [] as any[] }),
-  ]);
-
-  const ownerNameById = new Map((owners ?? []).map((owner) => [owner.id, owner.full_name]));
-  const templateMetadataById = new Map((templates ?? []).map((t) => [t.id, t]));
+  const templateMetadataById = new Map((templates ?? []).map((t: any) => [t.id, t]));
 
   return plans.map((plan) => {
     const isOwner = plan.owner_profile_id === currentUserId;
     return {
       ...plan,
-      owner_name: ownerNameById.get(plan.owner_profile_id) ?? null,
+      owner_name: isOwner ? "Tú" : null,
       source_template_name: plan.source_template_id ? templateMetadataById.get(plan.source_template_id)?.module_name ?? null : null,
       program_title: plan.source_template_id ? templateMetadataById.get(plan.source_template_id)?.program_title ?? null : null,
       program_code: plan.source_template_id ? templateMetadataById.get(plan.source_template_id)?.program_code ?? null : null,
@@ -81,7 +76,7 @@ export async function listPlans(): Promise<ActionResponse<TeachingPlan[]>> {
     .order("created_at", { ascending: false });
 
   if (error) return { ok: false, error: error.message };
-  const enriched = await enrichPlansMetadata((data ?? []) as TeachingPlan[], userId);
+  const enriched = await enrichPlansMetadata(supabase, (data ?? []) as TeachingPlan[], userId);
   return { ok: true, data: enriched as TeachingPlan[] };
 }
 
@@ -152,13 +147,13 @@ export async function getPlan(planId: string): Promise<ActionResponse<TeachingPl
     ce_weights: i.ce_weights || []
   }));
 
-  const adminClient = createAdminClient();
-  const [{ data: owner }, { data: sourceTemplate }] = await Promise.all([
-    adminClient.from("profiles").select("full_name").eq("id", data.owner_profile_id).maybeSingle(),
-    data.source_template_id
-      ? adminClient.from("curriculum_templates").select("module_name, program_title, program_code, program_level, program_course").eq("id", data.source_template_id).maybeSingle()
-      : Promise.resolve({ data: null }),
-  ]);
+  const sourceTemplate = data.source_template_id
+    ? await supabase
+        .from("curriculum_templates")
+        .select("module_name, program_title, program_code, program_level, program_course")
+        .eq("id", data.source_template_id)
+        .maybeSingle()
+    : { data: null };
 
   const isOwner = Boolean(userId && data.owner_profile_id === userId);
 
@@ -168,12 +163,12 @@ export async function getPlan(planId: string): Promise<ActionResponse<TeachingPl
     units: mappedUnits,
     instruments: mappedInstruments,
     sourceTemplateHours: data.hours_total ?? 0,
-    owner_name: owner?.full_name ?? null,
-    source_template_name: sourceTemplate?.module_name ?? null,
-    program_title: sourceTemplate?.program_title ?? null,
-    program_code: sourceTemplate?.program_code ?? null,
-    program_level: sourceTemplate?.program_level ?? null,
-    program_course: sourceTemplate?.program_course ?? null,
+    owner_name: isOwner ? "Tú" : null,
+    source_template_name: sourceTemplate.data?.module_name ?? null,
+    program_title: sourceTemplate.data?.program_title ?? null,
+    program_code: sourceTemplate.data?.program_code ?? null,
+    program_level: sourceTemplate.data?.program_level ?? null,
+    program_course: sourceTemplate.data?.program_course ?? null,
     is_owner: isOwner,
     can_edit: isOwner,
   };

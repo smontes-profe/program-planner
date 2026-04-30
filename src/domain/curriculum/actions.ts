@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createAdminClient, createClient } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase";
 import { curriculumTemplateSchema } from "./schemas";
 import { type CurriculumTemplate, type CurriculumStatus } from "./types";
 import { z } from "zod";
@@ -24,19 +24,11 @@ async function enrichTemplateMetadata<T extends { created_by_profile_id: string 
 ): Promise<(T & { creator_name?: string | null; is_owner: boolean; can_edit: boolean })[]> {
   if (templates.length === 0) return [];
 
-  const adminClient = createAdminClient();
-  const ownerIds = Array.from(new Set(templates.map((template) => template.created_by_profile_id).filter(Boolean)));
-  const { data: owners } = ownerIds.length > 0
-    ? await adminClient.from("profiles").select("id, full_name").in("id", ownerIds)
-    : { data: [] as { id: string; full_name: string | null }[] };
-
-  const ownerNameById = new Map((owners ?? []).map((owner) => [owner.id, owner.full_name]));
-
   return templates.map((template) => {
     const isOwner = template.created_by_profile_id === currentUserId;
     return {
       ...template,
-      creator_name: ownerNameById.get(template.created_by_profile_id) ?? null,
+      creator_name: isOwner ? "Tú" : "Otro creador",
       is_owner: isOwner,
       can_edit: isOwner,
     };

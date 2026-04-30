@@ -13,7 +13,7 @@ export default function Home() {
         <div className="flex flex-col items-center gap-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20 rounded-full text-emerald-700 dark:text-emerald-400 text-xs font-bold uppercase tracking-widest shadow-sm">
             <GraduationCap className="h-4 w-4" />
-            Program Planner v0.1.1
+            Program Planner v0.1.2
           </div>
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 leading-[1.1]">
             Simplifica tu <span className="text-emerald-600 dark:text-emerald-500">Planificación</span> Académica

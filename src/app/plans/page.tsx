@@ -71,7 +71,7 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
   const courseFilter = filters.course?.trim() ?? "";
   const sortBy = filters.sortBy?.trim() ?? "";
   
-  const ownerOptions = Array.from(new Set(plans.map((plan) => plan.owner_name).filter(Boolean))) as string[];
+  const ownerOptions = Array.from(new Set(plans.map((plan) => (plan.is_owner ? "Tú" : "Otro creador")))) as string[];
   const templateOptions = Array.from(new Set(publishedTemplates.map((template: any) => template.module_name).filter(Boolean))) as string[];
   const yearOptions = Array.from(new Set(plans.map((plan) => plan.academic_year).filter(Boolean))) as string[];
   const titleOptions = Array.from(new Set(plans.map((plan) => plan.program_title).filter(Boolean))) as string[];
@@ -80,10 +80,11 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
   const courseOptions = Array.from(new Set(plans.map((plan) => plan.program_course).filter(Boolean))) as string[];
   
   const filteredPlans = plans.filter((plan) => {
-    const matchesQuery = !query || [plan.title, plan.owner_name, plan.source_template_name].some((value) =>
+    const ownerLabel = plan.is_owner ? "Tú" : "Otro creador";
+    const matchesQuery = !query || [plan.title, ownerLabel, plan.source_template_name].some((value) =>
       value?.toLowerCase().includes(query)
     );
-    const matchesOwner = !ownerFilter || (plan.owner_name ?? "").toLowerCase() === ownerFilter;
+    const matchesOwner = !ownerFilter || ownerLabel.toLowerCase() === ownerFilter;
     const matchesTemplate = !templateFilter || (plan.source_template_name ?? "").toLowerCase() === templateFilter;
     const matchesYear = !yearFilter || (plan.academic_year ?? "") === yearFilter;
     const matchesTitle = !titleFilter || (plan.program_title ?? "") === titleFilter;
@@ -248,6 +249,7 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
             const isPublished = plan.status === "published";
             const statusColor = isPublished ? "bg-emerald-500" : "bg-zinc-300 dark:bg-zinc-700";
             const statusLabel = isPublished ? "Publicada" : "Borrador";
+            const ownerLabel = plan.is_owner ? "Tú" : "Otro creador";
 
             return (
               <Link key={plan.id} href={`/plans/${plan.id}`} className="block group">
@@ -279,11 +281,9 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                      {plan.is_owner ? (
-                        <p className="text-emerald-600 dark:text-emerald-400 font-medium">Creada por: Tú</p>
-                      ) : (
-                        <p>Creada por: <span className="font-medium text-zinc-700 dark:text-zinc-300">{plan.owner_name || "Desconocido"}</span></p>
-                      )}
+                      <p className={plan.is_owner ? "text-emerald-600 dark:text-emerald-400 font-medium" : ""}>
+                        Creada por: <span className="font-medium text-zinc-700 dark:text-zinc-300">{ownerLabel}</span>
+                      </p>
                       {plan.source_template_name && (
                         <p className="mt-1">Currículo base: <span className="font-medium text-zinc-700 dark:text-zinc-300">{plan.source_template_name}</span></p>
                       )}

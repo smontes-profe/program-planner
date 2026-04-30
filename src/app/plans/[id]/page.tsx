@@ -79,12 +79,8 @@ export default async function PlanDetailPage({ params }: PlanDetailPageProps) {
             <span>•</span>
             <span className="capitalize">{plan.region_code}</span>
             <span>•</span>
-            {plan.owner_name ? (
-              <>
-                <span>Creada por {plan.owner_name}</span>
-                <span>•</span>
-              </>
-            ) : null}
+            <span>Creada por {plan.is_owner ? "Tú" : "Otro creador"}</span>
+            <span>•</span>
             <div className="flex items-center gap-1.5">
               <Clock className="h-3.5 w-3.5 text-zinc-400" />
               <PlanHoursEditor planId={plan.id} initialHours={plan.hours_total || 0} readOnly={!canEdit} />

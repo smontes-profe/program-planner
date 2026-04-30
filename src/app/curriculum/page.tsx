@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Plus, FileText, Search, AlertCircle } from "lucide-react";
-import { createClient } from "@/lib/supabase";
 import { CurriculumCard } from "./_components/CurriculumCard";
 
 export const metadata = {
@@ -38,12 +37,7 @@ export default async function CurriculumPage({ searchParams }: CurriculumPagePro
   const filters = (await searchParams) ?? {};
   // Ensure user has an organization to work on (auto-create if empty during Phase 1.5)
   await ensureUserHasOrganization();
-  
-  // Get current user info for creator highlighting
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const currentUserEmail = user?.email;
-  
+
   const result = await listTemplates();
 
   if (!result.ok) {
@@ -77,18 +71,19 @@ export default async function CurriculumPage({ searchParams }: CurriculumPagePro
   const courseFilter = filters.course?.trim() ?? "";
   const sortBy = filters.sortBy?.trim() ?? "";
   
-  const ownerOptions = Array.from(new Set(templates.map((template) => template.creator_name).filter(Boolean))) as string[];
+  const ownerOptions = Array.from(new Set(templates.map((template) => (template.is_owner ? "Tú" : "Otro creador")).filter(Boolean))) as string[];
   const yearOptions = Array.from(new Set(templates.map((template) => template.academic_year).filter(Boolean))) as string[];
   const titleOptions = Array.from(new Set(templates.map((template) => template.program_title).filter(Boolean))) as string[];
   const codeOptions = Array.from(new Set(templates.map((template) => template.program_code).filter(Boolean))) as string[];
-  const levelOptions = Array.from(new Set(templates.map((template) => template.program_level).filter(Boolean))) as string[];
+  const levelOptions = Array.from(new Set(templates.map((template) => template.program_level).filter(Boolean))) as string[]; 
   const courseOptions = Array.from(new Set(templates.map((template) => template.program_course).filter(Boolean))) as string[];
   
   const filteredTemplates = templates.filter((template) => {
-    const matchesQuery = !query || [template.module_name, template.creator_name].some((value) =>
+    const ownerLabel = template.is_owner ? "Tú" : "Otro creador";
+    const matchesQuery = !query || [template.module_name, ownerLabel].some((value) =>
       value?.toLowerCase().includes(query)
     );
-    const matchesOwner = !ownerFilter || (template.creator_name ?? "").toLowerCase() === ownerFilter;
+    const matchesOwner = !ownerFilter || ownerLabel.toLowerCase() === ownerFilter;
     const matchesYear = !yearFilter || (template.academic_year ?? "") === yearFilter;
     const matchesTitle = !titleFilter || (template.program_title ?? "") === titleFilter;
     const matchesCode = !codeFilter || (template.program_code ?? "") === codeFilter;
@@ -248,7 +243,6 @@ export default async function CurriculumPage({ searchParams }: CurriculumPagePro
             <CurriculumCard 
               key={template.id} 
               template={template} 
-              currentUserEmail={currentUserEmail}
             />
           ))}
         </div>
