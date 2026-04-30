@@ -11,6 +11,9 @@ const passwordSchema = z
   .string()
   .min(8, "La contrasena debe tener al menos 8 caracteres")
   .max(128, "La contrasena es demasiado larga");
+const profileSchema = z.object({
+  full_name: z.string().trim().min(3, "Indica nombre y apellidos.").max(160, "El nombre es demasiado largo."),
+});
 
 type AuthActionState = {
   ok: boolean;
@@ -228,6 +231,76 @@ export async function updateOwnPasswordAction(
   }
 
   return { ok: true, message: "Contraseña actualizada correctamente." };
+}
+
+/**
+ * Update the authenticated user's public profile data.
+ */
+export async function updateOwnProfileAction(
+  prevState: AuthActionState,
+  formData: FormData
+): Promise<AuthActionState> {
+  void prevState;
+
+  const rawFullName = getStringField(formData, "full_name");
+  const parsed = profileSchema.safeParse({ full_name: rawFullName });
+
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Revisa los datos del perfil.",
+      fields: { full_name: rawFullName },
+    };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return {
+      ok: false,
+      error: "Sesion no valida. Vuelve a iniciar sesion.",
+      fields: { full_name: parsed.data.full_name },
+    };
+  }
+
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .update({ full_name: parsed.data.full_name })
+    .eq("id", user.id)
+    .select("id")
+    .single();
+
+  if (profileError) {
+    return {
+      ok: false,
+      error: "No se pudo actualizar el perfil. Intentalo de nuevo.",
+      fields: { full_name: parsed.data.full_name },
+    };
+  }
+
+  const { error: metadataError } = await supabase.auth.updateUser({
+    data: { full_name: parsed.data.full_name },
+  });
+
+  if (metadataError) {
+    return {
+      ok: false,
+      error: "El nombre se guardo en el perfil, pero no se pudo sincronizar con la sesion.",
+      fields: { full_name: parsed.data.full_name },
+    };
+  }
+
+  revalidatePath("/account");
+
+  return {
+    ok: true,
+    message: "Perfil actualizado correctamente.",
+    fields: { full_name: parsed.data.full_name },
+  };
 }
 
 /**

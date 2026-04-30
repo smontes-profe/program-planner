@@ -27,8 +27,7 @@ Status legend:
 - [P3][x] Programaciones: en la pastilla de cada programación, el indicador de "Publicada"/"Draft" cuando esté publciada, debería salir en verde (como para los currículos).
 - [P3][x] Evaluaciones, pastillas: Añadimos una fila más donde mostremos el nombre de la programación que se usa en la evaluación y quitamos el creador.
 - [P3][x] Evaluaciones, PRIS/PMIS: Poner un tamaño máximo de casilla. Ahora mismo se autoajusta al ancho y cuando hay pocos (2 o 3 sueles er lo normal), queda gigantesco.
-- [P3][ ] Evaluaciones, PRIS/PMIS: FIX: No está bien ajustado al ancho. Sobra muhco.
-- [P2][ ] "Mi Cuenta": Que permita editar el nombre y los apellidos.
+- [P2][x] "Mi Cuenta": Que permita editar el nombre y los apellidos.
 
 
 ## Phase 10 - Cambio de normativa: 2 evaluaciones por año en lugar de 3
