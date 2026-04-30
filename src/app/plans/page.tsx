@@ -247,6 +247,7 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {sortedPlans.map((plan) => {
             const isPublished = plan.status === "published";
+            const isClone = Boolean(plan.is_clone || plan.source_plan_id);
             const statusColor = isPublished ? "bg-emerald-500" : "bg-zinc-300 dark:bg-zinc-700";
             const statusLabel = isPublished ? "Publicada" : "Borrador";
             const ownerLabel = plan.is_owner ? "Tú" : "Otro creador";
@@ -261,6 +262,11 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
                         {truncatePlanTitle(plan.title)}
                       </CardTitle>
                       <div className="flex gap-2 shrink-0">
+                        {isClone ? (
+                          <span className="inline-flex items-center rounded-md border border-amber-200 bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                            Clon
+                          </span>
+                        ) : null}
                         <span className={cn(
                           "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium",
                           isPublished 

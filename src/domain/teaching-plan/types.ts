@@ -7,6 +7,7 @@ export interface TeachingPlan {
   owner_profile_id: string;
   source_plan_id: string | null;
   source_template_id: string | null;
+  is_clone?: boolean;
   source_version: string | null;
   title: string;
   region_code: string;

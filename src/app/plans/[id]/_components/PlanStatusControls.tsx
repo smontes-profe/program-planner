@@ -10,9 +10,10 @@ interface PlanStatusControlsProps {
   readonly planId: string;
   readonly initialStatus: PlanStatus;
   readonly readOnly?: boolean;
+  readonly isClone?: boolean;
 }
 
-export function PlanStatusControls({ planId, initialStatus, readOnly = false }: PlanStatusControlsProps) {
+export function PlanStatusControls({ planId, initialStatus, readOnly = false, isClone = false }: PlanStatusControlsProps) {
   const [status, setStatus] = useState<PlanStatus>(initialStatus);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -54,6 +55,10 @@ export function PlanStatusControls({ planId, initialStatus, readOnly = false }: 
       {readOnly ? (
         <div className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-300">
           Esta programación compartida está en modo solo lectura. Solo su creador puede cambiar el estado.
+        </div>
+      ) : isClone ? (
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+          Esta programaciÃ³n es un clon y permanece siempre privada. No se puede publicar.
         </div>
       ) : (
         <div className="flex items-center gap-3">

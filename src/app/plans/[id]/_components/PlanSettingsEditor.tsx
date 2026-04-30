@@ -21,19 +21,20 @@ interface PlanSettingsEditorProps {
 }
 
 export function PlanSettingsEditor({ plan }: PlanSettingsEditorProps) {
+  const isClone = Boolean(plan.is_clone || plan.source_plan_id);
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
   const [title, setTitle] = useState(plan.title);
   const [academicYear, setAcademicYear] = useState(plan.academic_year);
   const [visibility, setVisibility] = useState<"private" | "organization">(
-    plan.visibility_scope as "private" | "organization"
+    isClone ? "private" : plan.visibility_scope as "private" | "organization"
   );
 
   function resetForm() {
     setTitle(plan.title);
     setAcademicYear(plan.academic_year);
-    setVisibility(plan.visibility_scope as "private" | "organization");
+    setVisibility(isClone ? "private" : plan.visibility_scope as "private" | "organization");
     setError("");
   }
 
@@ -50,7 +51,7 @@ export function PlanSettingsEditor({ plan }: PlanSettingsEditorProps) {
       const res = await updatePlan(plan.id, {
         title,
         academic_year: academicYear,
-        visibility_scope: visibility,
+        visibility_scope: isClone ? "private" : visibility,
       });
 
       if (res.ok) {
@@ -105,16 +106,23 @@ export function PlanSettingsEditor({ plan }: PlanSettingsEditorProps) {
             <Label htmlFor="visibility_scope">Visibilidad</Label>
             <select
               id="visibility_scope"
-              value={visibility}
+              value={isClone ? "private" : visibility}
+              disabled={isClone}
               onChange={(e) => setVisibility(e.target.value as "private" | "organization")}
               className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
             >
               <option value="private">Privada (solo creador)</option>
-              <option value="organization">Público</option>
+              {!isClone ? <option value="organization">Público</option> : null}
             </select>
-            <p className="text-[11px] text-zinc-400">
-              Las programaciones públicas de la organización solo son editables por su creador.
-            </p>
+            {isClone ? (
+              <p className="text-[11px] text-amber-700 dark:text-amber-400">
+                Las copias de programaciones permanecen siempre privadas.
+              </p>
+            ) : (
+              <p className="text-[11px] text-zinc-400">
+                Las programaciones públicas de la organización solo son editables por su creador.
+              </p>
+            )}
           </div>
 
           {error && <p className="text-xs text-destructive font-medium">{error}</p>}

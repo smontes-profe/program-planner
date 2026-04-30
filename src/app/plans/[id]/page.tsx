@@ -25,6 +25,7 @@ export default async function PlanDetailPage({ params }: PlanDetailPageProps) {
 
   const plan = result.data;
   const canEdit = Boolean(plan.can_edit);
+  const isClone = Boolean(plan.is_clone || plan.source_plan_id);
   const warningsResult = await getPlanWarnings(id);
   const warnings = warningsResult.ok ? warningsResult.data.warnings : [];
 
@@ -56,6 +57,7 @@ export default async function PlanDetailPage({ params }: PlanDetailPageProps) {
               />
             ) : null}
             <Badge variant={badgeVariant}>{badgeLabel}</Badge>
+            {isClone ? <Badge variant="outline">Clon</Badge> : null}
             {!canEdit ? (
               <Badge variant="outline" className="gap-1">
                 <Eye className="h-3.5 w-3.5" />
@@ -80,6 +82,12 @@ export default async function PlanDetailPage({ params }: PlanDetailPageProps) {
             <span className="capitalize">{plan.region_code}</span>
             <span>•</span>
             <span>Creada por {plan.is_owner ? "Tú" : "Otro creador"}</span>
+            {isClone ? (
+              <>
+                <span>•</span>
+                <span>Clon</span>
+              </>
+            ) : null}
             <span>•</span>
             <div className="flex items-center gap-1.5">
               <Clock className="h-3.5 w-3.5 text-zinc-400" />
@@ -97,7 +105,7 @@ export default async function PlanDetailPage({ params }: PlanDetailPageProps) {
         </div>
 
         {/* Status controls and warnings */}
-        <PlanStatusControls planId={plan.id} initialStatus={plan.status} readOnly={!canEdit} />
+        <PlanStatusControls planId={plan.id} initialStatus={plan.status} readOnly={!canEdit} isClone={isClone} />
         {warnings.length > 0 && <PlanWarnings warnings={warnings} />}
 
         {/* Tab content */}

@@ -363,12 +363,13 @@ export async function createPlanFromPlan(payload: {
       owner_profile_id: userId,
       source_plan_id: sourcePlan.id,
       source_template_id: sourcePlan.source_template_id,
+      is_clone: true,
       source_version: sourcePlan.source_version,
       title: validated.data.title?.trim() || `${sourcePlan.title} (copia)`,
       region_code: sourcePlan.region_code,
       module_code: sourcePlan.module_code,
       academic_year: validated.data.academic_year || sourcePlan.academic_year,
-      visibility_scope: validated.data.visibility_scope ?? "private",
+      visibility_scope: "private",
       status: "draft",
       hours_total: sourcePlan.hours_total || 0,
       ce_weight_auto: Boolean(sourcePlan.ce_weight_auto),
@@ -563,7 +564,7 @@ export async function updatePlan(planId: string, payload: {
   const supabase = await createClient();
   const { data: existingPlan } = await supabase
     .from("teaching_plans")
-    .select("owner_profile_id")
+    .select("owner_profile_id, source_plan_id, is_clone")
     .eq("id", planId)
     .single();
 
@@ -571,10 +572,18 @@ export async function updatePlan(planId: string, payload: {
   if (!(await canCurrentUserEditPlan(supabase, existingPlan))) {
     return { ok: false, error: "Acceso denegado: esta programación solo la puede editar su creador." };
   }
+  const isClone = Boolean(existingPlan.is_clone || existingPlan.source_plan_id);
+  if (isClone && validated.data.visibility_scope === "organization") {
+    return { ok: false, error: "Las copias de programaciones no se pueden hacer públicas." };
+  }
+
+  const updatePayload = isClone
+    ? { ...validated.data, visibility_scope: "private" as const }
+    : validated.data;
 
   const { data, error } = await supabase
     .from("teaching_plans")
-    .update(validated.data)
+    .update(updatePayload)
     .eq("id", planId)
     .select()
     .single();
@@ -605,6 +614,9 @@ export async function publishPlan(planId: string): Promise<ActionResponse<Teachi
 
   if (plan.owner_profile_id !== user.id) {
     return { ok: false, error: "No tienes permiso para publicar esta programación" };
+  }
+  if (plan.is_clone || plan.source_plan_id) {
+    return { ok: false, error: "Las copias de programaciones no se pueden publicar." };
   }
 
   if (plan.status === "published") return { ok: false, error: "La programación ya está publicada" };
@@ -1065,15 +1077,15 @@ export async function archiveTeachingPlan(planId: string): Promise<ActionRespons
     return { ok: false, error: "No tienes permiso para archivar esta programación" };
   }
   
-  // Check if there are any evaluations using this plan
+  // Check if there are any evaluation contexts using this plan.
   const { data: evaluations, error: evaluationsError } = await supabase
-    .from("evaluations")
-    .select("id")
-    .eq("plan_id", planId)
+    .from("evaluation_context_modules")
+    .select("context_id")
+    .eq("teaching_plan_id", planId)
     .limit(1);
     
   if (evaluationsError) {
-    return { ok: false, error: "Error al verificar evaluaciones asociadas" };
+    return { ok: false, error: `Error al verificar evaluaciones asociadas: ${evaluationsError.message}` };
   }
   
   if (evaluations && evaluations.length > 0) {
