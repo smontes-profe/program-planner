@@ -226,6 +226,9 @@ export async function createPlanFromTemplate(payload: {
   if (templateError || !template) {
     return { ok: false, error: "Currículo no encontrado o no está publicado" };
   }
+  if (template.created_by_profile_id !== user.id) {
+    return { ok: false, error: "Solo puedes crear programaciones desde currículos propios." };
+  }
 
   // 1. Create the teaching plan
   const { data: plan, error: planError } = await supabase
@@ -1477,15 +1480,18 @@ export async function getPlanWarnings(planId: string): Promise<ActionResponse<{ 
 }
 
 /**
- * List published templates available to the current user for import
+ * List the current user's published templates available to create plans.
  */
 export async function listPublishedTemplates(): Promise<ActionResponse<any[]>> {
   const supabase = await createClient();
+  const userId = await getCurrentUserId(supabase);
+  if (!userId) return { ok: false, error: "Usuario no autenticado" };
 
   const { data, error } = await supabase
     .from("curriculum_templates")
-    .select("id, module_name, module_code, academic_year, version, region_code, organization_id, visibility_scope")
+    .select("id, module_name, module_code, academic_year, version, region_code, organization_id, visibility_scope, is_clone")
     .eq("status", "published")
+    .eq("created_by_profile_id", userId)
     .order("module_name");
 
   if (error) return { ok: false, error: error.message };
