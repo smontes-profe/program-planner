@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { type EvaluationContextFull, type GradeComputationResult, type InstrumentScore } from "@/domain/evaluation/types";
+import { type EvaluationContextFull, type EvaluationContextShare, type GradeComputationResult, type InstrumentScore } from "@/domain/evaluation/types";
 import { cn } from "@/lib/utils";
 import { Users, Grid3x3, BarChart3, Download } from "lucide-react";
 import { StudentsTab } from "./StudentsTab";
@@ -17,6 +17,7 @@ interface EvalTabsProps {
   readonly plans: TeachingPlanFull[];
   readonly scores: InstrumentScore[];
   readonly scoreError?: string;
+  readonly shares: EvaluationContextShare[];
 }
 
 type TabId = "students" | "matrix" | "pri_pmi" | "grades" | "export";
@@ -29,7 +30,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   { id: "export", label: "Exportación", icon: <Download className="h-4 w-4" /> },
 ];
 
-export function EvalTabs({ context, gradesResult, plans, scores, scoreError }: EvalTabsProps) {
+export function EvalTabs({ context, gradesResult, plans, scores, scoreError, shares }: EvalTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>("students");
 
   return (
@@ -73,7 +74,7 @@ export function EvalTabs({ context, gradesResult, plans, scores, scoreError }: E
           />
         )}
         {activeTab === "grades" && <GradesTab contextId={context.id} gradesResult={gradesResult} />}
-        {activeTab === "export" && <ExportTab context={context} gradesResult={gradesResult} plans={plans} scores={scores} />}
+        {activeTab === "export" && <ExportTab context={context} gradesResult={gradesResult} plans={plans} scores={scores} shares={shares} />}
       </div>
     </div>
   );

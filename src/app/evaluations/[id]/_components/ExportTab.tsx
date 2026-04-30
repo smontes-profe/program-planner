@@ -1,22 +1,30 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { type EvaluationContextFull, type GradeComputationResult, type InstrumentScore } from "@/domain/evaluation/types";
+import { useState, useMemo, useTransition } from "react";
+import { type EvaluationContextFull, type EvaluationContextShare, type GradeComputationResult, type InstrumentScore } from "@/domain/evaluation/types";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Download, FileSpreadsheet, ClipboardList, Database, LayoutGrid } from "lucide-react";
+import { Download, FileSpreadsheet, ClipboardList, Database, LayoutGrid, Loader2, Share2, Trash2 } from "lucide-react";
 import type { TeachingPlanFull } from "@/domain/teaching-plan/types";
 import { formatAdjustedGradeValue, isCountableAdjustedGradeValue } from "@/domain/evaluation/grade-values";
+import { removeEvaluationShare, shareEvaluation } from "@/domain/evaluation/actions";
 
 interface ExportTabProps {
   readonly context: EvaluationContextFull;
   readonly gradesResult: GradeComputationResult | null;
   readonly plans: TeachingPlanFull[];
   readonly scores: InstrumentScore[];
+  readonly shares: EvaluationContextShare[];
 }
 
-export function ExportTab({ context, gradesResult, plans, scores }: ExportTabProps) {
+export function ExportTab({ context, gradesResult, plans, scores, shares }: ExportTabProps) {
   const [includePriPmi, setIncludePriPmi] = useState(false);
+  const [shareRows, setShareRows] = useState<EvaluationContextShare[]>(shares);
+  const [shareEmails, setShareEmails] = useState("");
+  const [shareWarnings, setShareWarnings] = useState<string[]>([]);
+  const [shareMessage, setShareMessage] = useState("");
+  const [shareError, setShareError] = useState("");
+  const [isSharingPending, startSharingTransition] = useTransition();
 
   /** Escapa un campo CSV que pueda contener comas o comillas */
   const esc = (v: string | number | null | undefined) => {
@@ -200,6 +208,47 @@ export function ExportTab({ context, gradesResult, plans, scores }: ExportTabPro
     downloadCSV(content, `acta_evaluacion_${context.title.replace(/\s+/g, "_")}.csv`);
   }
 
+  function handleShareSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setShareError("");
+    setShareMessage("");
+    setShareWarnings([]);
+
+    startSharingTransition(async () => {
+      const result = await shareEvaluation(context.id, shareEmails);
+      if (!result.ok) {
+        setShareError(result.error);
+        return;
+      }
+
+      setShareRows(result.data.shares);
+      setShareWarnings(result.data.warnings);
+      setShareMessage(
+        result.data.added.length > 0
+          ? `Acceso añadido para: ${result.data.added.join(", ")}.`
+          : "No se han añadido nuevos accesos."
+      );
+      setShareEmails("");
+    });
+  }
+
+  function handleRemoveShare(shareId: string) {
+    setShareError("");
+    setShareMessage("");
+    setShareWarnings([]);
+
+    startSharingTransition(async () => {
+      const result = await removeEvaluationShare(context.id, shareId);
+      if (!result.ok) {
+        setShareError(result.error);
+        return;
+      }
+
+      setShareRows(result.data);
+      setShareMessage("Acceso eliminado.");
+    });
+  }
+
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Exportación de datos</h2>
@@ -244,6 +293,78 @@ export function ExportTab({ context, gradesResult, plans, scores }: ExportTabPro
           disabled={!gradesResult || gradesResult.studentGrades.length === 0}
         />
       </div>
+
+      {context.is_owner ? (
+        <section className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+          <div className="flex items-start gap-3">
+            <Share2 className="mt-0.5 h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            <div className="min-w-0 flex-1 space-y-4">
+              <div>
+                <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">Compartir evaluación</h3>
+                <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  Añade los emails de los usuarios que quieras invitar, separados por comas. Esos usuarios podrán ver tus evaluaciones pero no modificarlas. Esto es útil, por ejemplo, para dar visibilidad a tus evaluaciones a tutores, jefes de estudio, etc.
+                </p>
+              </div>
+
+              {shareRows.length === 0 ? (
+                <p className="rounded-md border border-dashed border-zinc-200 px-3 py-2 text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                  Todavía no hay usuarios invitados.
+                </p>
+              ) : (
+                <div className="divide-y divide-zinc-200 rounded-md border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+                  {shareRows.map((share) => (
+                    <div key={share.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-zinc-800 dark:text-zinc-100">
+                          {share.invited_name || share.invited_email}
+                        </p>
+                        {share.invited_name ? (
+                          <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">{share.invited_email}</p>
+                        ) : null}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRemoveShare(share.id)}
+                        disabled={isSharingPending}
+                        className="shrink-0"
+                      >
+                        <Trash2 className="mr-1 h-4 w-4" />
+                        Eliminar
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <form onSubmit={handleShareSubmit} className="space-y-3">
+                <textarea
+                  value={shareEmails}
+                  onChange={(e) => setShareEmails(e.target.value)}
+                  rows={3}
+                  placeholder="usuario1@centro.com, usuario2@centro.com"
+                  className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:border-zinc-800 dark:bg-zinc-950"
+                />
+                <Button type="submit" disabled={isSharingPending || shareEmails.trim().length === 0}>
+                  {isSharingPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Share2 className="mr-2 h-4 w-4" />}
+                  Añadir acceso
+                </Button>
+              </form>
+
+              {shareError ? <p className="text-sm font-medium text-red-600 dark:text-red-400">{shareError}</p> : null}
+              {shareMessage ? <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">{shareMessage}</p> : null}
+              {shareWarnings.length > 0 ? (
+                <ul className="space-y-1 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
+                  {shareWarnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

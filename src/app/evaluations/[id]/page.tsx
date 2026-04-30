@@ -1,4 +1,4 @@
-import { getEvaluationContext, computeStudentGrades, getScoresForContext } from "@/domain/evaluation/actions";
+import { getEvaluationContext, computeStudentGrades, getScoresForContext, listEvaluationShares } from "@/domain/evaluation/actions";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { MoveLeft } from "lucide-react";
@@ -24,6 +24,7 @@ export default async function EvalDetailPage({ params, searchParams }: EvalDetai
   const linkedPlans: TeachingPlanFull[] = planResults.filter(pr => pr.ok).map(pr => pr.data);
   const scoresResult = await getScoresForContext(id);
   const scoresForMatrix = scoresResult.ok ? scoresResult.data : [];
+  const sharesResult = context.is_owner ? await listEvaluationShares(id) : { ok: true as const, data: [] };
   const gradesResult = await computeStudentGrades(id, {
     plans: linkedPlans,
     scores: scoresResult.ok ? scoresResult.data : undefined,
@@ -82,6 +83,7 @@ export default async function EvalDetailPage({ params, searchParams }: EvalDetai
           plans={linkedPlans}
           scores={scoresForMatrix}
           scoreError={scoresResult.ok ? undefined : scoresResult.error}
+          shares={sharesResult.ok ? sharesResult.data : []}
         />
       </div>
     </div>

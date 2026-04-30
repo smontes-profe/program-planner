@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase";
+import { createAdminClient, createClient } from "@/lib/supabase";
 import {
   createEvaluationContextSchema,
   updateEvaluationContextSchema,
@@ -16,6 +16,7 @@ import {
 } from "./schemas";
 import {
   type EvaluationContext,
+  type EvaluationContextShare,
   type EvaluationStudent,
   type InstrumentScore,
   type EvaluationContextFull,
@@ -29,10 +30,68 @@ import {
 import { computeAllStudentGrades, type GradeComputationResult } from "./grade-engine";
 import { getPlan } from "@/domain/teaching-plan/actions";
 import type { TeachingPlanFull } from "@/domain/teaching-plan/types";
+import { z } from "zod";
 
 export type ActionResponse<T = any> =
   | { ok: true; data: T }
   | { ok: false; error: string; details?: any };
+
+type ShareEvaluationResult = {
+  shares: EvaluationContextShare[];
+  added: string[];
+  warnings: string[];
+};
+
+const emailSchema = z.string().trim().email();
+
+async function getOwnedEvaluationContext(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  contextId: string
+): Promise<{ context: { id: string; created_by_profile_id: string } | null; userId: string | null; error?: string }> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { context: null, userId: null, error: "Usuario no autenticado" };
+
+  const { data: context, error } = await supabase
+    .from("evaluation_contexts")
+    .select("id, created_by_profile_id")
+    .eq("id", contextId)
+    .single();
+
+  if (error || !context) return { context: null, userId: user.id, error: "Evaluación no encontrada" };
+  if (context.created_by_profile_id !== user.id) {
+    return { context: null, userId: user.id, error: "Solo el creador puede compartir esta evaluación" };
+  }
+
+  return { context, userId: user.id };
+}
+
+async function listEvaluationSharesWithAdmin(contextId: string): Promise<EvaluationContextShare[]> {
+  const admin = createAdminClient();
+  const { data: shares } = await admin
+    .from("evaluation_context_shares")
+    .select("id, context_id, invited_profile_id, invited_by_profile_id, invited_email, created_at")
+    .eq("context_id", contextId)
+    .order("created_at", { ascending: true });
+
+  const profileIds = Array.from(new Set((shares ?? []).map((share) => share.invited_profile_id)));
+  const { data: profiles } = profileIds.length > 0
+    ? await admin
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("id", profileIds)
+    : { data: [] as { id: string; full_name: string | null; email: string }[] };
+
+  const profileById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
+
+  return (shares ?? []).map((share) => {
+    const profile = profileById.get(share.invited_profile_id);
+    return {
+      ...share,
+      invited_name: profile?.full_name ?? null,
+      invited_email: profile?.email ?? share.invited_email,
+    };
+  });
+}
 
 export async function listPublishedPlans(): Promise<ActionResponse<{ id: string; title: string; module_code: string; academic_year: string }[]>> {
   const supabase = await createClient();
@@ -85,6 +144,7 @@ export async function listEvaluationContexts(): Promise<ActionResponse<Evaluatio
     student_count: ctx.student_count?.[0]?.count || 0,
     // Include plan names for display
     plan_names: ctx.modules?.map((m: any) => m.plan?.title) || [],
+    is_owner: ctx.created_by_profile_id === user.id,
   }));
 
   return { ok: true, data: contexts };
@@ -126,6 +186,7 @@ export async function getEvaluationContext(contextId: string): Promise<ActionRes
     academic_year: ctx.academic_year,
     title: ctx.title,
     created_at: ctx.created_at,
+    is_owner: ctx.created_by_profile_id === user.id,
     plan_ids: modules?.map((m: any) => m.teaching_plan_id) || [],
     plans: modules?.map((m: any) => m.plan).filter(Boolean) || [],
     students: (students || []) as EvaluationStudent[],
@@ -202,6 +263,131 @@ export async function deleteEvaluationContext(contextId: string): Promise<Action
   if (error) return { ok: false, error: error.message };
   revalidatePath("/evaluations");
   return { ok: true, data: null };
+}
+
+export async function listEvaluationShares(contextId: string): Promise<ActionResponse<EvaluationContextShare[]>> {
+  const supabase = await createClient();
+  const ownership = await getOwnedEvaluationContext(supabase, contextId);
+  if (ownership.error) return { ok: false, error: ownership.error };
+
+  const shares = await listEvaluationSharesWithAdmin(contextId);
+  return { ok: true, data: shares };
+}
+
+export async function shareEvaluation(contextId: string, rawEmails: string): Promise<ActionResponse<ShareEvaluationResult>> {
+  const supabase = await createClient();
+  const ownership = await getOwnedEvaluationContext(supabase, contextId);
+  if (ownership.error || !ownership.userId) {
+    return { ok: false, error: ownership.error ?? "No se pudo validar el propietario" };
+  }
+
+  const warnings: string[] = [];
+  const added: string[] = [];
+  const inputEmails = rawEmails
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (inputEmails.length === 0) {
+    return { ok: false, error: "Introduce al menos un email" };
+  }
+
+  const uniqueEmails: string[] = [];
+  const seenEmails = new Set<string>();
+  for (const email of inputEmails) {
+    const parsed = emailSchema.safeParse(email);
+    if (!parsed.success) {
+      warnings.push(`${email}: email no válido, no se ha añadido.`);
+      continue;
+    }
+    if (seenEmails.has(email)) {
+      warnings.push(`${email}: estaba repetido en la lista, no se duplica.`);
+      continue;
+    }
+    seenEmails.add(email);
+    uniqueEmails.push(email);
+  }
+
+  if (uniqueEmails.length === 0) {
+    const shares = await listEvaluationSharesWithAdmin(contextId);
+    return { ok: true, data: { shares, added, warnings } };
+  }
+
+  const admin = createAdminClient();
+  const resolvedProfiles: { id: string; email: string; full_name: string | null }[] = [];
+  for (const email of uniqueEmails) {
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("id, email, full_name")
+      .ilike("email", email)
+      .maybeSingle();
+
+    if (!profile) {
+      warnings.push(`${email}: no existe ningún usuario con ese email, no se ha añadido.`);
+      continue;
+    }
+    if (profile.id === ownership.userId) {
+      warnings.push(`${email}: es tu propio usuario, no se ha añadido.`);
+      continue;
+    }
+    resolvedProfiles.push(profile);
+  }
+
+  if (resolvedProfiles.length > 0) {
+    const { data: existingShares } = await admin
+      .from("evaluation_context_shares")
+      .select("invited_profile_id, invited_email")
+      .eq("context_id", contextId)
+      .in("invited_profile_id", resolvedProfiles.map((profile) => profile.id));
+    const existingProfileIds = new Set((existingShares ?? []).map((share) => share.invited_profile_id));
+    const rowsToInsert = resolvedProfiles
+      .filter((profile) => {
+        if (existingProfileIds.has(profile.id)) {
+          warnings.push(`${profile.email}: ya tenía acceso, no se duplica.`);
+          return false;
+        }
+        return true;
+      })
+      .map((profile) => ({
+        context_id: contextId,
+        invited_profile_id: profile.id,
+        invited_by_profile_id: ownership.userId,
+        invited_email: profile.email.toLowerCase(),
+      }));
+
+    if (rowsToInsert.length > 0) {
+      const { error: insertError } = await admin
+        .from("evaluation_context_shares")
+        .insert(rowsToInsert);
+      if (insertError) {
+        return { ok: false, error: `Error al compartir la evaluación: ${insertError.message}` };
+      }
+      added.push(...rowsToInsert.map((row) => row.invited_email));
+    }
+  }
+
+  const shares = await listEvaluationSharesWithAdmin(contextId);
+  revalidatePath(`/evaluations/${contextId}`);
+  return { ok: true, data: { shares, added, warnings } };
+}
+
+export async function removeEvaluationShare(contextId: string, shareId: string): Promise<ActionResponse<EvaluationContextShare[]>> {
+  const supabase = await createClient();
+  const ownership = await getOwnedEvaluationContext(supabase, contextId);
+  if (ownership.error) return { ok: false, error: ownership.error };
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("evaluation_context_shares")
+    .delete()
+    .eq("id", shareId)
+    .eq("context_id", contextId);
+
+  if (error) return { ok: false, error: `Error al eliminar acceso: ${error.message}` };
+
+  const shares = await listEvaluationSharesWithAdmin(contextId);
+  revalidatePath(`/evaluations/${contextId}`);
+  return { ok: true, data: shares };
 }
 
 export async function linkTeachingPlan(

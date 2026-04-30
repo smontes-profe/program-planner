@@ -18,6 +18,17 @@ export interface EvaluationContext {
   plan_count?: number;
   student_count?: number;
   plan_names?: string[];
+  is_owner?: boolean;
+}
+
+export interface EvaluationContextShare {
+  id: string;
+  context_id: string;
+  invited_profile_id: string;
+  invited_by_profile_id: string;
+  invited_email: string;
+  invited_name?: string | null;
+  created_at: string;
 }
 
 export interface EvaluationContextFull extends EvaluationContext {
