@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Search } from "lucide-react";
 
 interface PublishedTemplate {
   id: string;
@@ -36,8 +36,21 @@ export function CreatePlanButton({ publishedTemplates }: CreatePlanButtonProps) 
   const [error, setError] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [academicYear, setAcademicYear] = useState("");
+  const [templateQuery, setTemplateQuery] = useState("");
 
   const selectedTemplate = publishedTemplates.find((t) => t.id === selectedTemplateId);
+  const normalizedTemplateQuery = templateQuery.trim().toLowerCase();
+  const filteredTemplates = normalizedTemplateQuery
+    ? publishedTemplates.filter((template) =>
+        [
+          template.module_name,
+          template.module_code,
+          template.region_code,
+          template.academic_year,
+          template.version,
+        ].some((value) => value?.toLowerCase().includes(normalizedTemplateQuery))
+      )
+    : publishedTemplates;
 
   function handleTemplateChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const id = e.target.value;
@@ -70,7 +83,7 @@ export function CreatePlanButton({ publishedTemplates }: CreatePlanButtonProps) 
   }
 
   return (
-    <Sheet open={open} onOpenChange={(v) => { setOpen(v); setError(""); setSelectedTemplateId(""); setAcademicYear(""); }}>
+    <Sheet open={open} onOpenChange={(v) => { setOpen(v); setError(""); setSelectedTemplateId(""); setAcademicYear(""); setTemplateQuery(""); }}>
       <SheetTrigger>
         <div
           id="create-plan-button"
@@ -95,6 +108,20 @@ export function CreatePlanButton({ publishedTemplates }: CreatePlanButtonProps) 
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5 pt-6 px-4 pb-4">
             <div className="space-y-2">
+              <Label htmlFor="template-filter">Filtrar currículos</Label>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                <Input
+                  id="template-filter"
+                  value={templateQuery}
+                  onChange={(e) => setTemplateQuery(e.target.value)}
+                  placeholder="Nombre, código, región, año o versión"
+                  className="pl-9"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="source_template_id">Currículo base</Label>
               <select
                 id="source_template_id"
@@ -105,12 +132,17 @@ export function CreatePlanButton({ publishedTemplates }: CreatePlanButtonProps) 
                 className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:border-zinc-800"
               >
                 <option value="">Selecciona un currículo...</option>
-                {publishedTemplates.map((t) => (
+                {filteredTemplates.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.module_name} ({t.module_code} · {t.region_code} · {t.academic_year} · v{t.version})
                   </option>
                 ))}
               </select>
+              {filteredTemplates.length === 0 ? (
+                <p className="text-xs text-amber-700 dark:text-amber-400">
+                  No hay currículos propios que coincidan con el filtro.
+                </p>
+              ) : null}
             </div>
 
             <div className="space-y-2">
