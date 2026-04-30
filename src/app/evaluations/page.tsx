@@ -6,7 +6,7 @@ import Link from "next/link";
 import { BookOpen, AlertCircle, CalendarDays, Plus, Search } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createAdminClient } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase";
 
 const EVALUATION_TITLE_MAX_LENGTH = 25;
 
@@ -60,19 +60,13 @@ export default async function EvaluationsPage({
 
   const contexts = contextsResult.data;
   const publishedPlans = plansResult.ok ? plansResult.data : [];
-
-  // Enrich contexts with creator names and module information
-  const adminClient = createAdminClient();
-  const creatorIds = Array.from(new Set(contexts.map(c => c.created_by_profile_id).filter(Boolean)));
-  const { data: creators } = creatorIds.length > 0
-    ? await adminClient.from("profiles").select("id, full_name").in("id", creatorIds)
-    : { data: [] as { id: string; full_name: string | null }[] };
-
-  const creatorNameById = new Map((creators ?? []).map(creator => [creator.id, creator.full_name]));
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const creatorLabel = user?.email ?? null;
 
   const enrichedContexts = contexts.map(ctx => ({
     ...ctx,
-    creator_name: creatorNameById.get(ctx.created_by_profile_id) ?? null,
+    creator_name: creatorLabel,
   }));
 
   // Extract filter options and apply filters

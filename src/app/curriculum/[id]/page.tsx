@@ -12,7 +12,6 @@ import Link from "next/link";
 import { MoveLeft, Edit, Eye } from "lucide-react";
 import { notFound } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { createAdminClient } from "@/lib/supabase";
 
 interface TemplatePageProps {
   readonly params: Promise<{ id: string }>;
@@ -21,7 +20,6 @@ interface TemplatePageProps {
 export default async function TemplateDetailsPage({ params }: TemplatePageProps) {
   const { id } = await params;
   const supabase = await createClient();
-  const adminClient = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   const { data: template, error } = await supabase
@@ -53,11 +51,7 @@ export default async function TemplateDetailsPage({ params }: TemplatePageProps)
   const isDraft = template.status === 'draft';
   const isOwner = Boolean(user && template.created_by_profile_id === user.id);
   const canEdit = isOwner;
-  const { data: owner } = await adminClient
-    .from("profiles")
-    .select("full_name")
-    .eq("id", template.created_by_profile_id)
-    .maybeSingle();
+  const ownerLabel = isOwner ? "Tú" : "Otro creador";
 
   let badgeVariant: 'success' | 'warning' | 'neutral' = 'neutral';
   let badgeLabel = 'Borrador';
@@ -137,7 +131,7 @@ export default async function TemplateDetailsPage({ params }: TemplatePageProps)
                 v{template.version}
               </span>
               <span>•</span>
-              {owner?.full_name ? <span>Creado por {owner.full_name}</span> : null}
+              <span>Creado por {ownerLabel}</span>
               <span>•</span>
               <TemplateHoursEditor templateId={id} initialHours={template.hours_total || 0} readOnly={!canEdit} />
             </div>
