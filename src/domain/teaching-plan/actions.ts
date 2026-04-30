@@ -1046,7 +1046,11 @@ export async function updatePlanInstrumentOrder(planId: string, orderedIds: stri
   const promises = orderedIds.map((id, index) => 
     supabase.from("plan_instrument").update({ order_index: index }).eq("id", id).eq("plan_id", planId)
   );
-  await Promise.all(promises);
+  const results = await Promise.all(promises);
+  const failed = results.find((result) => result.error);
+  if (failed?.error) {
+    return { ok: false, error: `Error al actualizar orden de instrumentos: ${failed.error.message}` };
+  }
   revalidatePath(`/plans/${planId}`);
   return { ok: true, data: null };
 }
@@ -1198,10 +1202,19 @@ export async function addPlanInstrument(
     return { ok: false, error: manualWeightsError };
   }
 
+  const { data: lastInstrument } = await supabase
+    .from("plan_instrument")
+    .select("order_index")
+    .eq("plan_id", planId)
+    .order("order_index", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const nextOrderIndex = (lastInstrument?.order_index ?? -1) + 1;
+
   // 1. Create instrument
   const { data: instrument, error } = await supabase
     .from("plan_instrument")
-    .insert({ plan_id: planId, ...validated.data })
+    .insert({ plan_id: planId, ...validated.data, order_index: nextOrderIndex })
     .select()
     .single();
 

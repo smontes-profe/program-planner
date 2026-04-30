@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { type TeachingPlanFull, type PlanInstrument, type InstrumentType } from "@/domain/teaching-plan/types";
 import { 
   addPlanInstrument, updatePlanInstrument, deletePlanInstrument, updatePlanInstrumentOrder 
@@ -832,13 +832,28 @@ function SortableInstrumentRow({
 
 export function InstrumentsTab({ plan, readOnly = false }: InstrumentsTabProps) {
   const router = useRouter();
+  const [optimisticOrderIds, setOptimisticOrderIds] = useState<string[] | null>(null);
   const [open, setOpen] = useState(false);
   const [editingInstrument, setEditingInstrument] = useState<PlanInstrument | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [isOrderPending, startOrderTransition] = useTransition();
   const [error, setError] = useState("");
 
+  const instruments = useMemo(() => {
+    const source = plan.instruments || [];
+    if (!optimisticOrderIds) return source;
+
+    const byId = new Map(source.map((instrument) => [instrument.id, instrument]));
+    const ordered = optimisticOrderIds
+      .map((id) => byId.get(id))
+      .filter((instrument): instrument is PlanInstrument => Boolean(instrument));
+    const orderedIds = new Set(ordered.map((instrument) => instrument.id));
+    const newItems = source.filter((instrument) => !orderedIds.has(instrument.id));
+    return [...ordered, ...newItems];
+  }, [plan.instruments, optimisticOrderIds]);
+
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -895,18 +910,23 @@ export function InstrumentsTab({ plan, readOnly = false }: InstrumentsTabProps) 
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = plan.instruments?.findIndex((inst) => inst.id === active.id) ?? 0;
-      const newIndex = plan.instruments?.findIndex((inst) => inst.id === over.id) ?? 0;
+      const oldIndex = instruments.findIndex((inst) => inst.id === active.id);
+      const newIndex = instruments.findIndex((inst) => inst.id === over.id);
+      if (oldIndex < 0 || newIndex < 0) return;
       
-      const newOrder = arrayMove(plan.instruments || [], oldIndex, newIndex);
+      const newOrder = arrayMove(instruments, oldIndex, newIndex);
       const orderedIds = newOrder.map(inst => inst.id);
+      setOptimisticOrderIds(orderedIds);
       
-      const res = await updatePlanInstrumentOrder(plan.id, orderedIds);
-      if (res.ok) {
-        router.refresh();
-      } else {
-        alert(res.error);
-      }
+      startOrderTransition(async () => {
+        const res = await updatePlanInstrumentOrder(plan.id, orderedIds);
+        if (res.ok) {
+          router.refresh();
+        } else {
+          setOptimisticOrderIds(null);
+          alert(res.error);
+        }
+      });
     }
   };
 
@@ -951,15 +971,20 @@ export function InstrumentsTab({ plan, readOnly = false }: InstrumentsTabProps) 
           </Sheet>
         </div>
 
-        <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-white dark:bg-zinc-950 shadow-sm">
-          {!readOnly && plan.instruments && plan.instruments.length > 0 ? (
+        <div className="relative border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-white dark:bg-zinc-950 shadow-sm">
+          {isOrderPending ? (
+            <div className="absolute right-4 top-4 z-10 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+              Actualizando orden...
+            </div>
+          ) : null}
+          {!readOnly && instruments.length > 0 ? (
             <DndContext 
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}
             >
               <SortableContext 
-                items={plan.instruments.map(inst => inst.id)} 
+                items={instruments.map(inst => inst.id)} 
                 strategy={verticalListSortingStrategy}
               >
                 <Table>
@@ -975,14 +1000,14 @@ export function InstrumentsTab({ plan, readOnly = false }: InstrumentsTabProps) 
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {plan.instruments?.length === 0 ? (
+                    {instruments.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} className="h-32 text-center text-zinc-500 italic">
                           No hay instrumentos definidos.
                         </TableCell>
                       </TableRow>
                     ) : (
-                      plan.instruments.map((inst) => (
+                      instruments.map((inst) => (
                         <SortableInstrumentRow
                           key={inst.id}
                           instrument={inst}
@@ -1012,19 +1037,14 @@ export function InstrumentsTab({ plan, readOnly = false }: InstrumentsTabProps) 
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {plan.instruments?.length === 0 ? (
+                {instruments.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="h-32 text-center text-zinc-500 italic">
                       No hay instrumentos definidos.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  (plan.instruments || [])
-                    .sort((a, b) => {
-                      const codeA = a.code || "";
-                      const codeB = b.code || "";
-                      return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: 'base' });
-                    })
+                  instruments
                     .map((inst) => {
                     const unitCodes = (inst.unit_ids || []).map(uId => {
                       const unit = plan.units?.find(u => u.id === uId);
